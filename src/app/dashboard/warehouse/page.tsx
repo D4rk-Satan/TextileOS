@@ -1,0 +1,235 @@
+'use client';
+
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { 
+  Building2,
+  Package,
+  Factory
+} from 'lucide-react';
+import { GreyInwardForm } from '@/components/warehouse/GreyInwardForm';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { GlassCard } from '@/components/shared/GlassCard';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getGreyInwards, getBatches } from '@/app/actions/warehouse';
+
+type TabType = 'grey-inward' | 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'ready-for-dispatch' | 'dispatched';
+
+function WarehousePageContent() {
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabType>('grey-inward');
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any[]>([]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setData([]); // Clear old data to prevent layout mismatch during loading
+    if (activeTab === 'grey-inward') {
+      const result = await getGreyInwards();
+      if (result?.success) {
+        setData(result.data || []);
+      }
+    } else if (activeTab === 'batches') {
+      const result = await getBatches();
+      if (result?.success) {
+        setData(result.data || []);
+      }
+    } else {
+      setData([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as TabType;
+    if (tab && ['grey-inward', 'batches', 'out-for-rfd', 'ready-for-printing', 'ready-for-dispatch', 'dispatched'].includes(tab)) {
+      setActiveTab(tab);
+      setShowForm(false);
+    }
+    fetchData();
+  }, [searchParams, activeTab]);
+
+  const titles: Record<TabType, string> = {
+    'grey-inward': 'Grey Inward',
+    'batches': 'Batches',
+    'out-for-rfd': 'Out For RFD',
+    'ready-for-printing': 'Ready For Printing',
+    'ready-for-dispatch': 'Ready For Dispatch',
+    'dispatched': 'Dispatched'
+  };
+
+  const handleRecordAdded = () => {
+    setShowForm(false);
+    fetchData();
+  };
+
+  return (
+    <div className="space-y-8">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6"
+      >
+        <div>
+          <h1 className="text-4xl font-black text-foreground capitalize tracking-tight flex items-center gap-3">
+            <span className="w-2 h-8 bg-blue-600 rounded-full" />
+            {titles[activeTab]}
+          </h1>
+          <p className="text-muted-foreground mt-1 font-medium italic opacity-80">Manage your {activeTab.replace(/-/g, ' ')} workflows and records.</p>
+        </div>
+        
+        {!showForm && data.length > 0 && (
+          <button 
+            onClick={() => setShowForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
+          >
+            New {titles[activeTab]} Entry
+          </button>
+        )}
+      </motion.div>
+
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div 
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="h-96 flex items-center justify-center"
+          >
+            <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+          </motion.div>
+        ) : showForm ? (
+          <div key="form" className="max-w-7xl mx-auto">
+             <div className="mb-6 flex items-center justify-between">
+                <button 
+                  onClick={() => setShowForm(false)}
+                  className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+                >
+                  ← Back to {titles[activeTab]}
+                </button>
+                <h2 className="text-2xl font-black text-foreground flex items-center gap-3">
+                  New {titles[activeTab]} Entry
+                </h2>
+             </div>
+             <GlassCard>
+                <div className="p-10">
+                  {activeTab === 'grey-inward' && <GreyInwardForm onSuccess={handleRecordAdded} />}
+                </div>
+             </GlassCard>
+          </div>
+        ) : data.length === 0 && activeTab === 'grey-inward' ? (
+          <motion.div 
+            key="empty"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-card/50 rounded-[2.5rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm"
+          >
+            <div className="p-10">
+              <EmptyState 
+                title={`No ${titles[activeTab]} records`}
+                description={`You haven't recorded any ${activeTab.replace(/-/g, ' ')} entries yet.`}
+                onAdd={() => setShowForm(true)}
+                onImport={() => alert('Import feature coming soon!')}
+              />
+            </div>
+          </motion.div>
+        ) : activeTab === 'batches' ? (
+          <motion.div 
+            key="batches-list"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Batch No</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lot No</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Mtrs</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {data.map((batch: any) => (
+                    <tr key={batch.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-8 py-5">
+                        <span className="font-bold text-foreground">{batch.batchNo}</span>
+                      </td>
+                      <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
+                        {batch.greyInward?.customer?.customerName || 'N/A'}
+                      </td>
+                      <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
+                        {batch.greyInward?.lotNo}
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="text-sm font-black text-blue-600">{(batch.mtrs || 0).toFixed(2)} Mtr</span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="text-[10px] bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full font-black uppercase tracking-wider">
+                          {batch.greyInward?.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {data.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-20 text-center text-muted-foreground italic font-medium">
+                        No batches found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        ) : activeTab !== 'grey-inward' ? (
+          <div key="placeholder" className="flex flex-col items-center justify-center py-32 text-center bg-card rounded-[2.5rem] border border-border shadow-xl">
+            <div className="w-24 h-24 bg-muted/50 text-muted-foreground/20 rounded-[2rem] flex items-center justify-center mb-8 border-2 border-dashed border-border">
+              <Package size={48} />
+            </div>
+            <h3 className="text-2xl font-black text-foreground uppercase tracking-widest">Coming Soon</h3>
+            <p className="text-muted-foreground mt-3 font-medium max-w-sm mx-auto">
+              The <span className="text-blue-600 font-bold">{titles[activeTab]}</span> module is currently under development.
+            </p>
+          </div>
+        ) : (
+          <motion.div 
+            key="list"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
+          >
+            <div className="p-8">
+               <h3 className="text-xl font-bold mb-4">Recent {titles[activeTab]}</h3>
+               <div className="grid gap-4">
+                  {data.map((item: any) => (
+                    <div key={item.id} className="p-4 rounded-xl bg-muted/30 border border-border flex justify-between items-center">
+                      <div>
+                        <span className="font-bold block">{item.lotNo}</span>
+                        <span className="text-xs text-muted-foreground">Challan: {item.challanNo} • {item.quality}</span>
+                      </div>
+                      <span className="text-[10px] bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full font-black uppercase tracking-wider">{item.status}</span>
+                    </div>
+                  ))}
+               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export default function WarehousePage() {
+  return (
+    <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading Module...</div>}>
+      <WarehousePageContent />
+    </Suspense>
+  );
+}

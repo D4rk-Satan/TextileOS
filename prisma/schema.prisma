@@ -1,0 +1,157 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Organization {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  phone        String?
+  status       String        @default("Active") // Active, Pending, Suspended
+  plan         String        @default("Basic")  // Basic, Pro, Enterprise
+  users        User[]
+  customers    Customer[]
+  vendors      Vendor[]
+  items        Item[]
+  inwards      GreyInward[]
+  greyOutwards GreyOutward[]
+  rfdInwards   RFDInward[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  password       String       // Hashed
+  role           String       @default("Admin") // SuperAdmin, Admin, User
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Customer {
+  id           String        @id @default(cuid())
+  customerName String
+  status       String        @default("Active")
+  address      String?
+  addressLine1 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String        @default("India")
+  phone        String?
+  gstin        String?
+  inwards      GreyInward[]
+  
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Vendor {
+  id           String   @id @default(cuid())
+  vendorName   String
+  masterName   String?
+  vendorNumber String?
+  booksId      String?
+  gstin        String?
+  status       String   @default("Active")
+  addressLine1 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String   @default("India")
+
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+  greyOutwards   GreyOutward[]
+  rfdInwards     RFDInward[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Item {
+  id        String   @id @default(cuid())
+  itemName  String
+  sku       String   @unique
+
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GreyInward {
+  id           String   @id @default(cuid())
+  lotNo        String
+  date         DateTime
+  challanNo    String
+  quality      String
+  processType  String
+  batchDetail  String?
+  status       String   @default("In-Warehouse")
+  image        String?
+  totalBatch   Int      @default(0)
+  totalMtr     Decimal  @db.Decimal(10, 2)
+  
+  customer     Customer @relation(fields: [customerId], references: [id])
+  customerId   String
+  
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  batches      Batch[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Batch {
+  id           String     @id @default(cuid())
+  batchNo      String
+  pcs          Int?
+  mtrs         Decimal?   @db.Decimal(10, 2)
+  weight       Decimal?   @db.Decimal(10, 2)
+  
+  greyInward   GreyInward @relation(fields: [greyInwardId], references: [id], onDelete: Cascade)
+  greyInwardId String
+}
+
+model GreyOutward {
+  id              String      @id @default(cuid())
+  date            DateTime
+  lotNo           String
+  dyeingHouseId   String
+  dyeingHouse     Vendor      @relation(fields: [dyeingHouseId], references: [id])
+  remark          String?
+  
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model RFDInward {
+  id              String      @id @default(cuid())
+  date            DateTime
+  lotNo           String
+  dyeingHouseId   String
+  dyeingHouse     Vendor      @relation(fields: [dyeingHouseId], references: [id])
+  remark          String?
+  
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
