@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Building2,
   Package,
-  Factory
+  Factory,
+  Search
 } from 'lucide-react';
 import { GreyInwardForm } from '@/components/warehouse/GreyInwardForm';
 import { EmptyState } from '@/components/shared/EmptyState';
