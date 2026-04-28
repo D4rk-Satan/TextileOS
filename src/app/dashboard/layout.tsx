@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { 
   LayoutDashboard, 
   Boxes, 
@@ -90,8 +90,10 @@ export default function DashboardLayout({
   ];
 
   return (
-    <DashboardShell navigation={navigation} userProfile={profile}>
-      {children}
-    </DashboardShell>
+    <Suspense fallback={null}>
+      <DashboardShell navigation={navigation} userProfile={profile}>
+        {children}
+      </DashboardShell>
+    </Suspense>
   );
 }
