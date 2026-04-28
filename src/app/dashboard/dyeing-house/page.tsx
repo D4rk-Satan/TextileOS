@@ -8,7 +8,8 @@ import {
   Layers,
   Package,
   History,
-  Building2
+  Building2,
+  Search
 } from 'lucide-react';
 import { GreyOutwardForm } from '@/components/dyeing/GreyOutwardForm';
 import { RFDInwardForm } from '@/components/dyeing/RFDInwardForm';
@@ -66,31 +67,44 @@ function DyeingHousePageContent() {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6"
       >
-        <div>
-          <h1 className="text-2xl font-bold text-foreground capitalize tracking-tight flex items-center gap-3">
-            <span className="w-1.5 h-6 bg-blue-600 rounded-full" />
-            {titles[activeTab]}
-          </h1>
-          <p className="text-[13px] text-muted-foreground mt-1 font-medium opacity-80">
-            {activeTab === 'grey-outward' ? 'Manage outward shipments of grey fabric to dyeing houses.' : 'Record RFD fabric received back from dyeing houses.'}
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground capitalize tracking-tight flex items-center gap-3">
+              <span className="w-1.5 h-6 bg-blue-600 rounded-full" />
+              {titles[activeTab]}
+            </h1>
+            <p className="text-[11px] text-muted-foreground mt-0.5 font-medium opacity-80 whitespace-nowrap">
+              {activeTab === 'grey-outward' ? 'Manage outward shipments.' : 'Record RFD fabric received.'}
+            </p>
+          </div>
+
+          <div className="flex gap-1 bg-muted/50 p-1 rounded-xl border border-border backdrop-blur-sm">
+              <button 
+                  onClick={() => setActiveTab('grey-outward')}
+                  className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-2 ${activeTab === 'grey-outward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+              >
+                  <Droplets size={12} />
+                  Grey Outward
+              </button>
+              <button 
+                  onClick={() => setActiveTab('rfd-inward')}
+                  className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-2 ${activeTab === 'rfd-inward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+              >
+                  <Layers size={12} />
+                  RFD Inward
+              </button>
+          </div>
         </div>
 
-        <div className="flex gap-2 bg-muted/50 p-1 rounded-2xl border border-border backdrop-blur-sm">
-            <button 
-                onClick={() => setActiveTab('grey-outward')}
-                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'grey-outward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-            >
-                <Droplets size={16} />
-                Grey Outward
-            </button>
-            <button 
-                onClick={() => setActiveTab('rfd-inward')}
-                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'rfd-inward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-            >
-                <Layers size={16} />
-                RFD Inward
-            </button>
+        <div className="relative flex-1 max-w-xs hidden lg:block">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <Search size={14} />
+          </div>
+          <input 
+            type="text" 
+            placeholder={`Search ${titles[activeTab]}...`} 
+            className="w-full h-9 pl-10 pr-4 rounded-xl border border-border bg-background/50 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[12px] font-medium"
+          />
         </div>
       </motion.div>
       <AnimatePresence mode="wait">

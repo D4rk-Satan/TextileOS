@@ -222,13 +222,24 @@ export default function DashboardShell({
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border mt-auto">
-          <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all group overflow-hidden">
-            <UserCircle size={20} className="flex-shrink-0 text-muted-foreground group-hover:text-foreground" />
-            <span className={cn("transition-all duration-300 whitespace-nowrap", isMinimized ? "opacity-0 w-0" : "opacity-100 w-auto")}>
-              Profile Settings
-            </span>
-          </button>
+        <div className="p-4 border-t border-border bg-card/50 mt-auto">
+          <div className={cn(
+            "flex transition-all duration-300",
+            isMinimized ? "flex-col items-center gap-4" : "items-center justify-between"
+          )}>
+            <div className={cn("flex flex-col", isMinimized && "hidden")}>
+               <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">{userProfile.orgName}</span>
+               <span className="text-xs font-bold text-foreground">Organization</span>
+            </div>
+            
+            <div className={cn("flex items-center gap-2", isMinimized && "flex-col")}>
+              <ThemeToggle />
+              <button className="relative p-2 text-muted-foreground hover:bg-muted rounded-xl transition-colors">
+                <Bell size={18} />
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border border-card"></span>
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -251,14 +262,6 @@ export default function DashboardShell({
           </div>
 
           <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <button className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors">
-              <Bell size={22} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-card"></span>
-            </button>
-          </div>
-            <div className="h-10 w-px bg-border"></div>
             <div className="flex items-center gap-3 pl-2">
               <div className="text-right hidden sm:block">
                 <p className="text-[13px] font-bold text-foreground leading-none">{userProfile.name}</p>
