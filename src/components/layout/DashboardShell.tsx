@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { 
   Bell, 
   Search,
@@ -47,6 +47,7 @@ export default function DashboardShell({
   }
 }: DashboardShellProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
@@ -85,7 +86,10 @@ export default function DashboardShell({
   };
 
   const NavLink = ({ item, depth = 0 }: { item: NavItem; depth?: number }) => {
-    const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+    const currentFullUrl = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+    const isActive = item.href.includes('?') 
+      ? currentFullUrl === item.href 
+      : pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
     const isExpanded = expandedItems.includes(item.name);
     const hasSubItems = item.subItems && item.subItems.length > 0;
 
@@ -99,7 +103,7 @@ export default function DashboardShell({
               isActive && depth === 0
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-bold' 
                 : isActive && depth > 0
-                ? 'text-blue-600 bg-blue-50/20 border-l-2 border-blue-600 rounded-none rounded-r-xl font-bold'
+                ? 'text-blue-600 bg-blue-600/10 border-l-4 border-blue-600 rounded-none rounded-r-xl font-bold translate-x-1'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               depth > 0 && 'py-2 px-3 text-[11px]'
             )}
@@ -157,7 +161,7 @@ export default function DashboardShell({
           isActive && depth === 0
             ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-bold' 
             : isActive && depth > 0
-            ? 'text-blue-600 bg-blue-50/20 border-l-2 border-blue-600 rounded-none rounded-r-xl font-bold'
+            ? 'text-blue-600 bg-blue-600/10 border-l-4 border-blue-600 rounded-none rounded-r-xl font-bold translate-x-1'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground',
           depth > 0 && 'py-2 px-3 text-[11px]'
         )}
