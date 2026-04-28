@@ -33,10 +33,10 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const result = await loginUser(data);
-      if (result.success) {
+      if (result.success && result.user) {
         // In a real app, the session would be set by the server action
         window.location.href = result.user.role === 'SuperAdmin' ? '/superadmin' : '/dashboard';
-      } else {
+      } else if (!result.success) {
         alert('Login failed: ' + result.error);
       }
     } catch (error) {
