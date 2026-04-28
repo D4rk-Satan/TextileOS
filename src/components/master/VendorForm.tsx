@@ -52,8 +52,8 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {/* Left Column: Vendor Details */}
           <div className="space-y-6">
             <FormSelect
@@ -140,7 +140,7 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
           </div>
         </div>
 
-        <div className="flex gap-4 pt-8 border-t border-border">
+        <div className="flex gap-4 pt-6 border-t border-border">
           <FormButton type="submit" variant="primary" disabled={isSubmitting} className="px-8 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-blue-600/10">
             {isSubmitting ? 'Creating...' : 'Create Vendor'}
           </FormButton>

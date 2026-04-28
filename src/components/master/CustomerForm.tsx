@@ -52,8 +52,8 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           {/* Left Column: Basic Info */}
           <div className="space-y-5">
             <FormSelect
@@ -134,7 +134,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
           </div>
         </div>
 
-        <div className="flex gap-4 pt-6 border-t border-border">
+        <div className="flex gap-4 pt-4 border-t border-border">
           <FormButton 
             type="submit" 
             variant="primary" 

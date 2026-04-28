@@ -76,12 +76,12 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="bg-card rounded-[1.5rem] p-6 border border-border shadow-sm">
-          <div className="flex items-center gap-3 mb-6 border-b border-border/50 pb-3">
+        <div className="bg-card rounded-[1.5rem] p-4 border border-border shadow-sm">
+          <div className="flex items-center gap-3 mb-4 border-b border-border/50 pb-2">
             <div className="p-1.5 bg-indigo-600/10 rounded-lg text-indigo-600">
-              <Layers size={20} />
+              <Layers size={18} />
             </div>
-            <h3 className="text-lg font-black text-foreground tracking-tight uppercase">RFD Inward Form</h3>
+            <h3 className="text-md font-black text-foreground tracking-tight uppercase">RFD Inward Form</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">

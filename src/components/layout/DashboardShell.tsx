@@ -195,7 +195,7 @@ export default function DashboardShell({
           isMinimized ? "w-20" : "w-64"
         )}
       >
-        <div className="p-6 flex items-center justify-between border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-20">
+        <div className="p-6 flex items-center justify-between border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-16">
           <div className={cn("flex items-center gap-3 overflow-hidden transition-all duration-300", isMinimized ? "w-0 opacity-0" : "w-auto opacity-100")}>
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-lg text-white">T</div>
             <div className="flex flex-col">
@@ -251,14 +251,14 @@ export default function DashboardShell({
         )}
       >
         {/* Header */}
-        <header className="h-20 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-40 flex items-center justify-between px-8 transition-colors duration-300">
-          <div className="flex items-center gap-4 flex-1">
+        <header className="h-16 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-40 flex items-center justify-between px-8 transition-colors duration-300">
+          <div className="flex items-center gap-8 flex-1">
             <button className="p-2 lg:hidden text-foreground">
               <Menu size={20} />
             </button>
-            <div className="relative w-96 hidden md:block">
-              {/* Search bar removed as per request */}
-            </div>
+            
+            {/* Portal target for page-specific title and actions */}
+            <div id="page-header-portal" className="flex-1 flex items-center gap-6" />
           </div>
 
           <div className="flex items-center gap-6">
