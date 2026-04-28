@@ -95,13 +95,13 @@ export default function DashboardShell({
           <button
             onClick={() => toggleExpanded(item.name, depth)}
             className={cn(
-              'flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium transition-all group outline-none relative overflow-hidden',
+              'flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[13px] font-medium transition-all group outline-none relative overflow-hidden',
               isActive && depth === 0
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-bold' 
                 : isActive && depth > 0
-                ? 'text-blue-600 bg-blue-50/50'
+                ? 'text-blue-600 bg-blue-50/20 border-l-2 border-blue-600 rounded-none rounded-r-xl font-bold'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              depth > 0 && 'py-2 px-3 text-xs'
+              depth > 0 && 'py-2 px-3 text-[11px]'
             )}
           >
             {item.icon && (
@@ -153,13 +153,13 @@ export default function DashboardShell({
         href={item.href}
         onClick={() => depth === 0 && setExpandedItems([])}
         className={cn(
-          'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group outline-none overflow-hidden',
+          'flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-medium transition-all group outline-none overflow-hidden',
           isActive && depth === 0
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-bold' 
             : isActive && depth > 0
-            ? 'text-blue-600 bg-blue-50/50'
+            ? 'text-blue-600 bg-blue-50/20 border-l-2 border-blue-600 rounded-none rounded-r-xl font-bold'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-          depth > 0 && 'py-2 px-3 text-xs'
+          depth > 0 && 'py-2 px-3 text-[11px]'
         )}
       >
         {item.icon && (
@@ -195,7 +195,7 @@ export default function DashboardShell({
           <div className={cn("flex items-center gap-3 overflow-hidden transition-all duration-300", isMinimized ? "w-0 opacity-0" : "w-auto opacity-100")}>
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-lg text-white">T</div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold tracking-tight text-foreground whitespace-nowrap">TextileOS</span>
+              <span className="text-lg font-bold tracking-tight text-foreground whitespace-nowrap">TextileOS</span>
               <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest block whitespace-nowrap">{userProfile.orgName}</span>
             </div>
           </div>
@@ -242,12 +242,7 @@ export default function DashboardShell({
               <Menu size={20} />
             </button>
             <div className="relative w-96 hidden md:block">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input 
-                type="text" 
-                placeholder="Search anything..." 
-                className="w-full bg-muted border-border rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-foreground focus:ring-2 focus:ring-blue-600/20 border transition-all outline-none"
-              />
+              {/* Search bar removed as per request */}
             </div>
           </div>
 
@@ -262,8 +257,8 @@ export default function DashboardShell({
             <div className="h-10 w-px bg-border"></div>
             <div className="flex items-center gap-3 pl-2">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-foreground leading-none">{userProfile.name}</p>
-                <p className="text-xs font-medium text-muted-foreground mt-1">{userProfile.role}</p>
+                <p className="text-[13px] font-bold text-foreground leading-none">{userProfile.name}</p>
+                <p className="text-[11px] font-medium text-muted-foreground mt-1">{userProfile.role}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
                 {userProfile.initials}

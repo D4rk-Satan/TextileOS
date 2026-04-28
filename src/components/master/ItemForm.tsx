@@ -62,16 +62,16 @@ export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
 
         <div className="flex gap-4 pt-8 border-t border-border">
-          <FormButton type="submit" variant="primary" disabled={isSubmitting} className="px-10 py-3 rounded-xl text-lg font-black shadow-lg shadow-blue-600/10 flex items-center gap-2">
+          <FormButton type="submit" variant="primary" disabled={isSubmitting} className="px-8 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-blue-600/10 flex items-center gap-2">
             {isSubmitting ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <Save size={20} />
+              <Save size={16} />
             )}
             Create Item
           </FormButton>
-          <FormButton type="button" onClick={onReset} variant="secondary" disabled={isSubmitting} className="px-10 py-3 rounded-xl text-lg font-bold border-2 flex items-center gap-2">
-            <RotateCcw size={20} />
+          <FormButton type="button" onClick={onReset} variant="secondary" disabled={isSubmitting} className="px-8 py-2.5 rounded-xl text-[13px] font-bold border flex items-center gap-2">
+            <RotateCcw size={16} />
             Clear Fields
           </FormButton>
         </div>

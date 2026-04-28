@@ -139,7 +139,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
             type="submit" 
             variant="primary" 
             disabled={isSubmitting}
-            className="px-10 py-3 rounded-xl text-lg font-black shadow-lg shadow-blue-600/10 flex items-center gap-2"
+            className="px-8 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-blue-600/10 flex items-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -148,7 +148,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               </>
             ) : (
               <>
-                <Save size={20} />
+                <Save size={16} />
                 Submit Record
               </>
             )}
@@ -158,7 +158,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
             onClick={onReset} 
             variant="secondary" 
             disabled={isSubmitting}
-            className="px-10 py-3 rounded-xl text-lg font-bold border-2 flex items-center gap-2"
+            className="px-8 py-2.5 rounded-xl text-[13px] font-bold border flex items-center gap-2"
           >
             <RotateCcw size={20} />
             Reset Form

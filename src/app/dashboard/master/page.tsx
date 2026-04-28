@@ -62,21 +62,14 @@ function MasterPageContent() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6"
       >
         <div>
-          <h1 className="text-4xl font-black text-foreground capitalize tracking-tight flex items-center gap-3">
-            <span className="w-2 h-8 bg-blue-600 rounded-full" />
+          <h1 className="text-2xl font-bold text-foreground capitalize tracking-tight flex items-center gap-3">
+            <span className="w-1.5 h-6 bg-blue-600 rounded-full" />
             {activeTab}
           </h1>
-          <p className="text-muted-foreground mt-1 font-medium italic opacity-80">Manage your {activeTab} information and records.</p>
+          <p className="text-[13px] text-muted-foreground mt-1 font-medium opacity-80">Manage your {activeTab} information and records.</p>
         </div>
         
-        {!showForm && data.length > 0 && (
-          <button 
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
-          >
-            Add New {activeTab.slice(0, -1)}
-          </button>
-        )}
+        {/* Top Add Button removed as per request to eliminate redundancy */}
       </motion.div>
 
       {/* Main Content Area */}
@@ -137,7 +130,7 @@ function MasterPageContent() {
                
                <button 
                  onClick={() => setShowForm(true)}
-                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-black transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
+                 className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[13px]"
                >
                  Add {activeTab.slice(0, -1)}
                </button>

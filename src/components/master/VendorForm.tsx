@@ -141,10 +141,10 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
 
         <div className="flex gap-4 pt-8 border-t border-border">
-          <FormButton type="submit" variant="primary" disabled={isSubmitting} className="px-10 py-3 rounded-xl text-lg font-black shadow-lg shadow-blue-600/10">
+          <FormButton type="submit" variant="primary" disabled={isSubmitting} className="px-8 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-blue-600/10">
             {isSubmitting ? 'Creating...' : 'Create Vendor'}
           </FormButton>
-          <FormButton type="button" onClick={onReset} variant="secondary" disabled={isSubmitting} className="px-10 py-3 rounded-xl text-lg font-bold border-2">
+          <FormButton type="button" onClick={onReset} variant="secondary" disabled={isSubmitting} className="px-8 py-2.5 rounded-xl text-[13px] font-bold border">
             Clear Fields
           </FormButton>
         </div>

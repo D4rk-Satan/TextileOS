@@ -67,11 +67,11 @@ function DyeingHousePageContent() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6"
       >
         <div>
-          <h1 className="text-4xl font-black text-foreground capitalize tracking-tight flex items-center gap-3">
-            <span className="w-2 h-8 bg-blue-600 rounded-full" />
+          <h1 className="text-2xl font-bold text-foreground capitalize tracking-tight flex items-center gap-3">
+            <span className="w-1.5 h-6 bg-blue-600 rounded-full" />
             {titles[activeTab]}
           </h1>
-          <p className="text-muted-foreground mt-1 font-medium italic opacity-80">
+          <p className="text-[13px] text-muted-foreground mt-1 font-medium opacity-80">
             {activeTab === 'grey-outward' ? 'Manage outward shipments of grey fabric to dyeing houses.' : 'Record RFD fabric received back from dyeing houses.'}
           </p>
         </div>
