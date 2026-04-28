@@ -21,8 +21,9 @@ export function FormButton({ variant = 'primary', className, children, ...props 
     <motion.button
       whileHover={{ scale: 1.01, y: -1 }}
       whileTap={{ scale: 0.98, y: 0 }}
+      suppressHydrationWarning
       className={cn(
-        'inline-flex items-center justify-center rounded-xl px-6 py-2.5 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50 disabled:pointer-events-none disabled:opacity-50 h-12',
+        'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-extrabold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50 disabled:pointer-events-none disabled:opacity-50 h-9',
         variants[variant],
         className
       )}

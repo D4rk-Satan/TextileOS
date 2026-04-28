@@ -26,7 +26,7 @@ export default function AdminRegistration() {
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="w-full max-w-xl mx-auto bg-card p-10 rounded-[2.5rem] border border-border shadow-2xl relative overflow-hidden backdrop-blur-sm"
+      className="w-full max-w-xl mx-auto bg-card p-8 rounded-[2rem] border border-border shadow-2xl relative overflow-hidden backdrop-blur-sm"
     >
       <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500" />
       
@@ -35,15 +35,15 @@ export default function AdminRegistration() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-600"
+          className="w-10 h-10 bg-blue-600/10 rounded-xl flex items-center justify-center mx-auto mb-3 text-blue-600"
         >
-          <UserPlus size={24} />
+          <UserPlus size={20} />
         </motion.div>
         <motion.h1 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-4xl font-black tracking-tight mb-2"
+          className="text-2xl font-black tracking-tight mb-1"
         >
           Admin Registration
         </motion.h1>
@@ -51,7 +51,7 @@ export default function AdminRegistration() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-muted-foreground font-medium"
+          className="text-muted-foreground text-sm font-medium"
         >
           Register a new administrative user for your workspace.
         </motion.p>
@@ -63,7 +63,7 @@ export default function AdminRegistration() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
           onSubmit={methods.handleSubmit(onSubmit)} 
-          className="space-y-6"
+          className="space-y-4"
         >
           <FormInput name="name" label="Full Name" required placeholder="John Doe" />
           <FormInput name="email" label="Email Address" type="email" required placeholder="admin@example.com" />
@@ -79,8 +79,8 @@ export default function AdminRegistration() {
             ]}
           />
 
-          <div className="flex gap-4 pt-6">
-            <FormButton type="submit" variant="primary" className="flex-1 py-7 text-lg font-black shadow-lg shadow-blue-600/10">
+          <div className="flex gap-4 pt-4">
+            <FormButton type="submit" variant="primary" className="flex-1 py-4 text-base font-black shadow-lg shadow-blue-600/10">
               Create Admin
             </FormButton>
           </div>

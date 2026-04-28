@@ -5,6 +5,9 @@ import { PrismaClient } from '@prisma/client';
 const prismaClientSingleton = () => {
   const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 30000,
     ssl: {
       rejectUnauthorized: false
     }

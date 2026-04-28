@@ -75,16 +75,16 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="bg-card rounded-[2rem] p-8 border border-border shadow-sm">
-          <div className="flex items-center gap-3 mb-8 border-b border-border/50 pb-4">
-            <div className="p-2 bg-blue-600/10 rounded-xl text-blue-600">
-              <Waves size={24} />
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="bg-card rounded-[1.5rem] p-6 border border-border shadow-sm">
+          <div className="flex items-center gap-3 mb-6 border-b border-border/50 pb-3">
+            <div className="p-1.5 bg-blue-600/10 rounded-lg text-blue-600">
+              <Waves size={20} />
             </div>
-            <h3 className="text-xl font-black text-foreground tracking-tight uppercase">Grey Outward Form</h3>
+            <h3 className="text-lg font-black text-foreground tracking-tight uppercase">Grey Outward Form</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <FormInput
               name="date"
               label="Date"
@@ -119,23 +119,23 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
             />
           </div>
 
-          <div className="flex items-center gap-4 mt-10">
+          <div className="flex items-center gap-4 mt-6">
             <FormButton 
                 type="submit" 
                 variant="primary" 
                 disabled={isSubmitting}
-                className="h-12 px-8 rounded-xl font-bold uppercase tracking-wider shadow-lg shadow-blue-500/20 flex gap-2"
+                className="h-10 px-6 rounded-lg font-bold uppercase tracking-wider shadow-lg shadow-blue-500/20 flex gap-2"
             >
-              <Save size={18} />
+              <Save size={16} />
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </FormButton>
             <FormButton 
                 type="button" 
                 onClick={onReset} 
                 variant="secondary" 
-                className="h-12 px-8 rounded-xl font-bold uppercase tracking-wider flex gap-2"
+                className="h-10 px-6 rounded-lg font-bold uppercase tracking-wider flex gap-2"
             >
-              <RotateCcw size={18} />
+              <RotateCcw size={16} />
               Reset
             </FormButton>
           </div>

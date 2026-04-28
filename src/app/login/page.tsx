@@ -17,6 +17,7 @@ import {
   Zap
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { loginUser } from '@/app/actions/auth';
 
 export default function LoginPage() {
   const methods = useForm({
@@ -27,7 +28,6 @@ export default function LoginPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { loginUser } = require('@/app/actions/auth');
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -83,13 +83,22 @@ export default function LoginPage() {
                     placeholder="••••••••"
                   />
                   <div className="flex justify-end">
-                    <button type="button" className="text-[11px] text-blue-600 hover:underline font-bold">
+                    <button 
+                      type="button" 
+                      className="text-[11px] text-blue-600 hover:underline font-bold"
+                      suppressHydrationWarning
+                    >
                       Forgot password?
                     </button>
                   </div>
                 </div>
 
-                <FormButton type="submit" variant="primary" className="w-full py-4 text-base font-black shadow-lg shadow-blue-600/20 rounded-xl">
+                <FormButton 
+                  type="submit" 
+                  variant="primary" 
+                  className="w-full py-4 text-base font-black shadow-lg shadow-blue-600/20 rounded-xl"
+                  suppressHydrationWarning
+                >
                   Sign In
                 </FormButton>
 

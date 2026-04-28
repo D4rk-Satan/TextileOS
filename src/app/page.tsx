@@ -93,7 +93,11 @@ export default function Home() {
                     required
                   />
                   <div className="flex justify-end">
-                    <button type="button" className="text-xs text-blue-600 hover:underline font-bold">
+                    <button 
+                      type="button" 
+                      className="text-xs text-blue-600 hover:underline font-bold"
+                      suppressHydrationWarning
+                    >
                       Forgot password?
                     </button>
                   </div>

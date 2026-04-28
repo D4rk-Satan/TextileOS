@@ -43,9 +43,9 @@ export function PasswordInput({
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={cn('flex flex-col gap-1.5 w-full', className)}
+      className={cn('flex flex-col gap-0.5 w-full', className)}
     >
-      <label htmlFor={name} className="text-sm font-semibold text-foreground/90 flex gap-0.5 ml-1">
+      <label htmlFor={name} className="text-xs font-semibold text-foreground/80 flex gap-0.5 ml-1">
         {label}
         {required && <span className="text-blue-600 font-bold">*</span>}
       </label>
@@ -56,10 +56,11 @@ export function PasswordInput({
             ...rules,
           })}
           id={name}
+          suppressHydrationWarning
           type={showPassword ? 'text' : 'password'}
           placeholder={placeholder}
           className={cn(
-            'flex h-12 w-full rounded-xl border border-input bg-background/50 px-4 py-3 text-sm transition-all focus-within:shadow-lg focus-within:shadow-blue-500/5 pr-12',
+            'flex h-9 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm transition-all focus-within:shadow-lg focus-within:shadow-blue-500/5 pr-10',
             'placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
             'disabled:cursor-not-allowed disabled:opacity-50',
             error ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-border'
@@ -68,9 +69,10 @@ export function PasswordInput({
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-blue-600 transition-colors"
+          suppressHydrationWarning
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-blue-600 transition-colors"
         >
-          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
 
@@ -78,7 +80,7 @@ export function PasswordInput({
       <motion.div 
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: 'auto' }}
-        className="mt-2 space-y-1.5 p-3 bg-muted/30 rounded-xl border border-border/50"
+        className="mt-0.5 space-y-0.5 p-1.5 bg-muted/30 rounded-lg border border-border/50"
       >
         <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/70 mb-1 ml-1">Password Requirements</p>
         {criteria.map((item, index) => (

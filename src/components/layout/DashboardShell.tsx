@@ -67,11 +67,21 @@ export default function DashboardShell({
     setExpandedItems(initialExpanded);
   }, [pathname, navigation]);
 
-  const toggleExpanded = (name: string) => {
+  const toggleExpanded = (name: string, depth: number) => {
     if (isMinimized) return;
-    setExpandedItems(prev => 
-      prev.includes(name) ? prev.filter(i => i !== name) : [...prev, name]
-    );
+    setExpandedItems(prev => {
+      const isCurrentlyExpanded = prev.includes(name);
+      
+      if (depth === 0) {
+        // For top-level items, only allow one to be open at a time
+        return isCurrentlyExpanded ? [] : [name];
+      }
+      
+      // For nested items, toggle normally
+      return isCurrentlyExpanded 
+        ? prev.filter(i => i !== name) 
+        : [...prev, name];
+    });
   };
 
   const NavLink = ({ item, depth = 0 }: { item: NavItem; depth?: number }) => {
@@ -83,7 +93,7 @@ export default function DashboardShell({
       return (
         <div className="space-y-1">
           <button
-            onClick={() => toggleExpanded(item.name)}
+            onClick={() => toggleExpanded(item.name, depth)}
             className={cn(
               'flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium transition-all group outline-none relative overflow-hidden',
               isActive && depth === 0
@@ -141,6 +151,7 @@ export default function DashboardShell({
     return (
       <Link
         href={item.href}
+        onClick={() => depth === 0 && setExpandedItems([])}
         className={cn(
           'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group outline-none overflow-hidden',
           isActive && depth === 0

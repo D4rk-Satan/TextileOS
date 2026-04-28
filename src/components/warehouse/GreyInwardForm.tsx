@@ -139,18 +139,18 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-12">
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
         {/* Challan Info Wrapper */}
-        <div className="bg-muted/30 rounded-[2.5rem] p-8 border border-border/50">
-          <div className="flex items-center gap-3 mb-8 border-b border-border/50 pb-4">
-            <div className="p-2 bg-blue-600/10 rounded-xl text-blue-600">
-              <ClipboardList size={24} />
+        <div className="bg-muted/30 rounded-2xl p-6 border border-border/50">
+          <div className="flex items-center gap-3 mb-6 border-b border-border/50 pb-3">
+            <div className="p-1.5 bg-blue-600/10 rounded-lg text-blue-600">
+              <ClipboardList size={20} />
             </div>
-            <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">Challan Info</h3>
+            <h3 className="text-lg font-black text-foreground tracking-tight uppercase">Challan Info</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+            <div className="space-y-4">
               <FormInput
                 name="lotNo"
                 label="Lot No"
@@ -263,18 +263,18 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
 
         {/* Batch Info Section */}
-        <div className="bg-muted/30 rounded-[2.5rem] p-8 border border-border/50">
+        <div className="bg-muted/30 rounded-2xl p-6 border border-border/50">
           <BatchInfoForm />
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-4 pt-6">
-          <FormButton type="submit" variant="primary" className="h-14 px-10 rounded-2xl text-lg font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 flex gap-2">
-            <Save size={20} />
+        <div className="flex items-center gap-3 pt-4">
+          <FormButton type="submit" variant="primary" className="h-11 px-8 rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-blue-500/10 flex gap-2">
+            <Save size={18} />
             Save Grey Inward
           </FormButton>
-          <FormButton type="button" onClick={onReset} variant="secondary" className="h-14 px-10 rounded-2xl text-lg font-black uppercase tracking-widest flex gap-2">
-            <RotateCcw size={20} />
+          <FormButton type="button" onClick={onReset} variant="secondary" className="h-11 px-8 rounded-xl text-sm font-black uppercase tracking-wider flex gap-2">
+            <RotateCcw size={18} />
             Reset Form
           </FormButton>
         </div>
