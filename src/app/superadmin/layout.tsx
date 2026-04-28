@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { 
   LayoutDashboard, 
   Building2, 
@@ -31,8 +31,10 @@ export default function SuperAdminLayout({
   };
 
   return (
-    <DashboardShell navigation={navigation} userProfile={userProfile}>
-      {children}
-    </DashboardShell>
+    <Suspense fallback={null}>
+      <DashboardShell navigation={navigation} userProfile={userProfile}>
+        {children}
+      </DashboardShell>
+    </Suspense>
   );
 }
