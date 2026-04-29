@@ -190,18 +190,6 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
             </div>
 
             <div className="space-y-6">
-              <FormSelect
-                name="stage"
-                label="Stage"
-                required
-                icon={Search}
-                options={[
-                  { label: 'Dyeing House', value: 'Dyeing House' },
-                  { label: 'Partial received', value: 'Partial received' },
-                  { label: 'received', value: 'received' },
-                ]}
-              />
-
               <FormInput
                 name="totalGreyMtr"
                 label="Total Grey Mtr"
