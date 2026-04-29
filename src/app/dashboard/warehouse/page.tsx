@@ -184,8 +184,13 @@ function WarehousePageContent() {
                         <span className="text-sm font-black text-blue-600">{(batch.mtrs || 0).toFixed(2)} Mtr</span>
                       </td>
                       <td className="px-8 py-5">
-                        <span className="text-[10px] bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full font-black uppercase tracking-wider">
-                          {batch.greyInward?.status}
+                        <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
+                          batch.status === 'In-Warehouse' ? 'bg-muted text-muted-foreground' :
+                          batch.status === 'Out For Dyeing' ? 'bg-orange-500/10 text-orange-500' :
+                          batch.status === 'RFD Inward' ? 'bg-green-500/10 text-green-500' :
+                          'bg-blue-600/10 text-blue-600'
+                        }`}>
+                          {batch.status}
                         </span>
                       </td>
                     </tr>
