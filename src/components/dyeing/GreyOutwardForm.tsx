@@ -45,7 +45,7 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const refreshDCNumber = async () => {
     const dcRes = await getNextDCNumber();
-    if (dcRes?.success) {
+    if (dcRes?.success && dcRes.data) {
       methods.setValue('dcNo', dcRes.data);
     }
   };
@@ -66,7 +66,7 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
         setLotData(lotsRes.data || []);
       }
 
-      if (dcRes?.success) {
+      if (dcRes?.success && dcRes.data) {
         methods.setValue('dcNo', dcRes.data);
       }
     }
