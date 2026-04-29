@@ -215,28 +215,6 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                 placeholder="Enter comma separated values (e.g. 98.25, 109.25, 82)"
                 icon={FileText}
               />
-            </div>
-
-            <div className="space-y-6">
-              <FormInput
-                name="lotNoDisplay"
-                label="Lot No For Display"
-                placeholder="Display ID"
-                icon={Hash}
-              />
-
-              <FormSelect
-                name="status"
-                label="Status"
-                placeholder="Select Status"
-                icon={CheckCircle}
-                options={[
-                  { label: 'In-Warehouse', value: 'In-Warehouse' },
-                  { label: 'Open', value: 'Open' },
-                  { label: 'Started', value: 'Started' },
-                  { label: 'Closed', value: 'Closed' },
-                ]}
-              />
 
               <FormInput
                 name="image"
@@ -244,19 +222,23 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                 placeholder="Image filename / upload"
                 icon={ImageIcon}
               />
+            </div>
 
+            <div className="space-y-6">
               <FormInput
                 name="totalBatch"
                 label="Total Grey Batch"
                 icon={Hash}
-                className="bg-muted/30"
+                variant="dark"
+                readOnly
               />
 
               <FormInput
                 name="totalMtr"
                 label="Total Grey Mtr"
                 icon={Hash}
-                className="bg-muted/30"
+                variant="dark"
+                readOnly
               />
             </div>
           </div>

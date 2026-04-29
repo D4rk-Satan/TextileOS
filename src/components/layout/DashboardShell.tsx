@@ -175,9 +175,6 @@ export default function DashboardShell({
         <span className={cn("transition-all duration-300 whitespace-nowrap", isMinimized ? "opacity-0 w-0 translate-x-4" : "opacity-100 w-auto translate-x-0")}>
           {item.name}
         </span>
-        {!isMinimized && isActive && (
-          <ChevronRight size={14} className="ml-auto" />
-        )}
       </Link>
     );
   };
@@ -259,18 +256,6 @@ export default function DashboardShell({
             
             {/* Portal target for page-specific title and actions */}
             <div id="page-header-portal" className="flex-1 flex items-center gap-6" />
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3 pl-2">
-              <div className="text-right hidden sm:block">
-                <p className="text-[13px] font-bold text-foreground leading-none">{userProfile.name}</p>
-                <p className="text-[11px] font-medium text-muted-foreground mt-1">{userProfile.role}</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
-                {userProfile.initials}
-              </div>
-            </div>
           </div>
         </header>
 

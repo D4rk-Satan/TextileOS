@@ -80,7 +80,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               </label>
               <textarea
                 {...methods.register('address')}
-                className="flex min-h-[120px] w-full rounded-xl border border-border bg-white/50 dark:bg-black/20 px-4 py-3 text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none placeholder:text-muted-foreground text-foreground hover:border-blue-400 dark:hover:border-blue-500"
+                className="flex min-h-[80px] w-full rounded-xl border border-border bg-white/50 dark:bg-black/20 px-4 py-3 text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none placeholder:text-muted-foreground text-foreground hover:border-blue-400 dark:hover:border-blue-500"
                 placeholder="Complete street address"
               />
             </div>

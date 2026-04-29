@@ -79,19 +79,6 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
               placeholder="Associated master record name"
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormInput
-                name="vendorNumber"
-                label="Vendor Number"
-                placeholder="V-0000"
-              />
-              <FormInput
-                name="booksId"
-                label="Books ID"
-                placeholder="BK-0000"
-              />
-            </div>
-
             <FormInput
               name="gstin"
               label="GSTIN Number"

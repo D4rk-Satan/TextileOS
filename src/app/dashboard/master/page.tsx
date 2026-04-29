@@ -58,8 +58,8 @@ function MasterPageContent() {
   return (
     <div className="space-y-8">
       <HeaderPortal>
-        <div className="flex items-center gap-6 flex-1">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-3 min-w-[200px]">
             <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
             <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
               {activeTab}
@@ -67,28 +67,28 @@ function MasterPageContent() {
           </div>
 
           {!showForm && (
-            <div className="relative flex-1 max-w-md hidden lg:block">
+            <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
                 <Users size={16} />
               </div>
               <input 
                 type="text" 
                 placeholder={`Search ${activeTab}...`} 
-                className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium"
+                className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
               />
             </div>
           )}
-        </div>
 
-        <div className="flex items-center gap-3">
-          {!showForm && (
-            <button 
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[12px]"
-            >
-              Add {activeTab.slice(0, -1)}
-            </button>
-          )}
+          <div className="flex items-center gap-3 min-w-[200px] justify-end">
+            {!showForm && (
+              <button 
+                onClick={() => setShowForm(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[12px] whitespace-nowrap"
+              >
+                Add {activeTab.slice(0, -1)}
+              </button>
+            )}
+          </div>
         </div>
       </HeaderPortal>
 

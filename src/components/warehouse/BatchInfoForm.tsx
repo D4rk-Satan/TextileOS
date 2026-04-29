@@ -23,15 +23,6 @@ export function BatchInfoForm() {
           </div>
           <h3 className="text-xl font-black text-foreground tracking-tight uppercase">Batch Info</h3>
         </div>
-        <FormButton
-          type="button"
-          variant="outline"
-          onClick={() => append({ batchNo: `B-${fields.length + 1}`, pcs: '1', mtrs: '', weight: '0' })}
-          className="flex items-center gap-2 h-10 px-4 rounded-xl border-blue-600/20 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
-        >
-          <Plus size={18} />
-          <span>Add Batch</span>
-        </FormButton>
       </div>
 
       <div className="max-w-md">

@@ -14,9 +14,10 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   icon?: LucideIcon;
   placeholder?: string;
   rules?: RegisterOptions;
+  variant?: 'light' | 'dark';
 }
 
-export function FormSelect({ name, label, options, required, icon: Icon, placeholder, rules, className, ...props }: SelectProps) {
+export function FormSelect({ name, label, options, required, icon: Icon, placeholder, rules, className, variant = 'light', ...props }: SelectProps) {
   const {
     register,
     formState: { errors },
@@ -48,9 +49,10 @@ export function FormSelect({ name, label, options, required, icon: Icon, placeho
           })}
           id={name}
           className={cn(
-            'flex h-9 w-full rounded-lg border border-border bg-white/50 dark:bg-black/20 py-2 text-sm transition-all appearance-none cursor-pointer',
+            'flex h-9 w-full rounded-lg border border-border py-2 text-sm transition-all appearance-none cursor-pointer',
             'placeholder:text-muted-foreground outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500',
             'disabled:cursor-not-allowed disabled:opacity-50',
+            variant === 'dark' ? 'bg-black/60 dark:bg-black/40 border-border/50' : 'bg-white/50 dark:bg-black/20',
             Icon ? 'pl-9 pr-9' : 'px-3 pr-9',
             error ? 'border-red-500 focus:ring-red-500/10 focus:border-red-500' : 'hover:border-blue-400 dark:hover:border-blue-500'
           )}

@@ -64,41 +64,45 @@ function DyeingHousePageContent() {
   return (
     <div className="space-y-8">
       <HeaderPortal>
-        <div className="flex items-center gap-6 flex-1">
-          <div className="flex items-center gap-3">
-            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-            <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
-              {titles[activeTab]}
-            </h1>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-6 min-w-[300px]">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+              <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
+                {titles[activeTab]}
+              </h1>
+            </div>
+
+            <div className="flex gap-1 bg-muted/30 p-1 rounded-xl border border-border/50 backdrop-blur-sm">
+                <button 
+                    onClick={() => setActiveTab('grey-outward')}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-2 uppercase tracking-wider ${activeTab === 'grey-outward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                >
+                    <Droplets size={12} />
+                    Grey Out
+                </button>
+                <button 
+                    onClick={() => setActiveTab('rfd-inward')}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-2 uppercase tracking-wider ${activeTab === 'rfd-inward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                >
+                    <Layers size={12} />
+                    RFD In
+                </button>
+            </div>
           </div>
 
-          <div className="flex gap-1 bg-muted/30 p-1 rounded-xl border border-border/50 backdrop-blur-sm">
-              <button 
-                  onClick={() => setActiveTab('grey-outward')}
-                  className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-2 uppercase tracking-wider ${activeTab === 'grey-outward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-              >
-                  <Droplets size={12} />
-                  Grey Out
-              </button>
-              <button 
-                  onClick={() => setActiveTab('rfd-inward')}
-                  className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-2 uppercase tracking-wider ${activeTab === 'rfd-inward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-              >
-                  <Layers size={12} />
-                  RFD In
-              </button>
+          <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
+              <Search size={16} />
+            </div>
+            <input 
+              type="text" 
+              placeholder={`Search ${titles[activeTab]}...`} 
+              className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
+            />
           </div>
-        </div>
 
-        <div className="relative flex-1 max-w-xs hidden lg:block">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-            <Search size={14} />
-          </div>
-          <input 
-            type="text" 
-            placeholder={`Search ${titles[activeTab]}...`} 
-            className="w-full h-9 pl-10 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[12px] font-medium"
-          />
+          <div className="min-w-[300px]" /> {/* Spacer to keep search centered */}
         </div>
       </HeaderPortal>
       <AnimatePresence mode="wait">
