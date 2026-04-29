@@ -13,7 +13,8 @@ import {
   Save,
   RotateCcw,
   Building2,
-  Hash
+  Hash,
+  X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createGreyOutward, getDyeingHouses, getGreyInwardsForOutward, getNextDCNumber } from '@/app/actions/dyeing';
@@ -88,6 +89,18 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
       methods.setValue('batches', []);
     }
   }, [selectedLotNo, lotData, methods]);
+
+  const removeBatch = (idx: number) => {
+    const updatedBatches = [...(currentBatches || [])];
+    updatedBatches.splice(idx, 1);
+    
+    // Recalculate totals
+    const totalMtr = updatedBatches.reduce((acc, curr) => acc + (Number(curr.mtrs) || 0), 0);
+    
+    methods.setValue('batches', updatedBatches);
+    methods.setValue('totalGreyMtr', totalMtr.toFixed(2));
+    methods.setValue('totalGreyBatch', updatedBatches.length);
+  };
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -213,7 +226,14 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
               <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest mb-4">Batch Info</h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                 {currentBatches.map((batch: any, idx: number) => (
-                  <div key={idx} className="bg-muted/30 p-3 rounded-xl border border-border/50 flex flex-col items-center">
+                  <div key={idx} className="bg-muted/30 p-3 rounded-xl border border-border/50 flex flex-col items-center relative group">
+                    <button
+                      type="button"
+                      onClick={() => removeBatch(idx)}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600 z-10"
+                    >
+                      <X size={10} />
+                    </button>
                     <span className="text-[10px] font-black text-blue-600 uppercase mb-1">{batch.batchNo}</span>
                     <span className="text-sm font-bold text-foreground">{batch.mtrs.toFixed(2)}</span>
                   </div>
