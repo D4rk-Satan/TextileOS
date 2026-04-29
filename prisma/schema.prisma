@@ -121,9 +121,16 @@ model Batch {
   pcs          Int?
   mtrs         Decimal?   @db.Decimal(10, 2)
   weight       Decimal?   @db.Decimal(10, 2)
+  status       String     @default("In-Warehouse")
   
   greyInward   GreyInward @relation(fields: [greyInwardId], references: [id], onDelete: Cascade)
   greyInwardId String
+
+  greyOutward   GreyOutward? @relation(fields: [greyOutwardId], references: [id])
+  greyOutwardId String?
+
+  rfdInward     RFDInward?   @relation(fields: [rfdInwardId], references: [id])
+  rfdInwardId   String?
 }
 
 model GreyOutward {
@@ -139,6 +146,7 @@ model GreyOutward {
   
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  batches         Batch[]
 }
 
 model RFDInward {
@@ -154,4 +162,5 @@ model RFDInward {
   
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  batches         Batch[]
 }

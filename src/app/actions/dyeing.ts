@@ -48,7 +48,9 @@ export async function getGreyInwardsForOutward() {
         status: { in: ['In-Warehouse', 'Open', 'Started'] }
       },
       include: {
-        batches: true
+        batches: {
+          where: { status: 'In-Warehouse' }
+        }
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -77,10 +79,24 @@ export async function createGreyOutward(data: any) {
         dyeingHouseId: data.dyeingHouse,
         remark: data.remark,
         organizationId: orgId,
+        batches: {
+          connect: data.batches.map((b: any) => ({ id: b.id }))
+        }
       },
     });
 
-    // Optionally update the status of the GreyInward
+    // Update the status of specific batches
+    await prisma.batch.updateMany({
+      where: { 
+        id: { in: data.batches.map((b: any) => b.id) }
+      },
+      data: {
+        status: 'Out For Dyeing'
+      }
+    });
+
+    // Update the parent GreyInward status if all batches are out? 
+    // For now, keep the simple logic of updating by lotNo for backward compatibility
     await prisma.greyInward.updateMany({
       where: { 
         lotNo: data.lotNo,
@@ -105,11 +121,39 @@ export async function getGreyOutwards() {
     const outwards = await prisma.greyOutward.findMany({
       where: { organizationId: orgId },
       include: {
-        dyeingHouse: true
+        dyeingHouse: true,
+        batches: true
       },
       orderBy: { createdAt: 'desc' },
     });
-    return { success: true, data: outwards };
+
+    // Fetch all batches for these lots to show remaining ones
+    const lotNos = Array.from(new Set(outwards.map(o => o.lotNo)));
+    const inwards = await prisma.greyInward.findMany({
+      where: {
+        lotNo: { in: lotNos },
+        organizationId: orgId
+      },
+      include: { batches: true }
+    });
+
+    const serializedData = outwards.map(outward => {
+      const lotInward = inwards.find(i => i.lotNo === outward.lotNo);
+      return {
+        ...outward,
+        allLotBatches: (lotInward?.batches || []).map(batch => ({
+          ...batch,
+          mtrs: Number(batch.mtrs),
+          weight: Number(batch.weight)
+        })),
+        batches: outward.batches.map(batch => ({
+          ...batch,
+          mtrs: Number(batch.mtrs),
+          weight: Number(batch.weight)
+        }))
+      };
+    });
+    return { success: true, data: serializedData };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -118,26 +162,39 @@ export async function getGreyOutwards() {
 export async function createRFDInward(data: any) {
     try {
       const orgId = await getOrgId();
-      const rfdInward = await prisma.rFDInward.create({
-        data: {
-          date: new Date(data.date),
-          lotNo: data.lotNo,
-          dyeingHouseId: data.dyeingHouse,
-          remark: data.remark,
-          organizationId: orgId,
-        },
-      });
-  
-      // Update status to RFD Inward
-      await prisma.greyInward.updateMany({
-        where: { 
-          lotNo: data.lotNo,
-          organizationId: orgId
-        },
-        data: {
-          status: 'RFD Inward'
+    const rfdInward = await prisma.rFDInward.create({
+      data: {
+        date: new Date(data.date),
+        lotNo: data.lotNo,
+        dyeingHouseId: data.dyeingHouse,
+        remark: data.remark,
+        organizationId: orgId,
+        batches: {
+          connect: data.batches.map((b: any) => ({ id: b.id }))
         }
-      });
+      },
+    });
+
+    // Update the status of specific batches
+    await prisma.batch.updateMany({
+      where: { 
+        id: { in: data.batches.map((b: any) => b.id) }
+      },
+      data: {
+        status: 'RFD Inward'
+      }
+    });
+
+    // Update parent status
+    await prisma.greyInward.updateMany({
+      where: { 
+        lotNo: data.lotNo,
+        organizationId: orgId
+      },
+      data: {
+        status: 'RFD Inward'
+      }
+    });
   
       revalidatePath('/dashboard/dyeing-house');
       return { success: true, data: rfdInward };
@@ -150,14 +207,42 @@ export async function createRFDInward(data: any) {
 export async function getRFDInwards() {
     try {
       const orgId = await getOrgId();
-      const inwards = await prisma.rFDInward.findMany({
-        where: { organizationId: orgId },
-        include: {
-          dyeingHouse: true
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-      return { success: true, data: inwards };
+    const outwards = await prisma.rFDInward.findMany({
+      where: { organizationId: orgId },
+      include: {
+        dyeingHouse: true,
+        batches: true
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Fetch all batches for these lots
+    const lotNos = Array.from(new Set(outwards.map(o => o.lotNo)));
+    const inwards = await prisma.greyInward.findMany({
+      where: {
+        lotNo: { in: lotNos },
+        organizationId: orgId
+      },
+      include: { batches: true }
+    });
+
+    const serializedData = outwards.map(outward => {
+      const lotInward = inwards.find(i => i.lotNo === outward.lotNo);
+      return {
+        ...outward,
+        allLotBatches: (lotInward?.batches || []).map(batch => ({
+          ...batch,
+          mtrs: Number(batch.mtrs),
+          weight: Number(batch.weight)
+        })),
+        batches: outward.batches.map(batch => ({
+          ...batch,
+          mtrs: Number(batch.mtrs),
+          weight: Number(batch.weight)
+        }))
+      };
+    });
+    return { success: true, data: serializedData };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
