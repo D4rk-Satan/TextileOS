@@ -23,7 +23,7 @@ import {
 import { FormTextArea } from '@/components/shared/FormTextArea';
 import { BatchInfoForm } from './BatchInfoForm';
 import { motion } from 'framer-motion';
-import { createGreyInward } from '@/app/actions/warehouse';
+import { createGreyInward, getNextLotNumber } from '@/app/actions/warehouse';
 import { getCustomers, getItems } from '@/app/actions/master';
 
 export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
@@ -99,9 +99,10 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
   useEffect(() => {
     async function loadData() {
-      const [customerRes, itemRes] = await Promise.all([
+      const [customerRes, itemRes, lotRes] = await Promise.all([
         getCustomers(),
-        getItems()
+        getItems(),
+        getNextLotNumber()
       ]);
       
       if (customerRes?.success) {
@@ -111,9 +112,20 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
       if (itemRes?.success) {
         setQualities((itemRes.data || []).map((i: any) => ({ label: i.itemName, value: i.itemName })));
       }
+
+      if (lotRes?.success) {
+        methods.setValue('lotNo', lotRes.data.toString());
+      }
     }
     loadData();
-  }, []);
+  }, [methods]);
+
+  const refreshLotNumber = async () => {
+    const lotRes = await getNextLotNumber();
+    if (lotRes?.success) {
+      methods.setValue('lotNo', lotRes.data.toString());
+    }
+  };
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -122,6 +134,7 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
       if (result.success) {
         alert('Grey Inward entry saved successfully!');
         methods.reset();
+        await refreshLotNumber();
         onSuccess?.();
       } else {
         alert('Error: ' + result.error);
@@ -135,6 +148,7 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const onReset = () => {
     methods.reset();
+    refreshLotNumber();
   };
 
   return (
@@ -154,8 +168,10 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
               <FormInput
                 name="lotNo"
                 label="Lot No"
-                placeholder="Enter Lot Number"
+                placeholder="Auto-assigned"
                 icon={Box}
+                readOnly
+                variant="dark"
               />
 
               <FormInput

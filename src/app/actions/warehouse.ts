@@ -11,6 +11,18 @@ async function getOrgId() {
   return orgId;
 }
 
+export async function getNextLotNumber() {
+  try {
+    const orgId = await getOrgId();
+    const count = await prisma.greyInward.count({
+      where: { organizationId: orgId }
+    });
+    return { success: true, data: count + 1 };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function createGreyInward(data: any) {
   try {
     const orgId = await getOrgId();
