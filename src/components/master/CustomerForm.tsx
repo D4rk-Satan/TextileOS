@@ -28,6 +28,10 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  React.useEffect(() => {
+    methods.setValue('status', 'Active');
+  }, [methods]);
+
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
@@ -60,6 +64,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               name="status"
               label="Status"
               required
+              defaultValue="Active"
               options={[
                 { label: 'Active', value: 'Active' },
                 { label: 'Inactive', value: 'Inactive' },
