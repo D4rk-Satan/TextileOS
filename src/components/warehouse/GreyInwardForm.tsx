@@ -113,7 +113,7 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         setQualities((itemRes.data || []).map((i: any) => ({ label: i.itemName, value: i.itemName })));
       }
 
-      if (lotRes?.success) {
+      if (lotRes?.success && lotRes.data !== undefined) {
         methods.setValue('lotNo', lotRes.data.toString());
       }
     }
@@ -122,7 +122,7 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const refreshLotNumber = async () => {
     const lotRes = await getNextLotNumber();
-    if (lotRes?.success) {
+    if (lotRes?.success && lotRes.data !== undefined) {
       methods.setValue('lotNo', lotRes.data.toString());
     }
   };
