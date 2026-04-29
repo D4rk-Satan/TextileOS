@@ -221,16 +221,6 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                   { label: 'Direct Print', value: 'direct_print' },
                 ]}
               />
-            </div>
-
-            <div className="space-y-6">
-              <FormTextArea
-                name="batchDetail"
-                label="Batch Detail"
-                required
-                placeholder="Enter comma separated values (e.g. 98.25, 109.25, 82)"
-                icon={FileText}
-              />
 
               <FormInput
                 name="image"
@@ -241,20 +231,31 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
             </div>
 
             <div className="space-y-6">
-              <FormInput
-                name="totalBatch"
-                label="Total Grey Batch"
-                icon={Hash}
-                variant="dark"
-                readOnly
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  name="totalBatch"
+                  label="Total Grey Batch"
+                  icon={Hash}
+                  variant="dark"
+                  readOnly
+                />
 
-              <FormInput
-                name="totalMtr"
-                label="Total Grey Mtr"
-                icon={Hash}
-                variant="dark"
-                readOnly
+                <FormInput
+                  name="totalMtr"
+                  label="Total Grey Mtr"
+                  icon={Hash}
+                  variant="dark"
+                  readOnly
+                />
+              </div>
+
+              <FormTextArea
+                name="batchDetail"
+                label="Batch Detail"
+                required
+                placeholder="Enter comma separated values (e.g. 98.25, 109.25, 82)"
+                icon={FileText}
+                className="min-h-[120px]"
               />
             </div>
           </div>
