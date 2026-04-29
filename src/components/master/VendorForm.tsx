@@ -102,7 +102,7 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
 
             <FormInput
               name="addressLine1"
-              label="Address Line 1"
+              label="Street Address"
               placeholder="Street, building name, etc."
             />
 

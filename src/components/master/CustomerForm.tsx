@@ -74,16 +74,11 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               rules={{ minLength: { value: 3, message: 'Name too short' } }}
             />
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground/90 flex gap-0.5 ml-1">
-                Street Address
-              </label>
-              <textarea
-                {...methods.register('address')}
-                className="flex min-h-[80px] w-full rounded-xl border border-border bg-white/50 dark:bg-black/20 px-4 py-3 text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none placeholder:text-muted-foreground text-foreground hover:border-blue-400 dark:hover:border-blue-500"
-                placeholder="Complete street address"
-              />
-            </div>
+            <FormInput
+              name="address"
+              label="Street Address"
+              placeholder="Complete street address"
+            />
             
             <FormInput
               name="gstin"
@@ -101,12 +96,6 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
 
           {/* Right Column: Location & Contact */}
           <div className="space-y-5">
-            <FormInput
-              name="addressLine1"
-              label="Address Line 2"
-              placeholder="Apartment, suite, etc. (Optional)"
-            />
-
             <div className="grid grid-cols-2 gap-4">
               <FormInput name="city" label="City" placeholder="City" />
               <FormInput name="state" label="State" placeholder="State" />
