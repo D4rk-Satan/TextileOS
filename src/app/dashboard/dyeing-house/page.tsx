@@ -24,7 +24,7 @@ type TabType = 'grey-outward' | 'rfd-inward' | 'history';
 function DyeingHousePageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('grey-outward');
-  const [showForm, setShowForm] = useState(true); // Default to show form as per user request
+  const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
 
@@ -65,44 +65,36 @@ function DyeingHousePageContent() {
     <div className="space-y-8">
       <HeaderPortal>
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-6 min-w-[300px]">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-              <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
-                {titles[activeTab]}
-              </h1>
-            </div>
-
-            <div className="flex gap-1 bg-muted/30 p-1 rounded-xl border border-border/50 backdrop-blur-sm">
-                <button 
-                    onClick={() => setActiveTab('grey-outward')}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-2 uppercase tracking-wider ${activeTab === 'grey-outward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-                >
-                    <Droplets size={12} />
-                    Grey Out
-                </button>
-                <button 
-                    onClick={() => setActiveTab('rfd-inward')}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-2 uppercase tracking-wider ${activeTab === 'rfd-inward' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-                >
-                    <Layers size={12} />
-                    RFD In
-                </button>
-            </div>
+          <div className="flex items-center gap-3 min-w-[200px]">
+            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+            <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
+              {titles[activeTab]}
+            </h1>
           </div>
 
-          <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-              <Search size={16} />
+          {!showForm && (
+            <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
+                <Search size={16} />
+              </div>
+              <input 
+                type="text" 
+                placeholder={`Search ${titles[activeTab]}...`} 
+                className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
+              />
             </div>
-            <input 
-              type="text" 
-              placeholder={`Search ${titles[activeTab]}...`} 
-              className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
-            />
-          </div>
+          )}
 
-          <div className="min-w-[300px]" /> {/* Spacer to keep search centered */}
+          <div className="flex items-center gap-3 min-w-[200px] justify-end">
+            {!showForm && (
+              <button 
+                onClick={() => setShowForm(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[12px] whitespace-nowrap"
+              >
+                Add {titles[activeTab]}
+              </button>
+            )}
+          </div>
         </div>
       </HeaderPortal>
       <AnimatePresence mode="wait">
@@ -116,61 +108,76 @@ function DyeingHousePageContent() {
           >
             <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
           </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-3">
-                <motion.div 
-                    key={activeTab + "-form"}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="max-w-5xl"
+        ) : showForm ? (
+          <div key="form" className="max-w-7xl mx-auto">
+             <div className="mb-6 flex items-center justify-between">
+                <button 
+                  onClick={() => setShowForm(false)}
+                  className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
                 >
-                    <GlassCard>
-                        <div className="p-10">
-                            {activeTab === 'grey-outward' && <GreyOutwardForm onSuccess={handleRecordAdded} />}
-                            {activeTab === 'rfd-inward' && <RFDInwardForm onSuccess={handleRecordAdded} />}
-                        </div>
-                    </GlassCard>
-                </motion.div>
-            </div>
-
-            <div className="space-y-6">
-                <div className="bg-card/50 backdrop-blur-md rounded-[2rem] border border-border p-6 shadow-xl">
-                    <h3 className="text-lg font-black flex items-center gap-2 mb-6 uppercase tracking-widest text-foreground/70">
-                        <History size={18} className="text-blue-600" />
-                        Recent Log
-                    </h3>
-                    <div className="space-y-4">
-                        {data.length === 0 ? (
-                            <div className="py-20 text-center">
-                                <Package size={32} className="mx-auto text-muted-foreground/20 mb-3" />
-                                <p className="text-muted-foreground font-bold italic text-xs">No records yet.</p>
-                            </div>
-                        ) : (
-                            data.slice(0, 8).map((item) => (
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    key={item.id} 
-                                    className="p-4 bg-background/50 border border-border/50 rounded-2xl hover:border-blue-500/50 transition-all group"
-                                >
-                                    <div className="flex justify-between items-start mb-1">
-                                        <span className="font-black text-sm text-foreground group-hover:text-blue-600 transition-colors">#{item.lotNo}</span>
-                                        <span className="text-[9px] font-black text-muted-foreground uppercase">
-                                            {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                                        </span>
-                                    </div>
-                                    <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
-                                        <Building2 size={12} className="text-blue-500" />
-                                        <span className="truncate">{item.dyeingHouse?.vendorName}</span>
-                                    </div>
-                                </motion.div>
-                            ))
-                        )}
-                    </div>
+                  ← Back to {titles[activeTab]}
+                </button>
+                <h2 className="text-2xl font-black text-foreground flex items-center gap-3">
+                  New {titles[activeTab]} Entry
+                </h2>
+             </div>
+             <GlassCard>
+                <div className="p-10">
+                  {activeTab === 'grey-outward' && <GreyOutwardForm onSuccess={handleRecordAdded} />}
+                  {activeTab === 'rfd-inward' && <RFDInwardForm onSuccess={handleRecordAdded} />}
                 </div>
-            </div>
+             </GlassCard>
           </div>
+        ) : (
+          <motion.div 
+            key="list"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Date</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lot No</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Dyeing House</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Remark</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {data.map((item) => (
+                    <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
+                        {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="font-bold text-foreground">#{item.lotNo}</span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-2">
+                           <Building2 size={14} className="text-blue-500" />
+                           <span className="text-sm font-bold text-foreground">{item.dyeingHouse?.vendorName}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5 text-sm text-muted-foreground italic">
+                        {item.remark || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                  {data.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-8 py-20 text-center">
+                        <Package size={32} className="mx-auto text-muted-foreground/20 mb-3" />
+                        <p className="text-muted-foreground font-bold italic text-xs">No records yet.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
