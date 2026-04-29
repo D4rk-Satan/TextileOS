@@ -60,18 +60,6 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           {/* Left Column: Basic Info */}
           <div className="space-y-5">
-            <FormSelect
-              name="status"
-              label="Status"
-              required
-              showPlaceholder={false}
-              defaultValue="Active"
-              options={[
-                { label: 'Active', value: 'Active' },
-                { label: 'Inactive', value: 'Inactive' },
-              ]}
-            />
-
             <FormInput
               name="customerName"
               label="Customer Name"

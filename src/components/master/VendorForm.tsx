@@ -60,18 +60,6 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {/* Left Column: Vendor Details */}
           <div className="space-y-6">
-            <FormSelect
-              name="status"
-              label="Status"
-              required
-              showPlaceholder={false}
-              defaultValue="Active"
-              options={[
-                { label: 'Active', value: 'Active' },
-                { label: 'Inactive', value: 'Inactive' },
-              ]}
-            />
-
             <FormInput
               name="vendorName"
               label="Vendor Name"
