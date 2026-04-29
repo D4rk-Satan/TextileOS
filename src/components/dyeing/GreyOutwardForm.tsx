@@ -27,7 +27,7 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
       lotNo: '',
       dyeingHouse: '',
       remark: '',
-      stage: 'Dyeing Warehouse',
+      stage: 'Dyeing House',
       totalGreyMtr: '0.00',
       totalGreyBatch: 0,
       batches: [] as any[],
@@ -196,7 +196,7 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
                 required
                 icon={Search}
                 options={[
-                  { label: 'Dyeing Warehouse', value: 'Dyeing Warehouse' },
+                  { label: 'Dyeing House', value: 'Dyeing House' },
                   { label: 'Partial received', value: 'Partial received' },
                   { label: 'received', value: 'received' },
                 ]}
