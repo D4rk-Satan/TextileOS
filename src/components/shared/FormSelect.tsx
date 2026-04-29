@@ -15,9 +15,10 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string;
   rules?: RegisterOptions;
   variant?: 'light' | 'dark';
+  showPlaceholder?: boolean;
 }
 
-export function FormSelect({ name, label, options, required, icon: Icon, placeholder, rules, className, variant = 'light', ...props }: SelectProps) {
+export function FormSelect({ name, label, options, required, icon: Icon, placeholder, rules, className, variant = 'light', showPlaceholder = true, ...props }: SelectProps) {
   const {
     register,
     formState: { errors },
@@ -58,7 +59,9 @@ export function FormSelect({ name, label, options, required, icon: Icon, placeho
           )}
           {...props}
         >
-          <option value="" className="bg-card">{placeholder || 'Select an option'}</option>
+          {showPlaceholder && (
+            <option value="" className="bg-card">{placeholder || 'Select an option'}</option>
+          )}
           {options.map((option) => (
             <option key={option.value} value={option.value} className="bg-card">
               {option.label}

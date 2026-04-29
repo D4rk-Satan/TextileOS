@@ -64,6 +64,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               name="status"
               label="Status"
               required
+              showPlaceholder={false}
               defaultValue="Active"
               options={[
                 { label: 'Active', value: 'Active' },
