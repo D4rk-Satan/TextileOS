@@ -27,19 +27,39 @@ export async function getDyeingHouses() {
   }
 }
 
+export async function getNextDCNumber() {
+  try {
+    const orgId = await getOrgId();
+    const count = await prisma.greyOutward.count({
+      where: { organizationId: orgId }
+    });
+    return { success: true, data: `DC-${count + 1}` };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function getGreyInwardsForOutward() {
   try {
     const orgId = await getOrgId();
     const inwards = await prisma.greyInward.findMany({
       where: { 
         organizationId: orgId,
-        status: { in: ['Open', 'Started'] }
+        status: { in: ['In-Warehouse', 'Open', 'Started'] }
+      },
+      include: {
+        batches: true
       },
       orderBy: { createdAt: 'desc' },
     });
     const serializedData = inwards.map(inward => ({
       ...inward,
-      totalMtr: Number(inward.totalMtr)
+      totalMtr: Number(inward.totalMtr),
+      batches: inward.batches.map(batch => ({
+        ...batch,
+        mtrs: Number(batch.mtrs),
+        weight: Number(batch.weight)
+      }))
     }));
     return { success: true, data: serializedData };
   } catch (error: any) {
