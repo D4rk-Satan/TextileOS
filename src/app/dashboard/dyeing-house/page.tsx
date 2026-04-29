@@ -143,6 +143,7 @@ function DyeingHousePageContent() {
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Date</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lot No</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Dyeing House</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Remark</th>
                   </tr>
                 </thead>
@@ -160,6 +161,15 @@ function DyeingHousePageContent() {
                            <Building2 size={14} className="text-blue-500" />
                            <span className="text-sm font-bold text-foreground">{item.dyeingHouse?.vendorName}</span>
                         </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
+                          activeTab === 'grey-outward' 
+                            ? 'bg-orange-500/10 text-orange-500' 
+                            : 'bg-green-500/10 text-green-500'
+                        }`}>
+                          {activeTab === 'grey-outward' ? 'Outwarded' : 'Inwarded'}
+                        </span>
                       </td>
                       <td className="px-8 py-5 text-sm text-muted-foreground italic">
                         {item.remark || '-'}
