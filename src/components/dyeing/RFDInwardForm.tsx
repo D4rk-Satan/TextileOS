@@ -63,8 +63,9 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
     if (selectedLotNo) {
       const lot = outwardLots.find(l => l.lotNo === selectedLotNo);
       if (lot) {
-        // Filter for batches that are "Out For Dyeing" or belong to this lot
-        methods.setValue('batches', lot.batches || []);
+        // Filter for batches that are "Out For RFD" or belong to this lot
+        const relevantBatches = lot.batches.filter((b: any) => b.status === 'Out For RFD');
+        methods.setValue('batches', relevantBatches || []);
       }
     } else {
       methods.setValue('batches', []);

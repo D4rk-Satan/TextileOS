@@ -1,8 +1,21 @@
 'use server';
 
 import prisma from '@/lib/prisma';
+import { Batch } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+
+interface BatchInput {
+  id: string;
+}
+
+interface DyeingActionData {
+  date: string | Date;
+  lotNo: string;
+  dyeingHouse: string;
+  remark?: string;
+  batches: BatchInput[];
+}
 
 async function getOrgId() {
   const cookieStore = await cookies();
@@ -57,7 +70,7 @@ export async function getGreyInwardsForOutward() {
     const serializedData = inwards.map(inward => ({
       ...inward,
       totalMtr: Number(inward.totalMtr),
-      batches: inward.batches.map(batch => ({
+      batches: (inward.batches as any[]).map((batch: any) => ({
         ...batch,
         mtrs: Number(batch.mtrs),
         weight: Number(batch.weight)
@@ -69,9 +82,11 @@ export async function getGreyInwardsForOutward() {
   }
 }
 
-export async function createGreyOutward(data: any) {
+export async function createGreyOutward(data: DyeingActionData) {
   try {
     const orgId = await getOrgId();
+    
+    // 1. Create the GreyOutward record and connect selected batches
     const greyOutward = await prisma.greyOutward.create({
       data: {
         date: new Date(data.date),
@@ -80,32 +95,42 @@ export async function createGreyOutward(data: any) {
         remark: data.remark,
         organizationId: orgId,
         batches: {
-          connect: data.batches.map((b: any) => ({ id: b.id }))
+          connect: data.batches.map((b) => ({ id: b.id }))
         }
       },
     });
 
-    // Update the status of specific batches
+    // 2. Update the status of specific batches to 'Out For Dyeing'
     await prisma.batch.updateMany({
       where: { 
-        id: { in: data.batches.map((b: any) => b.id) }
+        id: { in: data.batches.map((b) => b.id) }
       },
       data: {
-        status: 'Out For Dyeing'
+        status: 'Out For RFD'
       }
     });
 
-    // Update the parent GreyInward status if all batches are out? 
-    // For now, keep the simple logic of updating by lotNo for backward compatibility
-    await prisma.greyInward.updateMany({
+    // 3. Update the parent GreyInward status based on ALL its batches
+    const inward = await prisma.greyInward.findFirst({
       where: { 
         lotNo: data.lotNo,
         organizationId: orgId
       },
-      data: {
-        status: 'Out For Dyeing'
-      }
+      include: { batches: true }
     });
+
+    if (inward) {
+      const allBatches = inward.batches as Batch[];
+      const allOut = allBatches.every(b => b.status === 'Out For RFD' || b.status === 'RFD Inward');
+      const someOut = allBatches.some(b => b.status === 'Out For RFD' || b.status === 'RFD Inward');
+      
+      await prisma.greyInward.update({
+        where: { id: inward.id },
+        data: {
+          status: allOut ? 'Out For RFD' : someOut ? 'Started' : 'In-Warehouse'
+        }
+      });
+    }
 
     revalidatePath('/dashboard/dyeing-house');
     return { success: true, data: greyOutward };
@@ -159,42 +184,53 @@ export async function getGreyOutwards() {
   }
 }
 
-export async function createRFDInward(data: any) {
+export async function createRFDInward(data: DyeingActionData) {
     try {
       const orgId = await getOrgId();
-    const rfdInward = await prisma.rFDInward.create({
-      data: {
-        date: new Date(data.date),
-        lotNo: data.lotNo,
-        dyeingHouseId: data.dyeingHouse,
-        remark: data.remark,
-        organizationId: orgId,
-        batches: {
-          connect: data.batches.map((b: any) => ({ id: b.id }))
+      
+      // 1. Create the RFDInward record and connect selected batches
+      const rfdInward = await prisma.rFDInward.create({
+        data: {
+          date: new Date(data.date),
+          lotNo: data.lotNo,
+          dyeingHouseId: data.dyeingHouse,
+          remark: data.remark,
+          organizationId: orgId,
+          batches: {
+            connect: data.batches.map((b) => ({ id: b.id }))
+          }
+        },
+      });
+
+      // 2. Update the status of specific batches to 'RFD Inward'
+      await prisma.batch.updateMany({
+        where: { 
+          id: { in: data.batches.map((b) => b.id) }
+        },
+        data: {
+          status: 'RFD Inward'
         }
-      },
-    });
+      });
 
-    // Update the status of specific batches
-    await prisma.batch.updateMany({
-      where: { 
-        id: { in: data.batches.map((b: any) => b.id) }
-      },
-      data: {
-        status: 'RFD Inward'
-      }
-    });
+      // 3. Update parent GreyInward status
+      const inward = await prisma.greyInward.findFirst({
+        where: { 
+          lotNo: data.lotNo,
+          organizationId: orgId
+        },
+        include: { batches: true }
+      });
 
-    // Update parent status
-    await prisma.greyInward.updateMany({
-      where: { 
-        lotNo: data.lotNo,
-        organizationId: orgId
-      },
-      data: {
-        status: 'RFD Inward'
+      if (inward) {
+        const allBatches = inward.batches as Batch[];
+        const allRFD = allBatches.every(b => b.status === 'RFD Inward');
+        await prisma.greyInward.update({
+          where: { id: inward.id },
+          data: {
+            status: allRFD ? 'RFD Inward' : 'Out For RFD' // If not all back, it's still partially out
+          }
+        });
       }
-    });
   
       revalidatePath('/dashboard/dyeing-house');
       return { success: true, data: rfdInward };

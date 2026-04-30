@@ -79,9 +79,11 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
     if (selectedLotNo) {
       const lot = lotData.find(l => l.lotNo === selectedLotNo);
       if (lot) {
-        methods.setValue('totalGreyMtr', lot.totalMtr.toFixed(2));
-        methods.setValue('totalGreyBatch', lot.batches.length);
-        methods.setValue('batches', lot.batches);
+        // By default, don't select all batches automatically to avoid accidental outwarding
+        // Let the user select them
+        methods.setValue('totalGreyMtr', '0.00');
+        methods.setValue('totalGreyBatch', 0);
+        methods.setValue('batches', []);
       }
     } else {
       methods.setValue('totalGreyMtr', '0.00');
@@ -90,9 +92,16 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   }, [selectedLotNo, lotData, methods]);
 
-  const removeBatch = (idx: number) => {
-    const updatedBatches = [...(currentBatches || [])];
-    updatedBatches.splice(idx, 1);
+  const toggleBatch = (batch: any) => {
+    const currentBatches = methods.getValues('batches') || [];
+    const isSelected = currentBatches.some((b: any) => b.id === batch.id);
+    
+    let updatedBatches;
+    if (isSelected) {
+      updatedBatches = currentBatches.filter((b: any) => b.id !== batch.id);
+    } else {
+      updatedBatches = [...currentBatches, batch];
+    }
     
     // Recalculate totals
     const totalMtr = updatedBatches.reduce((acc, curr) => acc + (Number(curr.mtrs) || 0), 0);
@@ -103,6 +112,10 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   const onSubmit = async (data: any) => {
+    if (!data.batches || data.batches.length === 0) {
+      alert('Please select at least one batch to outward.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const result = await createGreyOutward(data);
@@ -130,6 +143,8 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
     control: methods.control,
     name: 'batches'
   });
+
+  const selectedLot = lotData.find(l => l.lotNo === selectedLotNo);
 
   return (
     <FormProvider {...methods}>
@@ -208,24 +223,36 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
             </div>
           </div>
 
-          {/* Batch info display */}
-          {currentBatches && currentBatches.length > 0 && (
+          {/* Batch Selection Selection */}
+          {selectedLot && (
             <div className="mt-8 pt-8 border-t border-border/50">
-              <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest mb-4">Batch Info</h4>
+              <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest mb-4 flex justify-between items-center">
+                <span>Select Batches to Outward (Lot #{selectedLotNo})</span>
+                <span className="text-[10px] bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full">{selectedLot.batches.length} Available</span>
+              </h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {currentBatches.map((batch: any, idx: number) => (
-                  <div key={idx} className="bg-muted/30 p-3 rounded-xl border border-border/50 flex flex-col items-center relative group">
+                {selectedLot.batches.map((batch: any) => {
+                  const isSelected = (currentBatches || []).some((b: any) => b.id === batch.id);
+                  return (
                     <button
+                      key={batch.id}
                       type="button"
-                      onClick={() => removeBatch(idx)}
-                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600 z-10"
+                      onClick={() => toggleBatch(batch)}
+                      className={cn(
+                        "p-3 rounded-xl border transition-all flex flex-col items-center relative group",
+                        isSelected 
+                          ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20" 
+                          : "bg-muted/30 border-border/50 hover:border-blue-500/50"
+                      )}
                     >
-                      <X size={10} />
+                      <span className={cn(
+                        "text-[10px] font-black uppercase mb-1",
+                        isSelected ? "text-white/80" : "text-blue-600"
+                      )}>{batch.batchNo}</span>
+                      <span className="text-sm font-bold">{batch.mtrs.toFixed(2)}</span>
                     </button>
-                    <span className="text-[10px] font-black text-blue-600 uppercase mb-1">{batch.batchNo}</span>
-                    <span className="text-sm font-bold text-foreground">{batch.mtrs.toFixed(2)}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

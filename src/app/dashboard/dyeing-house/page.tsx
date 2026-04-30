@@ -233,13 +233,13 @@ function DyeingHousePageContent() {
                                         </div>
                                         <div className="text-sm font-bold text-foreground mb-2">{batch.mtrs.toFixed(2)} Mtr</div>
                                         <div className={`text-[8px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full inline-block ${
-                                          (isProcessedInThisRecord && activeTab === 'grey-outward') || batch.status === 'Out For Dyeing' ? 'bg-orange-500/10 text-orange-500' :
+                                          (isProcessedInThisRecord && activeTab === 'grey-outward') || batch.status === 'Out For RFD' ? 'bg-orange-500/10 text-orange-500' :
                                           (isProcessedInThisRecord && activeTab === 'rfd-inward') || batch.status === 'RFD Inward' ? 'bg-green-500/10 text-green-500' :
                                           batch.status === 'In-Warehouse' ? 'bg-muted text-muted-foreground' :
                                           'bg-blue-500/10 text-blue-500'
                                         }`}>
                                           {isProcessedInThisRecord 
-                                            ? (activeTab === 'grey-outward' ? 'Out For Dyeing' : 'RFD Inward')
+                                            ? (activeTab === 'grey-outward' ? 'Out For RFD' : 'RFD Inward')
                                             : batch.status}
                                         </div>
                                       </div>
