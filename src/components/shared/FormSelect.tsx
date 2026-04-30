@@ -50,14 +50,14 @@ export function FormSelect({ name, label, options, required, icon: Icon, placeho
           })}
           id={name}
           className={cn(
-            'flex h-11 w-full rounded-xl border border-border py-2 text-sm transition-all appearance-none cursor-pointer font-medium',
+            'flex h-11 w-full rounded-xl border border-border py-2 text-sm transition-all appearance-none cursor-pointer font-medium shadow-sm',
             'placeholder:text-muted-foreground/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500',
             'disabled:cursor-not-allowed disabled:opacity-50',
             variant === 'dark' 
-              ? 'bg-[#1a1c23] border-[#2d313e] text-white shadow-inner shadow-black/20 focus:bg-[#1e212b]' 
-              : 'bg-white/50 dark:bg-black/20 border-border',
+              ? 'bg-muted/80 border-border/80 text-foreground font-bold shadow-inner' 
+              : 'bg-card text-foreground',
             Icon ? 'pl-11 pr-11' : 'px-4 pr-11',
-            error ? 'border-red-500/50 focus:ring-red-500/10 focus:border-red-500' : 'hover:border-blue-500/50 dark:hover:border-blue-500/50'
+            error ? 'border-red-500/50 focus:ring-red-500/10 focus:border-red-500' : 'hover:border-blue-500/50'
           )}
           {...props}
         >
