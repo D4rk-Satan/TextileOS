@@ -19,6 +19,7 @@ import {
 import { motion } from 'framer-motion';
 import { createGreyOutward, getDyeingHouses, getGreyInwardsForOutward, getNextDCNumber } from '@/app/actions/dyeing';
 import { useWatch } from 'react-hook-form';
+import { cn } from '@/lib/utils';
 export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
   const methods = useForm({
     defaultValues: {
