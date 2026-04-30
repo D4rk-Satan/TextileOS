@@ -133,6 +133,7 @@ export async function createGreyOutward(data: DyeingActionData) {
     }
 
     revalidatePath('/dashboard/dyeing-house');
+    revalidatePath('/dashboard/warehouse');
     return { success: true, data: greyOutward };
   } catch (error: any) {
     console.error('Error creating grey outward:', error);
@@ -233,6 +234,7 @@ export async function createRFDInward(data: DyeingActionData) {
       }
   
       revalidatePath('/dashboard/dyeing-house');
+      revalidatePath('/dashboard/warehouse');
       return { success: true, data: rfdInward };
     } catch (error: any) {
       console.error('Error creating RFD inward:', error);

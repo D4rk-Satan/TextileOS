@@ -188,7 +188,7 @@ function DyeingHousePageContent() {
                               ? 'bg-orange-500/10 text-orange-500' 
                               : 'bg-green-500/10 text-green-500'
                           }`}>
-                            {activeTab === 'grey-outward' ? 'Outwarded' : 'Inwarded'}
+                            {activeTab === 'grey-outward' ? 'Out For RFD' : 'Inwarded'}
                           </span>
                         </td>
                         <td className="px-8 py-5 text-sm text-muted-foreground italic">
