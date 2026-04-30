@@ -54,7 +54,7 @@ function WarehousePageContent() {
 
   const titles: Record<TabType, string> = {
     'grey-inward': 'Grey Inward',
-    'batches': 'Batches',
+    'batches': 'In-Warehouse',
     'out-for-rfd': 'Out For RFD',
     'ready-for-printing': 'Ready For Printing',
     'ready-for-dispatch': 'Ready For Dispatch',

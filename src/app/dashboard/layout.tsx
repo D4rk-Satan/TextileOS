@@ -62,13 +62,13 @@ export default function DashboardLayout({
         ]
     },
     { 
-      name: 'Warehouse', 
+      name: 'Batches', 
       href: '/dashboard/warehouse', 
       icon: Warehouse,
       isDropdown: true,
       subItems: [
         { name: 'Grey Inward', href: '/dashboard/warehouse?tab=grey-inward', icon: Building2 },
-        { name: 'Batches', href: '/dashboard/warehouse?tab=batches', icon: Boxes },
+        { name: 'In-Warehouse', href: '/dashboard/warehouse?tab=batches', icon: Boxes },
         { name: 'Out For RFD', href: '/dashboard/warehouse?tab=out-for-rfd', icon: RotateCcw },
         { name: 'Ready For Printing', href: '/dashboard/warehouse?tab=ready-for-printing', icon: Printer },
         { name: 'Ready For Dispatch', href: '/dashboard/warehouse?tab=ready-for-dispatch', icon: ShoppingCart },
