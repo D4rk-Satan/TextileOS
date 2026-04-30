@@ -58,7 +58,11 @@ export async function getGreyInwardsForOutward() {
     const inwards = await prisma.greyInward.findMany({
       where: { 
         organizationId: orgId,
-        status: { in: ['In-Warehouse', 'Open', 'Started'] }
+        batches: {
+          some: {
+            status: 'In-Warehouse'
+          }
+        }
       },
       include: {
         batches: {
