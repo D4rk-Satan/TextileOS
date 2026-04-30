@@ -44,6 +44,7 @@ export function BatchInfoForm() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}
+                    >
                         <div className="flex items-center gap-3 w-full bg-muted/20 p-2 rounded-xl border border-border/50">
                             <div className="bg-blue-600/10 text-blue-600 px-3 py-2 rounded-lg text-xs font-black min-w-[100px] text-center border border-blue-600/20">
                                 {methods.getValues(`batches.${index}.batchNo`) || `Batch ${index + 1}`}
