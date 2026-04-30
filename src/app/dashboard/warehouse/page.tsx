@@ -12,7 +12,7 @@ import { GreyInwardForm } from '@/components/warehouse/GreyInwardForm';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getGreyInwards, getBatches } from '@/app/actions/warehouse';
+import { getGreyInwards, getBatches } from '@/app/actions/warehouse'; // Import with updated signature
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 
 type TabType = 'grey-inward' | 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'ready-for-dispatch' | 'dispatched';

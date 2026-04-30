@@ -105,14 +105,16 @@ export async function getGreyInwards() {
   }
 }
 
-export async function getBatches() {
+/** Fetches batches filtered by status */
+export async function getBatches(status?: string) {
   try {
     const orgId = await getOrgId();
     const batches = await prisma.batch.findMany({
       where: { 
         greyInward: {
           organizationId: orgId
-        }
+        },
+        ...(status ? { status } : {})
       },
       include: {
         greyInward: {
