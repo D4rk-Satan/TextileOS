@@ -40,8 +40,8 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
       image: '',
       challanNo: '',
       totalBatch: 0,
-      totalMtr: '',
-      batches: [{ batchNo: '', pcs: '', mtrs: '', weight: '' }],
+      totalMtr: '0.00',
+      batches: [],
     },
     mode: 'onTouched',
   });

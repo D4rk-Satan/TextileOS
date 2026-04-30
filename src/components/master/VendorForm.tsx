@@ -13,7 +13,6 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
     defaultValues: {
       status: 'Active',
       vendorName: '',
-      masterName: '',
       vendorNumber: '',
       booksId: '',
       addressLine1: '',
@@ -65,12 +64,6 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
               label="Vendor Name"
               required
               placeholder="Primary vendor name"
-            />
-
-            <FormInput
-              name="masterName"
-              label="Master Name"
-              placeholder="Associated master record name"
             />
 
             <FormInput

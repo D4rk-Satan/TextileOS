@@ -14,10 +14,17 @@ async function getOrgId() {
 export async function getNextLotNumber() {
   try {
     const orgId = await getOrgId();
-    const count = await prisma.greyInward.count({
-      where: { organizationId: orgId }
+    const lastEntry = await prisma.greyInward.findFirst({
+      where: { organizationId: orgId },
+      orderBy: { createdAt: 'desc' },
+      select: { lotNo: true }
     });
-    return { success: true, data: count + 1 };
+
+    if (!lastEntry) return { success: true, data: 1 };
+    
+    // Extract number from lotNo if it's formatted like "L-1" or just "1"
+    const currentNo = parseInt(lastEntry.lotNo.replace(/[^0-9]/g, '')) || 0;
+    return { success: true, data: currentNo + 1 };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

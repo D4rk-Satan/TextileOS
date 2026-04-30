@@ -155,14 +155,12 @@ function MasterPageContent() {
 
       {/* Placeholder for batches/reports */}
       {(activeTab === 'batches' || activeTab === 'reports') && (
-        <div className="flex flex-col items-center justify-center py-32 text-center bg-card rounded-[2.5rem] border border-border shadow-xl">
-          <div className="w-24 h-24 bg-muted/50 text-muted-foreground/20 rounded-[2rem] flex items-center justify-center mb-8 border-2 border-dashed border-border">
-            <Package size={48} />
-          </div>
-          <h3 className="text-2xl font-black text-foreground uppercase tracking-widest">Coming Soon</h3>
-          <p className="text-muted-foreground mt-3 font-medium max-w-sm mx-auto">
-            The <span className="text-blue-600 font-bold">{activeTab}</span> module is currently under development.
-          </p>
+        <div className="bg-card/50 rounded-[2.5rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm">
+           <EmptyState 
+             title={`${activeTab} Coming Soon`}
+             description={`The ${activeTab} module is currently under development. Check back soon for updates!`}
+             icon={<Package size={48} className="text-blue-600/20" />}
+           />
         </div>
       )}
     </div>
