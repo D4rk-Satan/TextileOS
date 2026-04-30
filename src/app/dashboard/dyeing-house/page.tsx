@@ -151,8 +151,12 @@ function DyeingHousePageContent() {
                   <tr className="bg-muted/50 border-b border-border">
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest w-12"></th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Date</th>
-                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lot No</th>
-                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Dyeing House</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">
+                      {activeTab === 'rfd-inward' ? 'Bill No' : 'Lot No'}
+                    </th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">
+                      {activeTab === 'rfd-inward' ? 'Challan No' : 'Dyeing House'}
+                    </th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Remark</th>
                   </tr>
@@ -174,12 +178,20 @@ function DyeingHousePageContent() {
                           {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </td>
                         <td className="px-8 py-5">
-                          <span className="font-bold text-foreground">#{item.lotNo}</span>
+                          <span className="font-bold text-foreground">
+                            {activeTab === 'rfd-inward' ? item.billNo : `#${item.lotNo}`}
+                          </span>
                         </td>
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-2">
-                             <Building2 size={14} className="text-blue-500" />
-                             <span className="text-sm font-bold text-foreground">{item.dyeingHouse?.vendorName}</span>
+                             {activeTab === 'rfd-inward' ? (
+                               <span className="text-sm font-bold text-foreground">{item.challanNo}</span>
+                             ) : (
+                               <>
+                                 <Building2 size={14} className="text-blue-500" />
+                                 <span className="text-sm font-bold text-foreground">{item.dyeingHouse?.vendorName}</span>
+                               </>
+                             )}
                           </div>
                         </td>
                         <td className="px-8 py-5">

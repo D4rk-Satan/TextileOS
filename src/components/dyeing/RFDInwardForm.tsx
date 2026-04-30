@@ -1,96 +1,125 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
 import { 
   Calendar, 
-  Search, 
-  FileText, 
   Layers,
   Save,
   RotateCcw,
   Building2,
   Hash,
-  X
+  FileText,
+  Info
 } from 'lucide-react';
-import { createRFDInward, getDyeingHouses, getGreyOutwards } from '@/app/actions/dyeing';
-import { useWatch } from 'react-hook-form';
+import { createRFDInward, getDyeingHouses, getGreyOutwardsByHouse } from '@/app/actions/dyeing';
 
 export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
   const methods = useForm({
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
-      lotNo: '',
       dyeingHouse: '',
+      billNo: '',
+      challanNo: '',
+      lotNo: '',
       remark: '',
       batches: [] as any[],
     },
     mode: 'onTouched',
   });
 
+  const { control, setValue, reset, handleSubmit } = methods;
+  const { fields, replace } = useFieldArray({
+    control,
+    name: 'batches',
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dyeingHouses, setDyeingHouses] = useState<any[]>([]);
-  const [outwardLots, setOutwardLots] = useState<any[]>([]);
+  const [outwards, setOutwards] = useState<any[]>([]);
 
-  const selectedLotNo = useWatch({
-    control: methods.control,
-    name: 'lotNo'
-  });
+  const selectedDyeingHouse = useWatch({ control, name: 'dyeingHouse' });
+  const selectedChallanId = useWatch({ control, name: 'challanNo' });
 
+  // Load Dyeing Houses
   useEffect(() => {
-    async function loadData() {
-      const [housesRes, lotsRes] = await Promise.all([
-        getDyeingHouses(),
-        getGreyOutwards()
-      ]);
-      
-      if (housesRes?.success) {
-        setDyeingHouses((housesRes.data || []).map((h: any) => ({ label: h.vendorName, value: h.id })));
-      }
-      
-      if (lotsRes?.success) {
-        setOutwardLots(lotsRes.data || []);
+    async function loadHouses() {
+      const res = await getDyeingHouses();
+      if (res?.success) {
+        setDyeingHouses((res.data || []).map((h: any) => ({ label: h.vendorName, value: h.id })));
       }
     }
-    loadData();
+    loadHouses();
   }, []);
 
-  // Update batches when lot is selected
+  // Load Outwards when Dyeing House changes
   useEffect(() => {
-    if (selectedLotNo) {
-      const lot = outwardLots.find(l => l.lotNo === selectedLotNo);
-      if (lot) {
-        // Filter for batches that are "Out For RFD" or belong to this lot
-        const relevantBatches = lot.batches.filter((b: any) => b.status === 'Out For RFD');
-        methods.setValue('batches', relevantBatches || []);
+    if (selectedDyeingHouse) {
+      async function loadOutwards() {
+        const res = await getGreyOutwardsByHouse(selectedDyeingHouse);
+        if (res?.success) {
+          setOutwards(res.data || []);
+        }
+      }
+      loadOutwards();
+      setValue('challanNo', '');
+      replace([]);
+    } else {
+      setOutwards([]);
+      replace([]);
+    }
+  }, [selectedDyeingHouse, setValue, replace]);
+
+  // Update batches when Challan changes
+  useEffect(() => {
+    if (selectedChallanId) {
+      const selectedOutward = outwards.find(o => o.id === selectedChallanId);
+      if (selectedOutward) {
+        setValue('lotNo', selectedOutward.lotNo);
+        const batchData = selectedOutward.batches.map((b: any) => ({
+          id: b.id,
+          batchNo: b.batchNo,
+          lotNo: selectedOutward.lotNo,
+          greyMtrs: b.mtrs,
+          rfdMtrs: b.mtrs, // Default to grey mtrs
+          isTP: false,
+          tpDetail: '',
+          millShortage: 0
+        }));
+        replace(batchData);
       }
     } else {
-      methods.setValue('batches', []);
+      setValue('lotNo', '');
+      replace([]);
     }
-  }, [selectedLotNo, outwardLots, methods]);
-
-  const removeBatch = (idx: number) => {
-    const currentBatches = methods.getValues('batches');
-    const updatedBatches = [...(currentBatches || [])];
-    updatedBatches.splice(idx, 1);
-    methods.setValue('batches', updatedBatches);
-  };
-
-  const currentBatches = useWatch({
-    control: methods.control,
-    name: 'batches'
-  });
+  }, [selectedChallanId, outwards, setValue, replace]);
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const result = await createRFDInward(data);
+      // Find the display name of the challan for storing
+      const selectedOutward = outwards.find(o => o.id === data.challanNo);
+      const challanDisplay = selectedOutward ? `${selectedOutward.challanNo} Lot-${selectedOutward.lotNo}` : data.challanNo;
+      
+      const submissionData = {
+        ...data,
+        challanNo: challanDisplay,
+        batches: data.batches.map((b: any) => ({
+          id: b.id,
+          rfdMtrs: Number(b.rfdMtrs),
+          isTP: b.isTP,
+          tpDetail: b.tpDetail,
+          millShortage: Number(b.millShortage)
+        }))
+      };
+
+      const result = await createRFDInward(submissionData);
       if (result.success) {
         alert('RFD Inward entry saved successfully!');
-        methods.reset();
+        reset();
         onSuccess?.();
       } else {
         alert('Error: ' + result.error);
@@ -102,13 +131,9 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  const onReset = () => {
-    methods.reset();
-  };
-
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="bg-card/50 backdrop-blur-md rounded-[2.5rem] p-8 border border-border shadow-xl">
           <div className="flex items-center gap-3 mb-8 border-b border-border/50 pb-4">
             <div className="p-2 bg-indigo-600/10 rounded-xl text-indigo-600">
@@ -117,8 +142,17 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
             <h3 className="text-xl font-black text-foreground tracking-tight uppercase">RFD Inward</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
             <div className="space-y-6">
+              <FormSelect
+                name="dyeingHouse"
+                label="Dyeing House Name"
+                required
+                placeholder="Select Dyeing House"
+                icon={Building2}
+                options={dyeingHouses}
+              />
+
               <FormInput
                 name="date"
                 label="Date"
@@ -126,63 +160,122 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                 required
                 icon={Calendar}
               />
-
-              <FormSelect
-                name="dyeingHouse"
-                label="Dyeing House"
-                required
-                placeholder="Select Dyeing House"
-                icon={Building2}
-                options={dyeingHouses}
-              />
             </div>
 
             <div className="space-y-6">
-              <FormSelect
-                name="lotNo"
-                label="Lot No"
+              <FormInput
+                name="billNo"
+                label="Bill No"
                 required
-                placeholder="Select Outward Lot"
+                placeholder="Enter Bill Number"
                 icon={Hash}
-                options={outwardLots.map(l => ({ label: l.lotNo, value: l.lotNo }))}
               />
 
-              <FormInput
-                name="remark"
-                label="Remark"
-                placeholder="Enter remarks (if any)"
+              <FormSelect
+                name="challanNo"
+                label="Challan No"
+                required
+                placeholder="Select Challan"
                 icon={FileText}
+                options={outwards.map(o => ({ 
+                  label: `${o.challanNo} Lot-${o.lotNo}`, 
+                  value: o.id 
+                }))}
               />
             </div>
           </div>
 
-          {/* Batch info display */}
-          {currentBatches && currentBatches.length > 0 && (
-            <div className="mt-8 pt-8 border-t border-border/50">
-              <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest mb-4">Batch Info</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {currentBatches.map((batch: any, idx: number) => (
-                  <div key={idx} className="bg-muted/30 p-3 rounded-xl border border-border/50 flex flex-col items-center relative group">
-                    <button
-                      type="button"
-                      onClick={() => removeBatch(idx)}
-                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600 z-10"
-                    >
-                      <X size={10} />
-                    </button>
-                    <span className="text-[10px] font-black text-indigo-600 uppercase mb-1">{batch.batchNo}</span>
-                    <span className="text-sm font-bold text-foreground">{batch.mtrs.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Batch Info Table */}
+          <div className="mt-10">
+            <div className="flex items-center gap-2 mb-4">
+              <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest">Batch Info</h4>
+              <Info size={14} className="text-muted-foreground" />
             </div>
-          )}
+            
+            <div className="overflow-hidden rounded-2xl border border-border/50 bg-muted/20">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-muted/50 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Lot No</th>
+                    <th className="px-4 py-3 text-right">Grey Mts</th>
+                    <th className="px-4 py-3 text-center">RFD Mtr <span className="text-red-500">*</span></th>
+                    <th className="px-4 py-3 text-center">TP</th>
+                    <th className="px-4 py-3">TP Detail</th>
+                    <th className="px-4 py-3 text-right">Mill Short...</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/30">
+                  {fields.map((field, index) => (
+                    <tr key={field.id} className="hover:bg-card/50 transition-colors">
+                      <td className="px-4 py-2">
+                        <input
+                          {...methods.register(`batches.${index}.lotNo`)}
+                          readOnly
+                          className="w-full bg-transparent border-none text-sm font-bold text-muted-foreground outline-none cursor-default"
+                        />
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <input
+                          {...methods.register(`batches.${index}.greyMtrs`)}
+                          readOnly
+                          className="w-20 bg-transparent border-none text-sm font-bold text-muted-foreground text-right outline-none cursor-default"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex justify-center">
+                          <input
+                            {...methods.register(`batches.${index}.rfdMtrs`, { required: true })}
+                            type="number"
+                            step="0.01"
+                            className="w-32 bg-card border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-center focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex justify-center">
+                          <input
+                            {...methods.register(`batches.${index}.isTP`)}
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          {...methods.register(`batches.${index}.tpDetail`)}
+                          className="w-full bg-card border border-border/50 rounded-lg px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
+                          placeholder="Detail"
+                        />
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <input
+                          {...methods.register(`batches.${index}.millShortage`)}
+                          type="number"
+                          step="0.01"
+                          className="w-28 bg-card border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-right focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all ml-auto"
+                          placeholder="0.00"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  {fields.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground font-medium italic">
+                        Select a Dyeing House and Challan to view batches
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
           <div className="flex items-center gap-4 mt-10">
             <FormButton 
                 type="submit" 
                 variant="primary" 
-                disabled={isSubmitting}
+                disabled={isSubmitting || fields.length === 0}
                 className="h-12 px-10 rounded-xl font-bold uppercase tracking-wider shadow-lg shadow-indigo-600/20 flex gap-2"
             >
               <Save size={18} />
@@ -190,7 +283,10 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
             </FormButton>
             <FormButton 
                 type="button" 
-                onClick={onReset} 
+                onClick={() => {
+                  reset();
+                  replace([]);
+                }} 
                 variant="secondary" 
                 className="h-12 px-10 rounded-xl font-bold uppercase tracking-wider flex gap-2"
             >

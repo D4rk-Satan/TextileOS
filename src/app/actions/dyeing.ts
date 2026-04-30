@@ -14,7 +14,26 @@ interface DyeingActionData {
   lotNo: string;
   dyeingHouse: string;
   remark?: string;
+  dcNo?: string;
   batches: BatchInput[];
+}
+
+interface RFDInwardBatchInput {
+  id: string;
+  rfdMtrs: number;
+  isTP: boolean;
+  tpDetail?: string;
+  millShortage?: number;
+}
+
+interface RFDInwardActionData {
+  date: string | Date;
+  dyeingHouse: string;
+  billNo: string;
+  challanNo: string;
+  lotNo: string;
+  remark?: string;
+  batches: RFDInwardBatchInput[];
 }
 
 async function getOrgId() {
@@ -97,6 +116,7 @@ export async function createGreyOutward(data: DyeingActionData) {
         lotNo: data.lotNo,
         dyeingHouseId: data.dyeingHouse,
         remark: data.remark,
+        challanNo: data.dcNo,
         organizationId: orgId,
         batches: {
           connect: data.batches.map((b) => ({ id: b.id }))
@@ -189,16 +209,18 @@ export async function getGreyOutwards() {
   }
 }
 
-export async function createRFDInward(data: DyeingActionData) {
+export async function createRFDInward(data: RFDInwardActionData) {
     try {
       const orgId = await getOrgId();
       
-      // 1. Create the RFDInward record and connect selected batches
+      // 1. Create the RFDInward record
       const rfdInward = await prisma.rFDInward.create({
         data: {
           date: new Date(data.date),
           lotNo: data.lotNo,
           dyeingHouseId: data.dyeingHouse,
+          billNo: data.billNo,
+          challanNo: data.challanNo,
           remark: data.remark,
           organizationId: orgId,
           batches: {
@@ -207,15 +229,20 @@ export async function createRFDInward(data: DyeingActionData) {
         },
       });
 
-      // 2. Update the status of specific batches to 'RFD Inward'
-      await prisma.batch.updateMany({
-        where: { 
-          id: { in: data.batches.map((b) => b.id) }
-        },
-        data: {
-          status: 'RFD Inward'
-        }
-      });
+      // 2. Update each batch with its RFD specific data and status
+      for (const batchData of data.batches) {
+        await prisma.batch.update({
+          where: { id: batchData.id },
+          data: {
+            status: 'RFD Inward',
+            rfdMtrs: batchData.rfdMtrs,
+            isTP: batchData.isTP,
+            tpDetail: batchData.tpDetail,
+            millShortage: batchData.millShortage,
+            rfdInwardId: rfdInward.id
+          }
+        });
+      }
 
       // 3. Update parent GreyInward status
       const inward = await prisma.greyInward.findFirst({
@@ -232,7 +259,7 @@ export async function createRFDInward(data: DyeingActionData) {
         await prisma.greyInward.update({
           where: { id: inward.id },
           data: {
-            status: allRFD ? 'RFD Inward' : 'Out For RFD' // If not all back, it's still partially out
+            status: allRFD ? 'RFD Inward' : 'Out For RFD'
           }
         });
       }
@@ -245,6 +272,42 @@ export async function createRFDInward(data: DyeingActionData) {
       return { success: false, error: error.message };
     }
   }
+
+export async function getGreyOutwardsByHouse(dyeingHouseId: string) {
+  try {
+    const orgId = await getOrgId();
+    const outwards = await prisma.greyOutward.findMany({
+      where: { 
+        organizationId: orgId,
+        dyeingHouseId: dyeingHouseId,
+        batches: {
+          some: {
+            status: 'Out For RFD'
+          }
+        }
+      },
+      include: {
+        batches: {
+          where: { status: 'Out For RFD' }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    
+    const serializedData = outwards.map(outward => ({
+      ...outward,
+      batches: outward.batches.map(batch => ({
+        ...batch,
+        mtrs: Number(batch.mtrs),
+        weight: Number(batch.weight)
+      }))
+    }));
+    
+    return { success: true, data: serializedData };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
 
 export async function getRFDInwards() {
     try {

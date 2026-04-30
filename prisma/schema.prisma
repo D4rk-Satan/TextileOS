@@ -131,6 +131,11 @@ model Batch {
 
   rfdInward     RFDInward?   @relation(fields: [rfdInwardId], references: [id])
   rfdInwardId   String?
+
+  rfdMtrs       Decimal?   @db.Decimal(10, 2)
+  isTP          Boolean    @default(false)
+  tpDetail      String?
+  millShortage  Decimal?   @db.Decimal(10, 2)
 }
 
 model GreyOutward {
@@ -146,6 +151,7 @@ model GreyOutward {
   
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  challanNo       String?
   batches         Batch[]
 }
 
@@ -162,5 +168,7 @@ model RFDInward {
   
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  billNo          String?
+  challanNo       String?
   batches         Batch[]
 }
