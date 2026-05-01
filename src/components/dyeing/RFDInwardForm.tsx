@@ -44,6 +44,30 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const selectedDyeingHouse = useWatch({ control, name: 'dyeingHouse' });
   const selectedChallanId = useWatch({ control, name: 'challanNo' });
+  const watchedBatches = useWatch({ control, name: 'batches' });
+
+  // Calculate Total RFD Mtr
+  const totalRFDMtr = watchedBatches?.reduce((sum: number, batch: any) => sum + (parseFloat(batch.rfdMtrs) || 0), 0) || 0;
+
+  // Real-time Mill Shortage Calculation
+  useEffect(() => {
+    if (!watchedBatches) return;
+
+    watchedBatches.forEach((batch: any, index: number) => {
+      const grey = parseFloat(batch.greyMtrs) || 0;
+      const rfd = parseFloat(batch.rfdMtrs) || 0;
+      
+      if (grey > 0) {
+        const shortage = ((grey - rfd) / grey) * 100;
+        const currentShortage = methods.getValues(`batches.${index}.millShortage`);
+        
+        // Only update if the value has changed significantly (avoid infinite loops)
+        if (shortage.toFixed(2) !== parseFloat(currentShortage || 0).toFixed(2)) {
+          methods.setValue(`batches.${index}.millShortage`, parseFloat(shortage.toFixed(2)));
+        }
+      }
+    });
+  }, [watchedBatches, methods]);
 
   // Load Dyeing Houses
   useEffect(() => {
@@ -244,7 +268,8 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                         {...methods.register(`batches.${index}.millShortage`)}
                         type="number"
                         step="0.01"
-                        className="w-28 bg-card border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-right focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all ml-auto"
+                        readOnly
+                        className="w-28 bg-muted/50 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-right outline-none cursor-default ml-auto"
                         placeholder="0.00"
                       />
                     </td>
@@ -259,6 +284,18 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Summary Section */}
+          <div className="mt-4 flex justify-end">
+            <div className="bg-muted/30 border border-border/50 rounded-xl px-6 py-4 flex items-center gap-8 shadow-sm">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Total RFD Mtr</span>
+                <span className="text-xl font-black text-indigo-600">
+                  {totalRFDMtr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
