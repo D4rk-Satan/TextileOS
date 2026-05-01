@@ -59,7 +59,7 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
         <FormHeader title="Vendor Information" icon={ShoppingBag} color="blue" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
           <FormInput
             name="vendorName"
             label="Vendor Name"
@@ -89,13 +89,11 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
             icon={MapPin}
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormInput name="city" label="City / District" placeholder="City" icon={MapPin} />
-            <FormInput name="state" label="State / Province" placeholder="State/UT" icon={MapPin} />
-          </div>
+          <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
+          <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
+          <FormInput name="postalCode" label="Pincode" placeholder="6-digits" icon={Hash} />
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormInput name="postalCode" label="Postal Code" placeholder="6-digits" icon={Hash} />
+          <div className="md:col-span-1">
             <FormSelect
               name="country"
               label="Country"

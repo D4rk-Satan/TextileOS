@@ -46,7 +46,7 @@ export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
         <FormHeader title="Item Information" icon={Package} color="blue" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
           <FormInput
             name="itemName"
             label="Item Name"

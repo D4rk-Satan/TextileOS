@@ -60,67 +60,53 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
         <FormHeader title="Customer Information" icon={Users} color="blue" />
         
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-12 gap-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
           {/* Row 1 */}
-          <div className="md:col-span-4">
-            <FormInput
-              name="customerName"
-              label="Customer Name"
-              required
-              placeholder="Full legal name"
-              icon={User}
-              rules={{ minLength: { value: 3, message: 'Name too short' } }}
-            />
-          </div>
-          <div className="md:col-span-4">
-            <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
-          </div>
-          <div className="md:col-span-4">
-            <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
-          </div>
+          <FormInput
+            name="customerName"
+            label="Customer Name"
+            required
+            placeholder="Full legal name"
+            icon={User}
+            rules={{ minLength: { value: 3, message: 'Name too short' } }}
+          />
+          <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
+          <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
 
           {/* Row 2 */}
-          <div className="md:col-span-4">
-            <FormInput
-              name="address"
-              label="Street Address"
-              placeholder="Complete street address"
-              icon={MapPin}
-            />
-          </div>
-          <div className="md:col-span-4">
-            <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" icon={Hash} />
-          </div>
-          <div className="md:col-span-4">
-            <FormSelect
-              name="country"
-              label="Country"
-              icon={Globe}
-              options={[
-                { label: 'India', value: 'India' },
-                { label: 'United States', value: 'USA' },
-                { label: 'United Kingdom', value: 'UK' },
-              ]}
-            />
-          </div>
+          <FormInput
+            name="address"
+            label="Street Address"
+            placeholder="Complete street address"
+            icon={MapPin}
+          />
+          <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" icon={Hash} />
+          <FormSelect
+            name="country"
+            label="Country"
+            icon={Globe}
+            options={[
+              { label: 'India', value: 'India' },
+              { label: 'United States', value: 'USA' },
+              { label: 'United Kingdom', value: 'UK' },
+            ]}
+          />
 
           {/* Row 3 */}
-          <div className="md:col-span-6">
-            <FormInput
-              name="gstin"
-              label="GSTIN Number"
-              required
-              placeholder="e.g. 29ABCDE1234F1Z5"
-              icon={Hash}
-              rules={{ 
-                pattern: { 
-                  value: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 
-                  message: 'Invalid GSTIN format (India)' 
-                } 
-              }}
-            />
-          </div>
-          <div className="md:col-span-6">
+          <FormInput
+            name="gstin"
+            label="GSTIN Number"
+            required
+            placeholder="e.g. 29ABCDE1234F1Z5"
+            icon={Hash}
+            rules={{ 
+              pattern: { 
+                value: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 
+                message: 'Invalid GSTIN format (India)' 
+              } 
+            }}
+          />
+          <div className="md:col-span-2">
             <PhoneInput
               name="phone"
               label="Contact Number"
