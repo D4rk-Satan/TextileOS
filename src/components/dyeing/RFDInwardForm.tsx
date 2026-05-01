@@ -83,7 +83,7 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
           methods.setValue(`batches.${index}.millShortage`, parseFloat(shortage.toFixed(2)));
         }
       } else {
-        methods.setValue(`batches.${index}.millShortage`, 0);
+        methods.setValue(`batches.${index}.millShortage`, '');
       }
     });
   }, [watchedBatches, methods]);
@@ -131,7 +131,7 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
           rfdMtrs: '', // Default to blank
           isTP: false,
           tpDetail: '',
-          millShortage: 0
+          millShortage: ''
         }));
         replace(batchData);
       }
