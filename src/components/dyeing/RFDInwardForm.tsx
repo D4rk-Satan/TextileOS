@@ -49,16 +49,33 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
   // Calculate Total RFD Mtr
   const totalRFDMtr = watchedBatches?.reduce((sum: number, batch: any) => sum + (parseFloat(batch.rfdMtrs) || 0), 0) || 0;
 
-  // Real-time Mill Shortage Calculation
+  // Helper to parse TP Detail string (e.g. "90+10+20")
+  const calculateTPSum = (detail: string) => {
+    if (!detail) return 0;
+    const parts = detail.split(/[+\s,]+/).map(p => parseFloat(p)).filter(p => !isNaN(p));
+    return parts.reduce((sum, p) => sum + p, 0);
+  };
+
+  // Real-time Calculation Logic
   useEffect(() => {
     if (!watchedBatches) return;
 
     watchedBatches.forEach((batch: any, index: number) => {
       const grey = parseFloat(batch.greyMtrs) || 0;
-      const rfd = parseFloat(batch.rfdMtrs) || 0;
+      let rfd = parseFloat(batch.rfdMtrs) || 0;
+
+      // 1. Handle TP Logic: If TP is checked, calculate RFD Mtr from TP Detail
+      if (batch.isTP) {
+        const calculatedRFD = calculateTPSum(batch.tpDetail);
+        if (calculatedRFD !== rfd) {
+          methods.setValue(`batches.${index}.rfdMtrs`, parseFloat(calculatedRFD.toFixed(2)));
+          rfd = calculatedRFD;
+        }
+      }
       
+      // 2. Mill Shortage Calculation: ((RFD - Grey) / Grey) * 100
       if (grey > 0) {
-        const shortage = ((grey - rfd) / grey) * 100;
+        const shortage = ((rfd - grey) / grey) * 100;
         const currentShortage = methods.getValues(`batches.${index}.millShortage`);
         
         // Only update if the value has changed significantly (avoid infinite loops)
@@ -242,7 +259,12 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                           {...methods.register(`batches.${index}.rfdMtrs`, { required: true })}
                           type="number"
                           step="0.01"
-                          className="w-32 bg-card border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-center focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
+                          readOnly={methods.watch(`batches.${index}.isTP`)}
+                          className={`w-32 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-center outline-none transition-all ${
+                            methods.watch(`batches.${index}.isTP`) 
+                              ? "bg-muted/50 cursor-default" 
+                              : "bg-card focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
+                          }`}
                           placeholder="0.00"
                         />
                       </div>
