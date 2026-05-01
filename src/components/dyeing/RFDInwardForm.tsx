@@ -73,15 +73,17 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         }
       }
       
-      // 2. Mill Shortage Calculation: ((RFD - Grey) / Grey) * 100
-      if (grey > 0) {
-        const shortage = ((rfd - grey) / grey) * 100;
+      // 2. Mill Shortage Calculation: ((Grey - RFD) / RFD) * 100
+      if (rfd > 0) {
+        const shortage = ((grey - rfd) / rfd) * 100;
         const currentShortage = methods.getValues(`batches.${index}.millShortage`);
         
         // Only update if the value has changed significantly (avoid infinite loops)
         if (shortage.toFixed(2) !== parseFloat(currentShortage || 0).toFixed(2)) {
           methods.setValue(`batches.${index}.millShortage`, parseFloat(shortage.toFixed(2)));
         }
+      } else {
+        methods.setValue(`batches.${index}.millShortage`, 0);
       }
     });
   }, [watchedBatches, methods]);
@@ -126,7 +128,7 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
           batchNo: b.batchNo,
           lotNo: selectedOutward.lotNo,
           greyMtrs: b.mtrs,
-          rfdMtrs: b.mtrs, // Default to grey mtrs
+          rfdMtrs: '', // Default to blank
           isTP: false,
           tpDetail: '',
           millShortage: 0
