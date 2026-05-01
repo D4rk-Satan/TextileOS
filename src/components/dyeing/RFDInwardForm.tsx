@@ -323,8 +323,6 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
               </tbody>
             </table>
           </div>
-
-          </div>
         </div>
 
         <div className="flex items-center gap-4 mt-10">
