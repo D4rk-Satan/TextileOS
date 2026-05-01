@@ -151,126 +151,125 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="bg-card/50 backdrop-blur-md rounded-[2.5rem] p-8 border border-border shadow-xl">
-          <FormHeader title="Grey Outward" icon={Waves} color="blue" />
+        <FormHeader title="Grey Outward" icon={Waves} color="blue" />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
+          <FormInput
+            name="date"
+            label="Date"
+            type="date"
+            required
+            icon={Calendar}
+          />
+
+          <FormInput
+            name="dcNo"
+            label="DC No"
+            placeholder="Auto-assigned"
+            icon={Hash}
+            readOnly
+            variant="dark"
+          />
+
+          <FormInput
+            name="totalGreyMtr"
+            label="Total Grey Mtr"
+            icon={Hash}
+            readOnly
+            variant="dark"
+          />
+
+          <FormSelect
+            name="dyeingHouse"
+            label="Dyeing House"
+            required
+            placeholder="Select Dyeing House"
+            icon={Building2}
+            options={dyeingHouses}
+          />
+
+          <FormSelect
+            name="lotNo"
+            label="Lot No"
+            required
+            placeholder="Select Lot Number"
+            icon={Hash}
+            options={lotData.map(l => ({ label: l.lotNo, value: l.lotNo }))}
+          />
+
+          <FormInput
+            name="totalGreyBatch"
+            label="Total Grey Batch"
+            icon={Hash}
+            readOnly
+            variant="dark"
+          />
+
+          <div className="md:col-span-3">
             <FormInput
-              name="date"
-              label="Date"
-              type="date"
-              required
-              icon={Calendar}
+              name="remark"
+              label="Remark"
+              placeholder="Enter remarks (if any)"
+              icon={FileText}
             />
-
-            <FormInput
-              name="dcNo"
-              label="DC No"
-              placeholder="Auto-assigned"
-              icon={Hash}
-              readOnly
-              variant="dark"
-            />
-
-            <FormInput
-              name="totalGreyMtr"
-              label="Total Grey Mtr"
-              icon={Hash}
-              readOnly
-              variant="dark"
-            />
-
-            <FormSelect
-              name="dyeingHouse"
-              label="Dyeing House"
-              required
-              placeholder="Select Dyeing House"
-              icon={Building2}
-              options={dyeingHouses}
-            />
-
-            <FormSelect
-              name="lotNo"
-              label="Lot No"
-              required
-              placeholder="Select Lot Number"
-              icon={Hash}
-              options={lotData.map(l => ({ label: l.lotNo, value: l.lotNo }))}
-            />
-
-            <FormInput
-              name="totalGreyBatch"
-              label="Total Grey Batch"
-              icon={Hash}
-              readOnly
-              variant="dark"
-            />
-
-            <div className="md:col-span-3">
-              <FormInput
-                name="remark"
-                label="Remark"
-                placeholder="Enter remarks (if any)"
-                icon={FileText}
-              />
-            </div>
-          </div>
-
-          {/* Batch Selection Selection */}
-          {selectedLot && (
-            <div className="mt-8 pt-8 border-t border-border/50">
-              <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest mb-4 flex justify-between items-center">
-                <span>Select Batches to Outward (Lot #{selectedLotNo})</span>
-                <span className="text-[10px] bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full">{selectedLot.batches.length} Available</span>
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {selectedLot.batches.map((batch: any) => {
-                  const isSelected = (currentBatches || []).some((b: any) => b.id === batch.id);
-                  return (
-                    <button
-                      key={batch.id}
-                      type="button"
-                      onClick={() => toggleBatch(batch)}
-                      className={cn(
-                        "p-3 rounded-xl border transition-all flex flex-col items-center relative group",
-                        isSelected 
-                          ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20" 
-                          : "bg-muted/30 border-border/50 hover:border-blue-500/50"
-                      )}
-                    >
-                      <span className={cn(
-                        "text-[10px] font-black uppercase mb-1",
-                        isSelected ? "text-white/80" : "text-blue-600"
-                      )}>{batch.batchNo}</span>
-                      <span className="text-sm font-bold">{batch.mtrs.toFixed(2)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-4 mt-10">
-            <FormButton 
-                type="submit" 
-                variant="primary" 
-                disabled={isSubmitting}
-                className="h-12 px-10 rounded-xl font-bold uppercase tracking-wider shadow-lg shadow-blue-600/20 flex gap-2"
-            >
-              <Save size={18} />
-              {isSubmitting ? 'Submitting...' : 'Save Outward'}
-            </FormButton>
-            <FormButton 
-                type="button" 
-                onClick={onReset} 
-                variant="secondary" 
-                className="h-12 px-10 rounded-xl font-bold uppercase tracking-wider flex gap-2"
-            >
-              <RotateCcw size={18} />
-              Reset
-            </FormButton>
           </div>
         </div>
+
+        {/* Batch Selection Selection */}
+        {selectedLot && (
+          <div className="mt-8 pt-8 border-t border-border/50">
+            <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest mb-4 flex justify-between items-center">
+              <span>Select Batches to Outward (Lot #{selectedLotNo})</span>
+              <span className="text-[10px] bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full">{selectedLot.batches.length} Available</span>
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+              {selectedLot.batches.map((batch: any) => {
+                const isSelected = (currentBatches || []).some((b: any) => b.id === batch.id);
+                return (
+                  <button
+                    key={batch.id}
+                    type="button"
+                    onClick={() => toggleBatch(batch)}
+                    className={cn(
+                      "p-3 rounded-xl border transition-all flex flex-col items-center relative group",
+                      isSelected 
+                        ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20" 
+                        : "bg-muted/30 border-border/50 hover:border-blue-500/50"
+                    )}
+                  >
+                    <span className={cn(
+                      "text-[10px] font-black uppercase mb-1",
+                      isSelected ? "text-white/80" : "text-blue-600"
+                    )}>{batch.batchNo}</span>
+                    <span className="text-sm font-bold">{batch.mtrs.toFixed(2)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-4 mt-10">
+          <FormButton 
+              type="submit" 
+              variant="primary" 
+              disabled={isSubmitting}
+              className="h-12 px-10 rounded-xl font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 flex gap-2"
+          >
+            <Save size={18} />
+            {isSubmitting ? 'Submitting...' : 'Save Outward'}
+          </FormButton>
+          <FormButton 
+              type="button" 
+              onClick={onReset} 
+              variant="secondary" 
+              className="h-12 px-10 rounded-xl font-black uppercase tracking-wider flex gap-2"
+          >
+            <RotateCcw size={18} />
+            Reset
+          </FormButton>
+        </div>
+
       </form>
     </FormProvider>
   );
