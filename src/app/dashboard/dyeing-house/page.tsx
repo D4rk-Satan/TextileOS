@@ -18,10 +18,10 @@ import { RFDInwardForm } from '@/components/dyeing/RFDInwardForm';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getGreyOutwards, getRFDInwards } from '@/app/actions/dyeing';
+import { getGreyOutwards, getRFDInwards, getReadyForPrintingBatches } from '@/app/actions/dyeing';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 
-type TabType = 'grey-outward' | 'rfd-inward' | 'history';
+type TabType = 'grey-outward' | 'rfd-inward' | 'ready-for-printing' | 'history';
 
 function DyeingHousePageContent() {
   const searchParams = useSearchParams();
@@ -46,13 +46,16 @@ function DyeingHousePageContent() {
     } else if (activeTab === 'rfd-inward') {
       const result = await getRFDInwards();
       if (result?.success) setData(result.data || []);
+    } else if (activeTab === 'ready-for-printing') {
+      const result = await getReadyForPrintingBatches();
+      if (result?.success) setData(result.data || []);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
-    if (tab && ['grey-outward', 'rfd-inward', 'history'].includes(tab)) {
+    if (tab && ['grey-outward', 'rfd-inward', 'ready-for-printing', 'history'].includes(tab)) {
       setActiveTab(tab);
     }
     fetchData();
@@ -61,6 +64,7 @@ function DyeingHousePageContent() {
   const titles: Record<TabType, string> = {
     'grey-outward': 'Grey Outward',
     'rfd-inward': 'RFD Inward',
+    'ready-for-printing': 'Ready for Printing',
     'history': 'Processing History'
   };
 
@@ -106,6 +110,25 @@ function DyeingHousePageContent() {
           </div>
         </div>
       </HeaderPortal>
+      
+      {!showForm && (
+        <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-2xl w-fit border border-border/50">
+          {(['grey-outward', 'rfd-inward', 'ready-for-printing', 'history'] as TabType[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                activeTab === tab
+                  ? "bg-background text-blue-600 shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab.replace(/-/g, ' ')}
+            </button>
+          ))}
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {loading ? (
           <motion.div 
@@ -150,15 +173,21 @@ function DyeingHousePageContent() {
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest w-12"></th>
-                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Date</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">
-                      {activeTab === 'rfd-inward' ? 'Bill No' : 'Lot No'}
+                      {activeTab === 'ready-for-printing' ? 'Batch No' : 'Date'}
                     </th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">
-                      {activeTab === 'rfd-inward' ? 'Challan No' : 'Dyeing House'}
+                      {activeTab === 'ready-for-printing' ? 'Lot No' : (activeTab === 'rfd-inward' ? 'Bill No' : 'Lot No')}
                     </th>
-                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
-                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Remark</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">
+                      {activeTab === 'ready-for-printing' ? 'Meters (G / R)' : (activeTab === 'rfd-inward' ? 'Challan No' : 'Dyeing House')}
+                    </th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">
+                      {activeTab === 'ready-for-printing' ? 'Shortage' : 'Status'}
+                    </th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">
+                      {activeTab === 'ready-for-printing' ? 'TP Detail' : 'Remark'}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -175,16 +204,25 @@ function DyeingHousePageContent() {
                           />
                         </td>
                         <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
-                          {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          {activeTab === 'ready-for-printing' ? (
+                            <span className="font-black text-blue-600">{item.batchNo}</span>
+                          ) : (
+                            new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                          )}
                         </td>
                         <td className="px-8 py-5">
                           <span className="font-bold text-foreground">
-                            {activeTab === 'rfd-inward' ? item.billNo : `#${item.lotNo}`}
+                            {activeTab === 'ready-for-printing' ? `#${item.greyInward?.lotNo}` : (activeTab === 'rfd-inward' ? item.billNo : `#${item.lotNo}`)}
                           </span>
                         </td>
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-2">
-                             {activeTab === 'rfd-inward' ? (
+                             {activeTab === 'ready-for-printing' ? (
+                               <div className="flex flex-col">
+                                 <span className="text-xs font-bold text-foreground">{item.mtrs} / {item.rfdMtrs}</span>
+                                 <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">Grey / RFD</span>
+                               </div>
+                             ) : activeTab === 'rfd-inward' ? (
                                <span className="text-sm font-bold text-foreground">{item.challanNo}</span>
                              ) : (
                                <>
@@ -195,16 +233,30 @@ function DyeingHousePageContent() {
                           </div>
                         </td>
                         <td className="px-8 py-5">
-                          <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
-                            activeTab === 'grey-outward' 
-                              ? 'bg-orange-500/10 text-orange-500' 
-                              : 'bg-green-500/10 text-green-500'
-                          }`}>
-                            {activeTab === 'grey-outward' ? 'Out For RFD' : 'Inwarded'}
-                          </span>
+                          {activeTab === 'ready-for-printing' ? (
+                            <span className={`text-[11px] font-black ${Number(item.millShortage) < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                              {item.millShortage}%
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
+                              activeTab === 'grey-outward' 
+                                ? 'bg-orange-500/10 text-orange-500' 
+                                : 'bg-green-500/10 text-green-500'
+                            }`}>
+                              {activeTab === 'grey-outward' ? 'Out For RFD' : 'Inwarded'}
+                            </span>
+                          )}
                         </td>
                         <td className="px-8 py-5 text-sm text-muted-foreground italic">
-                          {item.remark || '-'}
+                          {activeTab === 'ready-for-printing' ? (
+                            <div className="flex items-center gap-2">
+                              {item.isTP ? (
+                                <span className="bg-indigo-500/10 text-indigo-500 px-2 py-0.5 rounded text-[10px] font-black uppercase">{item.tpDetail}</span>
+                              ) : '-'}
+                            </div>
+                          ) : (
+                            item.remark || '-'
+                          )}
                         </td>
                       </tr>
                       

@@ -145,8 +145,8 @@ export async function createGreyOutward(data: DyeingActionData) {
 
     if (inward) {
       const allBatches = inward.batches as Batch[];
-      const allOut = allBatches.every(b => b.status === 'Out For RFD' || b.status === 'RFD Inward');
-      const someOut = allBatches.some(b => b.status === 'Out For RFD' || b.status === 'RFD Inward');
+      const allOut = allBatches.every(b => b.status === 'Out For RFD' || b.status === 'Ready for Printing');
+      const someOut = allBatches.some(b => b.status === 'Out For RFD' || b.status === 'Ready for Printing');
       
       await prisma.greyInward.update({
         where: { id: inward.id },
@@ -246,7 +246,7 @@ export async function createRFDInward(data: RFDInwardActionData) {
             await prisma.batch.update({
               where: { id: batchData.id },
               data: {
-                status: 'RFD Inward',
+                status: 'Ready for Printing',
                 rfdMtrs: parts[0],
                 isTP: true,
                 tpDetail: batchData.tpDetail,
@@ -262,7 +262,7 @@ export async function createRFDInward(data: RFDInwardActionData) {
                   batchNo: `${originalBatch.batchNo} (P${i + 1})`,
                   mtrs: 0, // 0 grey meters to avoid double counting
                   weight: 0,
-                  status: 'RFD Inward',
+                  status: 'Ready for Printing',
                   rfdMtrs: parts[i],
                   isTP: true,
                   tpDetail: batchData.tpDetail,
@@ -278,7 +278,7 @@ export async function createRFDInward(data: RFDInwardActionData) {
           await prisma.batch.update({
             where: { id: batchData.id },
             data: {
-              status: 'RFD Inward',
+              status: 'Ready for Printing',
               rfdMtrs: batchData.rfdMtrs,
               isTP: false,
               tpDetail: batchData.tpDetail,
@@ -300,11 +300,11 @@ export async function createRFDInward(data: RFDInwardActionData) {
 
       if (inward) {
         const allBatches = inward.batches as Batch[];
-        const allRFD = allBatches.every(b => b.status === 'RFD Inward');
+        const allRFD = allBatches.every(b => b.status === 'Ready for Printing');
         await prisma.greyInward.update({
           where: { id: inward.id },
           data: {
-            status: allRFD ? 'RFD Inward' : 'Out For RFD'
+            status: allRFD ? 'Ready for Printing' : 'Out For RFD'
           }
         });
       }
@@ -397,3 +397,36 @@ export async function getRFDInwards() {
       return { success: false, error: error.message };
     }
   }
+
+export async function getReadyForPrintingBatches() {
+  try {
+    const orgId = await getOrgId();
+    const batches = await prisma.batch.findMany({
+      where: {
+        greyInward: { organizationId: orgId },
+        status: 'Ready for Printing'
+      },
+      include: {
+        greyInward: {
+          include: { customer: true }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    const serializedData = batches.map(batch => ({
+      ...batch,
+      mtrs: Number(batch.mtrs),
+      rfdMtrs: Number(batch.rfdMtrs),
+      millShortage: Number(batch.millShortage),
+      greyInward: {
+        ...batch.greyInward,
+        totalMtr: Number(batch.greyInward.totalMtr)
+      }
+    }));
+
+    return { success: true, data: serializedData };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
