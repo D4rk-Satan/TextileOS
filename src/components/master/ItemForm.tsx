@@ -76,7 +76,7 @@ export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
             ) : (
               <Save size={18} />
             )}
-            Create Item
+            Save Record
           </FormButton>
           <FormButton 
             type="button" 
@@ -86,7 +86,7 @@ export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
             className="h-12 px-10 rounded-xl font-black uppercase tracking-wider flex gap-2"
           >
             <RotateCcw size={18} />
-            Clear Fields
+            Reset
           </FormButton>
         </div>
       </form>

@@ -154,68 +154,64 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
         <div className="bg-card/50 backdrop-blur-md rounded-[2.5rem] p-8 border border-border shadow-xl">
           <FormHeader title="Grey Outward" icon={Waves} color="blue" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
-            <div className="space-y-6">
-              <FormInput
-                name="date"
-                label="Date"
-                type="date"
-                required
-                icon={Calendar}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
+            <FormInput
+              name="date"
+              label="Date"
+              type="date"
+              required
+              icon={Calendar}
+            />
 
-              <FormSelect
-                name="dyeingHouse"
-                label="Dyeing House"
-                required
-                placeholder="Select Dyeing House"
-                icon={Building2}
-                options={dyeingHouses}
-              />
-            </div>
+            <FormInput
+              name="dcNo"
+              label="DC No"
+              placeholder="Auto-assigned"
+              icon={Hash}
+              readOnly
+              variant="dark"
+            />
 
-            <div className="space-y-6">
-              <FormInput
-                name="dcNo"
-                label="DC No"
-                placeholder="Auto-assigned"
-                icon={Hash}
-                readOnly
-                variant="dark"
-              />
+            <FormInput
+              name="totalGreyMtr"
+              label="Total Grey Mtr"
+              icon={Hash}
+              readOnly
+              variant="dark"
+            />
 
-              <FormSelect
-                name="lotNo"
-                label="Lot No"
-                required
-                placeholder="Select Lot Number"
-                icon={Hash}
-                options={lotData.map(l => ({ label: l.lotNo, value: l.lotNo }))}
-              />
+            <FormSelect
+              name="dyeingHouse"
+              label="Dyeing House"
+              required
+              placeholder="Select Dyeing House"
+              icon={Building2}
+              options={dyeingHouses}
+            />
 
+            <FormSelect
+              name="lotNo"
+              label="Lot No"
+              required
+              placeholder="Select Lot Number"
+              icon={Hash}
+              options={lotData.map(l => ({ label: l.lotNo, value: l.lotNo }))}
+            />
+
+            <FormInput
+              name="totalGreyBatch"
+              label="Total Grey Batch"
+              icon={Hash}
+              readOnly
+              variant="dark"
+            />
+
+            <div className="md:col-span-3">
               <FormInput
                 name="remark"
                 label="Remark"
                 placeholder="Enter remarks (if any)"
                 icon={FileText}
-              />
-            </div>
-
-            <div className="space-y-6">
-              <FormInput
-                name="totalGreyMtr"
-                label="Total Grey Mtr"
-                icon={Hash}
-                readOnly
-                variant="dark"
-              />
-
-              <FormInput
-                name="totalGreyBatch"
-                label="Total Grey Batch"
-                icon={Hash}
-                readOnly
-                variant="dark"
               />
             </div>
           </div>

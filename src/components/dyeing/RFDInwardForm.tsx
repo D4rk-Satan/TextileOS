@@ -139,46 +139,42 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
           <FormHeader title="RFD Inward" icon={Layers} color="indigo" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-            <div className="space-y-6">
-              <FormSelect
-                name="dyeingHouse"
-                label="Dyeing House Name"
-                required
-                placeholder="Select Dyeing House"
-                icon={Building2}
-                options={dyeingHouses}
-              />
+            <FormSelect
+              name="dyeingHouse"
+              label="Dyeing House Name"
+              required
+              placeholder="Select Dyeing House"
+              icon={Building2}
+              options={dyeingHouses}
+            />
 
-              <FormInput
-                name="date"
-                label="Date"
-                type="date"
-                required
-                icon={Calendar}
-              />
-            </div>
+            <FormInput
+              name="billNo"
+              label="Bill No"
+              required
+              placeholder="Enter Bill Number"
+              icon={Hash}
+            />
 
-            <div className="space-y-6">
-              <FormInput
-                name="billNo"
-                label="Bill No"
-                required
-                placeholder="Enter Bill Number"
-                icon={Hash}
-              />
+            <FormInput
+              name="date"
+              label="Date"
+              type="date"
+              required
+              icon={Calendar}
+            />
 
-              <FormSelect
-                name="challanNo"
-                label="Challan No"
-                required
-                placeholder="Select Challan"
-                icon={FileText}
-                options={outwards.map(o => ({ 
-                  label: `${o.challanNo} Lot-${o.lotNo}`, 
-                  value: o.id 
-                }))}
-              />
-            </div>
+            <FormSelect
+              name="challanNo"
+              label="Challan No"
+              required
+              placeholder="Select Challan"
+              icon={FileText}
+              options={outwards.map(o => ({ 
+                label: `${o.challanNo} Lot-${o.lotNo}`, 
+                value: o.id 
+              }))}
+            />
           </div>
 
           {/* Batch Info Table */}

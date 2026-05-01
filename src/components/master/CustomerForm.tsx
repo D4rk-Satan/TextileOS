@@ -62,7 +62,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
         
         <div className="grid grid-cols-1 md:grid-cols-12 gap-x-12 gap-y-8">
           {/* Row 1 */}
-          <div className="md:col-span-6">
+          <div className="md:col-span-4">
             <FormInput
               name="customerName"
               label="Customer Name"
@@ -72,15 +72,15 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               rules={{ minLength: { value: 3, message: 'Name too short' } }}
             />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
           </div>
 
           {/* Row 2 */}
-          <div className="md:col-span-6">
+          <div className="md:col-span-4">
             <FormInput
               name="address"
               label="Street Address"
@@ -88,10 +88,10 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               icon={MapPin}
             />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" icon={Hash} />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <FormSelect
               name="country"
               label="Country"
@@ -146,7 +146,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
             ) : (
               <>
                 <Save size={18} />
-                Submit Record
+                Save Record
               </>
             )}
           </FormButton>
@@ -158,7 +158,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
             className="h-12 px-10 rounded-xl font-black uppercase tracking-wider flex gap-2"
           >
             <RotateCcw size={18} />
-            Reset Form
+            Reset
           </FormButton>
         </div>
       </form>
