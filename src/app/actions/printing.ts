@@ -107,9 +107,9 @@ export async function getOutForPrintingLots() {
       orderBy: { createdAt: 'desc' }
     });
 
-    const serializedData = issues.filter(i => i.batches.length > 0).map(issue => ({
+    const serializedData = issues.filter((i: any) => i.batches.length > 0).map((issue: any) => ({
       ...issue,
-      batches: issue.batches.map(batch => ({
+      batches: issue.batches.map((batch: any) => ({
         ...batch,
         mtrs: Number(batch.mtrs),
         rfdMtrs: Number(batch.rfdMtrs)

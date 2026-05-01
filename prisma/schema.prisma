@@ -20,6 +20,8 @@ model Organization {
   inwards      GreyInward[]
   greyOutwards GreyOutward[]
   rfdInwards   RFDInward[]
+  printingIssues PrintingIssue[]
+  printingReceives PrintingReceive[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
