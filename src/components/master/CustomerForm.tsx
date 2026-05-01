@@ -61,26 +61,45 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
         <FormHeader title="Customer Information" icon={Users} color="blue" />
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
-          {/* Row 1 */}
+          {/* Row 1: Long Name + Short GSTIN */}
+          <div className="md:col-span-2">
+            <FormInput
+              name="customerName"
+              label="Customer Name"
+              required
+              placeholder="Full legal name"
+              icon={User}
+              rules={{ minLength: { value: 3, message: 'Name too short' } }}
+            />
+          </div>
           <FormInput
-            name="customerName"
-            label="Customer Name"
+            name="gstin"
+            label="GSTIN Number"
             required
-            placeholder="Full legal name"
-            icon={User}
-            rules={{ minLength: { value: 3, message: 'Name too short' } }}
+            placeholder="e.g. 29ABC..."
+            icon={Hash}
+            rules={{ 
+              pattern: { 
+                value: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 
+                message: 'Invalid GSTIN format' 
+              } 
+            }}
           />
+
+          {/* Row 2: Long Address + Short Pincode */}
+          <div className="md:col-span-2">
+            <FormInput
+              name="address"
+              label="Street Address"
+              placeholder="Complete street address"
+              icon={MapPin}
+            />
+          </div>
+          <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" icon={Hash} />
+
+          {/* Row 3: Balanced geographic info */}
           <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
           <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
-
-          {/* Row 2 */}
-          <FormInput
-            name="address"
-            label="Street Address"
-            placeholder="Complete street address"
-            icon={MapPin}
-          />
-          <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" icon={Hash} />
           <FormSelect
             name="country"
             label="Country"
@@ -92,21 +111,8 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
             ]}
           />
 
-          {/* Row 3 */}
-          <FormInput
-            name="gstin"
-            label="GSTIN Number"
-            required
-            placeholder="e.g. 29ABCDE1234F1Z5"
-            icon={Hash}
-            rules={{ 
-              pattern: { 
-                value: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 
-                message: 'Invalid GSTIN format (India)' 
-              } 
-            }}
-          />
-          <div className="md:col-span-2">
+          {/* Row 4: Full-width Contact Number (mirroring Remark field style) */}
+          <div className="md:col-span-3">
             <PhoneInput
               name="phone"
               label="Contact Number"

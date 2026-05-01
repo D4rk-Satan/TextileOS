@@ -60,52 +60,55 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
         <FormHeader title="Vendor Information" icon={ShoppingBag} color="blue" />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
-          <FormInput
-            name="vendorName"
-            label="Vendor Name"
-            required
-            placeholder="Primary vendor name"
-            icon={User}
-          />
-
+          {/* Row 1: Long Name + Short GSTIN */}
+          <div className="md:col-span-2">
+            <FormInput
+              name="vendorName"
+              label="Vendor Name"
+              required
+              placeholder="Primary vendor name"
+              icon={User}
+            />
+          </div>
           <FormInput
             name="gstin"
             label="GSTIN Number"
             required
-            placeholder="e.g. 29ABCDE1234F1Z5"
+            placeholder="e.g. 29ABC..."
             icon={Hash}
             rules={{ 
               pattern: { 
                 value: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 
-                message: 'Invalid GSTIN format (India)' 
+                message: 'Invalid GSTIN format' 
               } 
             }}
           />
 
-          <FormInput
-            name="addressLine1"
-            label="Street Address"
-            placeholder="Street, building name, etc."
-            icon={MapPin}
-          />
-
-          <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
-          <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
-          <FormInput name="postalCode" label="Pincode" placeholder="6-digits" icon={Hash} />
-
-          <div className="md:col-span-1">
-            <FormSelect
-              name="country"
-              label="Country"
-              icon={Globe}
-              options={[
-                { label: 'India', value: 'India' },
-                { label: 'China', value: 'China' },
-                { label: 'Bangladesh', value: 'Bangladesh' },
-                { label: 'Vietnam', value: 'Vietnam' },
-              ]}
+          {/* Row 2: Long Address + Short Pincode */}
+          <div className="md:col-span-2">
+            <FormInput
+              name="addressLine1"
+              label="Street Address"
+              placeholder="Street, building name, etc."
+              icon={MapPin}
             />
           </div>
+          <FormInput name="postalCode" label="Pincode" placeholder="6-digits" icon={Hash} />
+
+          {/* Row 3: Balanced geographic info */}
+          <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
+          <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
+          <FormSelect
+            name="country"
+            label="Country"
+            icon={Globe}
+            options={[
+              { label: 'India', value: 'India' },
+              { label: 'China', value: 'China' },
+              { label: 'Bangladesh', value: 'Bangladesh' },
+              { label: 'Vietnam', value: 'Vietnam' },
+            ]}
+          />
         </div>
 
         <div className="flex items-center gap-4 mt-10 pt-0">
