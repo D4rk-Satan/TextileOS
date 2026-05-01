@@ -60,16 +60,13 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
         <FormHeader title="Vendor Information" icon={ShoppingBag} color="blue" />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
-          {/* Row 1: Long Name + Short GSTIN */}
-          <div className="md:col-span-2">
-            <FormInput
-              name="vendorName"
-              label="Vendor Name"
-              required
-              placeholder="Primary vendor name"
-              icon={User}
-            />
-          </div>
+          <FormInput
+            name="vendorName"
+            label="Vendor Name"
+            required
+            placeholder="Primary vendor name"
+            icon={User}
+          />
           <FormInput
             name="gstin"
             label="GSTIN Number"
@@ -83,21 +80,17 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
               } 
             }}
           />
+          <FormInput
+            name="addressLine1"
+            label="Street Address"
+            placeholder="Street, building name, etc."
+            icon={MapPin}
+          />
 
-          {/* Row 2: Long Address + Short Pincode */}
-          <div className="md:col-span-2">
-            <FormInput
-              name="addressLine1"
-              label="Street Address"
-              placeholder="Street, building name, etc."
-              icon={MapPin}
-            />
-          </div>
-          <FormInput name="postalCode" label="Pincode" placeholder="6-digits" icon={Hash} />
-
-          {/* Row 3: Balanced geographic info */}
           <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
           <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
+          <FormInput name="postalCode" label="Pincode" placeholder="6-digits" icon={Hash} />
+
           <FormSelect
             name="country"
             label="Country"

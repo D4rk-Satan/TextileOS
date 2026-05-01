@@ -61,17 +61,14 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
         <FormHeader title="Customer Information" icon={Users} color="blue" />
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
-          {/* Row 1: Long Name + Short GSTIN */}
-          <div className="md:col-span-2">
-            <FormInput
-              name="customerName"
-              label="Customer Name"
-              required
-              placeholder="Full legal name"
-              icon={User}
-              rules={{ minLength: { value: 3, message: 'Name too short' } }}
-            />
-          </div>
+          <FormInput
+            name="customerName"
+            label="Customer Name"
+            required
+            placeholder="Full legal name"
+            icon={User}
+            rules={{ minLength: { value: 3, message: 'Name too short' } }}
+          />
           <FormInput
             name="gstin"
             label="GSTIN Number"
@@ -85,21 +82,17 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               } 
             }}
           />
+          <FormInput
+            name="address"
+            label="Street Address"
+            placeholder="Complete street address"
+            icon={MapPin}
+          />
 
-          {/* Row 2: Long Address + Short Pincode */}
-          <div className="md:col-span-2">
-            <FormInput
-              name="address"
-              label="Street Address"
-              placeholder="Complete street address"
-              icon={MapPin}
-            />
-          </div>
-          <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" icon={Hash} />
-
-          {/* Row 3: Balanced geographic info */}
           <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
           <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
+          <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" icon={Hash} />
+
           <FormSelect
             name="country"
             label="Country"
@@ -110,17 +103,13 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               { label: 'United Kingdom', value: 'UK' },
             ]}
           />
-
-          {/* Row 4: Full-width Contact Number (mirroring Remark field style) */}
-          <div className="md:col-span-3">
-            <PhoneInput
-              name="phone"
-              label="Contact Number"
-              required
-              icon={Phone}
-              rules={{ pattern: { value: /^\d{10}$/, message: 'Must be 10 digits' } }}
-            />
-          </div>
+          <PhoneInput
+            name="phone"
+            label="Contact Number"
+            required
+            icon={Phone}
+            rules={{ pattern: { value: /^\d{10}$/, message: 'Must be 10 digits' } }}
+          />
         </div>
 
         <div className="flex items-center gap-4 mt-10 pt-0">
