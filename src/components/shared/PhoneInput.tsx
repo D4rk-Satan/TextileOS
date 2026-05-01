@@ -4,10 +4,13 @@ import React from 'react';
 import { useFormContext, Controller, RegisterOptions } from 'react-hook-form';
 import { cn } from '@/lib/utils';
 
+import { LucideIcon } from 'lucide-react';
+
 interface PhoneInputProps {
   name: string;
   label: string;
   required?: boolean;
+  icon?: LucideIcon;
   rules?: RegisterOptions;
   className?: string;
 }
@@ -21,7 +24,7 @@ const countryCodes = [
   { code: '+65', country: 'SG' },
 ];
 
-export function PhoneInput({ name, label, required, rules, className }: PhoneInputProps) {
+export function PhoneInput({ name, label, required, icon: Icon, rules, className }: PhoneInputProps) {
   const {
     control,
     formState: { errors },
@@ -35,10 +38,10 @@ export function PhoneInput({ name, label, required, rules, className }: PhoneInp
         {label}
         {required && <span className="text-blue-600 font-bold">*</span>}
       </label>
-      <div className="flex gap-2">
-        <div className="relative min-w-[90px]">
+      <div className="flex gap-2 relative group">
+        <div className="relative min-w-[100px]">
           <select
-            className="flex h-9 w-full rounded-lg border border-border bg-white/50 dark:bg-black/20 px-2 py-2 text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 appearance-none cursor-pointer"
+            className="flex h-11 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm transition-all focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 appearance-none cursor-pointer font-bold shadow-sm"
             defaultValue="+91"
           >
             {countryCodes.map((c) => (
@@ -47,26 +50,40 @@ export function PhoneInput({ name, label, required, rules, className }: PhoneInp
               </option>
             ))}
           </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/50">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 3L5 7L9 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
         </div>
-        <Controller
-          name={name}
-          control={control}
-          rules={{ 
-            required: required ? 'Phone number is required' : false,
-            ...rules 
-          }}
-          render={({ field }) => (
-            <input
-              {...field}
-              type="tel"
-              placeholder="00000 00000"
-              className={cn(
-                'flex h-9 w-full rounded-lg border border-border bg-white/50 dark:bg-black/20 px-3 py-2 text-sm transition-all placeholder:text-muted-foreground outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50',
-                error ? 'border-red-500 focus:ring-red-500/10' : 'hover:border-blue-400 dark:hover:border-blue-500'
-              )}
-            />
+        
+        <div className="relative flex-1">
+          {Icon && (
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-blue-600 transition-colors pointer-events-none">
+              <Icon size={16} />
+            </div>
           )}
-        />
+          <Controller
+            name={name}
+            control={control}
+            rules={{ 
+              required: required ? 'Phone number is required' : false,
+              ...rules 
+            }}
+            render={({ field }) => (
+              <input
+                {...field}
+                type="tel"
+                placeholder="00000 00000"
+                className={cn(
+                  'flex h-11 w-full rounded-xl border border-border bg-card py-2 text-sm transition-all placeholder:text-muted-foreground/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 shadow-sm font-medium',
+                  Icon ? 'pl-11 pr-4' : 'px-4',
+                  error ? 'border-red-500/50 focus:ring-red-500/10' : 'hover:border-blue-500/50'
+                )}
+              />
+            )}
+          />
+        </div>
       </div>
       {error && (
         <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider ml-1 mt-0.5">
@@ -76,3 +93,4 @@ export function PhoneInput({ name, label, required, rules, className }: PhoneInp
     </div>
   );
 }
+
