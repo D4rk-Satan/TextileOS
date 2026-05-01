@@ -73,9 +73,9 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         }
       }
       
-      // 2. Mill Shortage Calculation: (Grey - RFD) / 100
-      if (rfd > 0) {
-        const shortage = (grey - rfd) / 100;
+      // 2. Mill Shortage Calculation: ((Grey - RFD) / Grey) * 100
+      if (rfd > 0 && grey > 0) {
+        const shortage = ((grey - rfd) / grey) * 100;
         const currentShortage = methods.getValues(`batches.${index}.millShortage`);
         
         // Only update if the value has changed significantly (avoid infinite loops)
@@ -221,9 +221,18 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
         {/* Batch Info Table */}
         <div className="mt-10">
-          <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest">Batch Info</h4>
-            <Info size={14} className="text-muted-foreground" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest">Batch Info</h4>
+              <Info size={14} className="text-muted-foreground" />
+            </div>
+
+            <div className="bg-muted/30 border border-border/50 rounded-xl px-4 py-2 flex items-center gap-4 shadow-sm">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total RFD Mtr</span>
+              <span className="text-lg font-black text-indigo-600">
+                {totalRFDMtr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
           </div>
           
           <div className="overflow-hidden rounded-2xl border border-border/50 bg-muted/20">
@@ -235,7 +244,7 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                   <th className="px-4 py-3 text-center">RFD Mtr <span className="text-red-500">*</span></th>
                   <th className="px-4 py-3 text-center">TP</th>
                   <th className="px-4 py-3">TP Detail</th>
-                  <th className="px-4 py-3 text-right">Mill Short...</th>
+                  <th className="px-4 py-3 text-right min-w-[140px]">Mill Shortage (%)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
@@ -298,7 +307,7 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
                         type="number"
                         step="0.01"
                         readOnly
-                        className="w-28 bg-muted/50 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-right outline-none cursor-default ml-auto"
+                        className="w-32 bg-muted/50 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-right outline-none cursor-default ml-auto"
                         placeholder="0.00"
                       />
                     </td>
@@ -315,16 +324,6 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
             </table>
           </div>
 
-          {/* Summary Section */}
-          <div className="mt-4 flex justify-end">
-            <div className="bg-muted/30 border border-border/50 rounded-xl px-6 py-4 flex items-center gap-8 shadow-sm">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Total RFD Mtr</span>
-                <span className="text-xl font-black text-indigo-600">
-                  {totalRFDMtr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
 

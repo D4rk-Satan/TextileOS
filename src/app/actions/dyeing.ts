@@ -231,17 +231,62 @@ export async function createRFDInward(data: RFDInwardActionData) {
 
       // 2. Update each batch with its RFD specific data and status
       for (const batchData of data.batches) {
-        await prisma.batch.update({
-          where: { id: batchData.id },
-          data: {
-            status: 'RFD Inward',
-            rfdMtrs: batchData.rfdMtrs,
-            isTP: batchData.isTP,
-            tpDetail: batchData.tpDetail,
-            millShortage: batchData.millShortage,
-            rfdInwardId: rfdInward.id
-          }
+        // Fetch original batch to get related IDs for splitting
+        const originalBatch = await prisma.batch.findUnique({
+          where: { id: batchData.id }
         });
+
+        if (!originalBatch) continue;
+
+        if (batchData.isTP && batchData.tpDetail) {
+          const parts = batchData.tpDetail.split(/[+\s,]+/).map(p => parseFloat(p)).filter(p => !isNaN(p));
+          
+          if (parts.length > 0) {
+            // Update the original batch with the first part
+            await prisma.batch.update({
+              where: { id: batchData.id },
+              data: {
+                status: 'RFD Inward',
+                rfdMtrs: parts[0],
+                isTP: true,
+                tpDetail: batchData.tpDetail,
+                millShortage: batchData.millShortage,
+                rfdInwardId: rfdInward.id
+              }
+            });
+
+            // Create new batches for the remaining parts
+            for (let i = 1; i < parts.length; i++) {
+              await prisma.batch.create({
+                data: {
+                  batchNo: `${originalBatch.batchNo} (P${i + 1})`,
+                  mtrs: 0, // 0 grey meters to avoid double counting
+                  weight: 0,
+                  status: 'RFD Inward',
+                  rfdMtrs: parts[i],
+                  isTP: true,
+                  tpDetail: batchData.tpDetail,
+                  greyInwardId: originalBatch.greyInwardId,
+                  greyOutwardId: originalBatch.greyOutwardId,
+                  rfdInwardId: rfdInward.id
+                }
+              });
+            }
+          }
+        } else {
+          // Standard update for non-TP batches
+          await prisma.batch.update({
+            where: { id: batchData.id },
+            data: {
+              status: 'RFD Inward',
+              rfdMtrs: batchData.rfdMtrs,
+              isTP: false,
+              tpDetail: batchData.tpDetail,
+              millShortage: batchData.millShortage,
+              rfdInwardId: rfdInward.id
+            }
+          });
+        }
       }
 
       // 3. Update parent GreyInward status
