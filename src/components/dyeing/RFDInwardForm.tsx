@@ -73,9 +73,9 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         }
       }
       
-      // 2. Mill Shortage Calculation: ((Grey - RFD) / RFD) * 100
+      // 2. Mill Shortage Calculation: (Grey - RFD) / 100
       if (rfd > 0) {
-        const shortage = ((grey - rfd) / rfd) * 100;
+        const shortage = (grey - rfd) / 100;
         const currentShortage = methods.getValues(`batches.${index}.millShortage`);
         
         // Only update if the value has changed significantly (avoid infinite loops)
