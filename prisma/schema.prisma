@@ -74,6 +74,8 @@ model Vendor {
   organizationId String?
   greyOutwards   GreyOutward[]
   rfdInwards     RFDInward[]
+  printingIssues PrintingIssue[] @relation("Printer")
+  printingReceives PrintingReceive[] @relation("PrinterReceive")
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -136,6 +138,15 @@ model Batch {
   isTP          Boolean    @default(false)
   tpDetail      String?
   millShortage  Decimal?   @db.Decimal(10, 2)
+
+  printingIssue     PrintingIssue?   @relation(fields: [printingIssueId], references: [id])
+  printingIssueId   String?
+
+  printingReceive   PrintingReceive? @relation(fields: [printingReceiveId], references: [id])
+  printingReceiveId String?
+
+  printMtrs        Decimal?   @db.Decimal(10, 2)
+  printShortage    Decimal?   @db.Decimal(10, 2)
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -173,5 +184,40 @@ model RFDInward {
   updatedAt       DateTime    @updatedAt
   billNo          String?
   challanNo       String?
+  batches         Batch[]
+}
+
+model PrintingIssue {
+  id              String      @id @default(cuid())
+  date            DateTime
+  lotNo           String
+  printerId       String
+  printer         Vendor      @relation("Printer", fields: [printerId], references: [id])
+  challanNo       String?
+  remark          String?
+  
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  batches         Batch[]
+}
+
+model PrintingReceive {
+  id              String      @id @default(cuid())
+  date            DateTime
+  lotNo           String
+  printerId       String
+  printer         Vendor      @relation("PrinterReceive", fields: [printerId], references: [id])
+  billNo          String?
+  challanNo       String?
+  remark          String?
+  
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   batches         Batch[]
 }

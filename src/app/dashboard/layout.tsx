@@ -83,6 +83,17 @@ export default function DashboardLayout({
       subItems: [
         { name: 'Grey Outward', href: '/dashboard/dyeing-house?tab=grey-outward', icon: Droplets },
         { name: 'RFD Inward', href: '/dashboard/dyeing-house?tab=rfd-inward', icon: Layers },
+        { name: 'Ready For Printing', href: '/dashboard/dyeing-house?tab=ready-for-printing', icon: Printer },
+      ]
+    },
+    { 
+      name: 'Printing Process', 
+      href: '/dashboard/printing-process', 
+      icon: Printer,
+      isDropdown: true,
+      subItems: [
+        { name: 'Issue For Printing', href: '/dashboard/printing-process?tab=issue', icon: FileText },
+        { name: 'Receive From Printing', href: '/dashboard/printing-process?tab=receive', icon: RotateCcw },
       ]
     },
     { name: 'Reports', href: '/dashboard/reports', icon: FileText },
