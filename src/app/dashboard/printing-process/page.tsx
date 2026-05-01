@@ -104,24 +104,6 @@ function PrintingProcessPageContent() {
         </div>
       </HeaderPortal>
 
-      {!showForm && (
-        <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-2xl w-fit border border-border/50">
-          {(['issue', 'receive'] as TabType[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                activeTab === tab
-                  ? "bg-background text-blue-600 shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      )}
-
       <AnimatePresence mode="wait">
         {loading ? (
           <div className="h-96 flex items-center justify-center">
