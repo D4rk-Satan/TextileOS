@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyOutwards, getRFDInwards, getReadyForPrintingBatches } from '@/app/actions/dyeing';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 
-type TabType = 'grey-outward' | 'rfd-inward' | 'ready-for-printing';
+type TabType = 'grey-outward' | 'rfd-inward';
 
 function DyeingHousePageContent() {
   const searchParams = useSearchParams();
@@ -46,16 +46,13 @@ function DyeingHousePageContent() {
     } else if (activeTab === 'rfd-inward') {
       const result = await getRFDInwards();
       if (result?.success) setData(result.data || []);
-    } else if (activeTab === 'ready-for-printing') {
-      const result = await getReadyForPrintingBatches();
-      if (result?.success) setData(result.data || []);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
-    if (tab && ['grey-outward', 'rfd-inward', 'ready-for-printing'].includes(tab)) {
+    if (tab && ['grey-outward', 'rfd-inward'].includes(tab)) {
       setActiveTab(tab);
     }
     fetchData();
@@ -63,8 +60,7 @@ function DyeingHousePageContent() {
 
   const titles: Record<TabType, string> = {
     'grey-outward': 'Grey Outward',
-    'rfd-inward': 'RFD Inward',
-    'ready-for-printing': 'Ready for Printing'
+    'rfd-inward': 'RFD Inward'
   };
 
   const handleRecordAdded = () => {

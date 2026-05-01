@@ -83,7 +83,6 @@ export default function DashboardLayout({
       subItems: [
         { name: 'Grey Outward', href: '/dashboard/dyeing-house?tab=grey-outward', icon: Droplets },
         { name: 'RFD Inward', href: '/dashboard/dyeing-house?tab=rfd-inward', icon: Layers },
-        { name: 'Ready For Printing', href: '/dashboard/dyeing-house?tab=ready-for-printing', icon: Printer },
       ]
     },
     { 

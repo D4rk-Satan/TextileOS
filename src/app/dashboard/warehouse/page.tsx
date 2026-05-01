@@ -42,6 +42,11 @@ function WarehousePageContent() {
       if (result?.success) {
         setData(result.data || []);
       }
+    } else if (activeTab === 'ready-for-printing') {
+      const result = await getBatches('Ready for Printing');
+      if (result?.success) {
+        setData(result.data || []);
+      }
     } else {
       setData([]);
     }
@@ -212,9 +217,9 @@ function WarehousePageContent() {
               />
             </div>
           </motion.div>
-        ) : (activeTab === 'batches' || activeTab === 'out-for-rfd') ? (
+        ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing') ? (
           <BatchList batches={data} />
-        ) : (activeTab === 'ready-for-printing' || activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
+        ) : (activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
           <div key="placeholder" className="bg-card/50 rounded-[2.5rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm">
              <EmptyState 
                 title={`${titles[activeTab]} Coming Soon`}
