@@ -20,6 +20,7 @@ import { motion } from 'framer-motion';
 import { createGreyOutward, getDyeingHouses, getGreyInwardsForOutward, getNextDCNumber } from '@/app/actions/dyeing';
 import { useWatch } from 'react-hook-form';
 import { cn } from '@/lib/utils';
+import { FormHeader } from '@/components/shared/FormHeader';
 export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
   const methods = useForm({
     defaultValues: {
@@ -151,12 +152,7 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
         <div className="bg-card/50 backdrop-blur-md rounded-[2.5rem] p-8 border border-border shadow-xl">
-          <div className="flex items-center gap-3 mb-8 border-b border-border/50 pb-4">
-            <div className="p-2 bg-blue-600/10 rounded-xl text-blue-600">
-              <Waves size={20} />
-            </div>
-            <h3 className="text-xl font-black text-foreground tracking-tight uppercase">Grey Outward</h3>
-          </div>
+          <FormHeader title="Grey Outward" icon={Waves} color="blue" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
             <div className="space-y-6">

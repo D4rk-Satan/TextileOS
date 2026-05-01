@@ -7,7 +7,8 @@ import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
 import { PhoneInput } from '@/components/shared/PhoneInput';
 import { createCustomer } from '@/app/actions/master';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, Users, User, MapPin, Hash, Globe, Phone } from 'lucide-react';
+import { FormHeader } from '@/components/shared/FormHeader';
 
 export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
   const methods = useForm({
@@ -57,28 +58,60 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-          {/* Left Column: Basic Info */}
-          <div className="space-y-5">
+        <FormHeader title="Customer Information" icon={Users} color="blue" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-12 gap-y-8">
+          {/* Row 1 */}
+          <div className="md:col-span-6">
             <FormInput
               name="customerName"
               label="Customer Name"
               required
               placeholder="Full legal name"
+              icon={User}
               rules={{ minLength: { value: 3, message: 'Name too short' } }}
             />
+          </div>
+          <div className="md:col-span-3">
+            <FormInput name="city" label="City" placeholder="City" icon={MapPin} />
+          </div>
+          <div className="md:col-span-3">
+            <FormInput name="state" label="State" placeholder="State" icon={MapPin} />
+          </div>
 
+          {/* Row 2 */}
+          <div className="md:col-span-6">
             <FormInput
               name="address"
               label="Street Address"
               placeholder="Complete street address"
+              icon={MapPin}
             />
-            
+          </div>
+          <div className="md:col-span-3">
+            <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" icon={Hash} />
+          </div>
+          <div className="md:col-span-3">
+            <FormSelect
+              name="country"
+              label="Country"
+              icon={Globe}
+              options={[
+                { label: 'India', value: 'India' },
+                { label: 'United States', value: 'USA' },
+                { label: 'United Kingdom', value: 'UK' },
+              ]}
+            />
+          </div>
+
+          {/* Row 3 */}
+          <div className="md:col-span-6">
             <FormInput
               name="gstin"
               label="GSTIN Number"
               required
               placeholder="e.g. 29ABCDE1234F1Z5"
+              icon={Hash}
               rules={{ 
                 pattern: { 
                   value: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 
@@ -87,42 +120,23 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               }}
             />
           </div>
-
-          {/* Right Column: Location & Contact */}
-          <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <FormInput name="city" label="City" placeholder="City" />
-              <FormInput name="state" label="State" placeholder="State" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormInput name="postalCode" label="Pincode" placeholder="6-digit ZIP" />
-              <FormSelect
-                name="country"
-                label="Country"
-                options={[
-                  { label: 'India', value: 'India' },
-                  { label: 'United States', value: 'USA' },
-                  { label: 'United Kingdom', value: 'UK' },
-                ]}
-              />
-            </div>
-
+          <div className="md:col-span-6">
             <PhoneInput
               name="phone"
               label="Contact Number"
               required
+              icon={Phone}
               rules={{ pattern: { value: /^\d{10}$/, message: 'Must be 10 digits' } }}
             />
           </div>
         </div>
 
-        <div className="flex gap-4 pt-4 border-t border-border">
+        <div className="flex items-center gap-4 mt-10 pt-0">
           <FormButton 
             type="submit" 
             variant="primary" 
             disabled={isSubmitting}
-            className="px-8 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-blue-600/10 flex items-center gap-2"
+            className="h-12 px-10 rounded-xl font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 flex gap-2"
           >
             {isSubmitting ? (
               <>
@@ -131,7 +145,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               </>
             ) : (
               <>
-                <Save size={16} />
+                <Save size={18} />
                 Submit Record
               </>
             )}
@@ -141,9 +155,9 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
             onClick={onReset} 
             variant="secondary" 
             disabled={isSubmitting}
-            className="px-8 py-2.5 rounded-xl text-[13px] font-bold border flex items-center gap-2"
+            className="h-12 px-10 rounded-xl font-black uppercase tracking-wider flex gap-2"
           >
-            <RotateCcw size={20} />
+            <RotateCcw size={18} />
             Reset Form
           </FormButton>
         </div>
@@ -151,3 +165,4 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
     </FormProvider>
   );
 }
+

@@ -4,8 +4,9 @@ import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormButton } from '@/components/shared/FormButton';
-import { Package, Hash, Save, RotateCcw } from 'lucide-react';
 import { createItem } from '@/app/actions/master';
+import { Package, Hash, Save, RotateCcw } from 'lucide-react';
+import { FormHeader } from '@/components/shared/FormHeader';
 
 export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
   const methods = useForm({
@@ -43,7 +44,9 @@ export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        <FormHeader title="Item Information" icon={Package} color="blue" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           <FormInput
             name="itemName"
             label="Item Name"
@@ -61,17 +64,28 @@ export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
           />
         </div>
 
-        <div className="flex gap-4 pt-6 border-t border-border">
-          <FormButton type="submit" variant="primary" disabled={isSubmitting} className="px-8 py-2.5 rounded-xl text-[13px] font-bold shadow-lg shadow-blue-600/10 flex items-center gap-2">
+        <div className="flex items-center gap-4 mt-10 pt-0">
+          <FormButton 
+            type="submit" 
+            variant="primary" 
+            disabled={isSubmitting} 
+            className="h-12 px-10 rounded-xl font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 flex gap-2"
+          >
             {isSubmitting ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <Save size={16} />
+              <Save size={18} />
             )}
             Create Item
           </FormButton>
-          <FormButton type="button" onClick={onReset} variant="secondary" disabled={isSubmitting} className="px-8 py-2.5 rounded-xl text-[13px] font-bold border flex items-center gap-2">
-            <RotateCcw size={16} />
+          <FormButton 
+            type="button" 
+            onClick={onReset} 
+            variant="secondary" 
+            disabled={isSubmitting} 
+            className="h-12 px-10 rounded-xl font-black uppercase tracking-wider flex gap-2"
+          >
+            <RotateCcw size={18} />
             Clear Fields
           </FormButton>
         </div>
@@ -79,3 +93,4 @@ export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
     </FormProvider>
   );
 }
+

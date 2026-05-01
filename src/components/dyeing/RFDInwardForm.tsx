@@ -16,6 +16,7 @@ import {
   Info
 } from 'lucide-react';
 import { createRFDInward, getDyeingHouses, getGreyOutwardsByHouse } from '@/app/actions/dyeing';
+import { FormHeader } from '@/components/shared/FormHeader';
 
 export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
   const methods = useForm({
@@ -135,12 +136,7 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="bg-card/50 backdrop-blur-md rounded-[2.5rem] p-8 border border-border shadow-xl">
-          <div className="flex items-center gap-3 mb-8 border-b border-border/50 pb-4">
-            <div className="p-2 bg-indigo-600/10 rounded-xl text-indigo-600">
-              <Layers size={20} />
-            </div>
-            <h3 className="text-xl font-black text-foreground tracking-tight uppercase">RFD Inward</h3>
-          </div>
+          <FormHeader title="RFD Inward" icon={Layers} color="indigo" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
             <div className="space-y-6">
