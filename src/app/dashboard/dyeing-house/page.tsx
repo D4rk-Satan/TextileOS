@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyOutwards, getRFDInwards, getReadyForPrintingBatches } from '@/app/actions/dyeing';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 
-type TabType = 'grey-outward' | 'rfd-inward' | 'ready-for-printing' | 'history';
+type TabType = 'grey-outward' | 'rfd-inward' | 'ready-for-printing';
 
 function DyeingHousePageContent() {
   const searchParams = useSearchParams();
@@ -55,7 +55,7 @@ function DyeingHousePageContent() {
 
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
-    if (tab && ['grey-outward', 'rfd-inward', 'ready-for-printing', 'history'].includes(tab)) {
+    if (tab && ['grey-outward', 'rfd-inward', 'ready-for-printing'].includes(tab)) {
       setActiveTab(tab);
     }
     fetchData();
@@ -64,8 +64,7 @@ function DyeingHousePageContent() {
   const titles: Record<TabType, string> = {
     'grey-outward': 'Grey Outward',
     'rfd-inward': 'RFD Inward',
-    'ready-for-printing': 'Ready for Printing',
-    'history': 'Processing History'
+    'ready-for-printing': 'Ready for Printing'
   };
 
   const handleRecordAdded = () => {
@@ -113,7 +112,7 @@ function DyeingHousePageContent() {
       
       {!showForm && (
         <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-2xl w-fit border border-border/50">
-          {(['grey-outward', 'rfd-inward', 'ready-for-printing', 'history'] as TabType[]).map((tab) => (
+          {(['grey-outward', 'rfd-inward', 'ready-for-printing'] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

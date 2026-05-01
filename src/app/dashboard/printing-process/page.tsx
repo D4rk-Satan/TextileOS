@@ -23,7 +23,7 @@ import { HeaderPortal } from '@/components/layout/HeaderPortal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getOutForPrintingLots } from '@/app/actions/printing';
 
-type TabType = 'issue' | 'receive' | 'history';
+type TabType = 'issue' | 'receive';
 
 function PrintingProcessPageContent() {
   const searchParams = useSearchParams();
@@ -50,7 +50,7 @@ function PrintingProcessPageContent() {
 
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
-    if (tab && ['issue', 'receive', 'history'].includes(tab)) {
+    if (tab && ['issue', 'receive'].includes(tab)) {
       setActiveTab(tab);
     }
     fetchData();
@@ -58,8 +58,7 @@ function PrintingProcessPageContent() {
 
   const titles: Record<TabType, string> = {
     'issue': 'Issue For Printing',
-    'receive': 'Receive From Printing',
-    'history': 'Printing History'
+    'receive': 'Receive From Printing'
   };
 
   const handleSuccess = () => {
@@ -107,7 +106,7 @@ function PrintingProcessPageContent() {
 
       {!showForm && (
         <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-2xl w-fit border border-border/50">
-          {(['issue', 'receive', 'history'] as TabType[]).map((tab) => (
+          {(['issue', 'receive'] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
