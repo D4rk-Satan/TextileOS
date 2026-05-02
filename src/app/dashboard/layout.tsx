@@ -71,6 +71,7 @@ export default function DashboardLayout({
         { name: 'In-Warehouse', href: '/dashboard/warehouse?tab=batches', icon: Boxes },
         { name: 'Out For RFD', href: '/dashboard/warehouse?tab=out-for-rfd', icon: RotateCcw },
         { name: 'Ready For Printing', href: '/dashboard/warehouse?tab=ready-for-printing', icon: Printer },
+        { name: 'Under Printing', href: '/dashboard/warehouse?tab=under-printing', icon: Printer },
         { name: 'Ready For Dispatch', href: '/dashboard/warehouse?tab=ready-for-dispatch', icon: ShoppingCart },
         { name: 'Dispatched', href: '/dashboard/warehouse?tab=dispatched', icon: Truck },
       ]

@@ -84,7 +84,7 @@ export async function createPrintingIssue(data: any) {
 
     await prisma.batch.updateMany({
       where: { id: { in: data.batches.map((b: any) => b.id) } },
-      data: { status: 'Out for Printing' }
+      data: { status: 'Under Printing' }
     });
 
     revalidatePath('/dashboard/printing-process');
@@ -102,7 +102,7 @@ export async function getOutForPrintingLots() {
       include: {
         printer: true,
         batches: {
-          where: { status: 'Out for Printing' }
+          where: { status: 'Under Printing' }
         }
       },
       orderBy: { createdAt: 'desc' }

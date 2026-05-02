@@ -121,6 +121,11 @@ export async function getBatches(status?: string) {
           include: {
             customer: true
           }
+        },
+        printingIssue: {
+          include: {
+            printer: true
+          }
         }
       },
       orderBy: { id: 'desc' },

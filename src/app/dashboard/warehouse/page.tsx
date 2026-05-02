@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyInwards, getBatches } from '@/app/actions/warehouse'; // Import with updated signature
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 
-type TabType = 'grey-inward' | 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'ready-for-dispatch' | 'dispatched';
+type TabType = 'grey-inward' | 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'under-printing' | 'ready-for-dispatch' | 'dispatched';
 
 function WarehousePageContent() {
   const searchParams = useSearchParams();
@@ -47,6 +47,11 @@ function WarehousePageContent() {
       if (result?.success) {
         setData(result.data || []);
       }
+    } else if (activeTab === 'under-printing') {
+      const result = await getBatches('Under Printing');
+      if (result?.success) {
+        setData(result.data || []);
+      }
     } else {
       setData([]);
     }
@@ -55,7 +60,7 @@ function WarehousePageContent() {
 
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
-    if (tab && ['grey-inward', 'batches', 'out-for-rfd', 'ready-for-printing', 'ready-for-dispatch', 'dispatched'].includes(tab)) {
+    if (tab && ['grey-inward', 'batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tab)) {
       setActiveTab(tab);
       setShowForm(false);
     }
@@ -67,6 +72,7 @@ function WarehousePageContent() {
     'batches': 'In-Warehouse',
     'out-for-rfd': 'Out For RFD',
     'ready-for-printing': 'Ready For Printing',
+    'under-printing': 'Under Printing',
     'ready-for-dispatch': 'Ready For Dispatch',
     'dispatched': 'Dispatched'
   };
@@ -88,6 +94,9 @@ function WarehousePageContent() {
             <tr className="bg-muted/50 border-b border-border">
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Batch No</th>
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
+              {activeTab === 'under-printing' && (
+                <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Printer</th>
+              )}
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lot No</th>
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Mtrs</th>
               {activeTab === 'ready-for-printing' && (
@@ -105,6 +114,11 @@ function WarehousePageContent() {
                 <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
                   {batch.greyInward?.customer?.customerName || 'N/A'}
                 </td>
+                {activeTab === 'under-printing' && (
+                  <td className="px-8 py-5 text-sm font-bold text-foreground">
+                    {batch.printingIssue?.printer?.vendorName || '-'}
+                  </td>
+                )}
                 <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
                   {batch.greyInward?.lotNo}
                 </td>
@@ -146,7 +160,7 @@ function WarehousePageContent() {
             ))}
             {batches.length === 0 && (
               <tr>
-                <td colSpan={activeTab === 'ready-for-printing' ? 6 : 5} className="px-8 py-20 text-center text-muted-foreground italic font-medium">
+                <td colSpan={activeTab === 'ready-for-printing' || activeTab === 'under-printing' ? 6 : 5} className="px-8 py-20 text-center text-muted-foreground italic font-medium">
                   No batches found in this section.
                 </td>
               </tr>
