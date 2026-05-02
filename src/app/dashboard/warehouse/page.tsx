@@ -255,7 +255,7 @@ function WarehousePageContent() {
               />
             </div>
           </motion.div>
-        ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing') ? (
+        ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing') ? (
           <BatchList batches={data} />
         ) : (activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
           <div key="placeholder" className="bg-card/50 rounded-[2.5rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm">
