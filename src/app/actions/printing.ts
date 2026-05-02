@@ -40,6 +40,7 @@ export async function getReadyForPrintingLots() {
         }
       },
       include: {
+        customer: true,
         batches: {
           where: { status: 'Ready for Printing' }
         }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { 
   Printer, 
@@ -11,13 +11,13 @@ import {
   RotateCcw, 
   Info,
   Layers,
-  ChevronRight,
-  Plus,
-  Trash2
+  Building2,
+  Tag
 } from 'lucide-react';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
+import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
 import { getPrinters, getReadyForPrintingLots, createPrintingIssue } from '@/app/actions/printing';
 import { toast } from 'sonner';
@@ -39,6 +39,8 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
       printerId: '',
       dcNo: '',
       remark: '',
+      processType: '',
+      customerName: '',
       batches: [] as any[]
     }
   });
@@ -67,17 +69,25 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
     if (selectedLotNo) {
       const lot = lots.find(l => l.lotNo === selectedLotNo);
       if (lot) {
+        setValue('processType', lot.processType || 'N/A');
+        setValue('customerName', lot.customer?.customerName || 'N/A');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
           batchNo: b.batchNo,
-          mtrs: b.mtrs,
-          rfdMtrs: b.rfdMtrs
+          mtrs: Number(b.mtrs),
+          rfdMtrs: Number(b.rfdMtrs)
         })));
       }
     } else {
+      setValue('processType', '');
+      setValue('customerName', '');
       replace([]);
     }
-  }, [selectedLotNo, lots, replace]);
+  }, [selectedLotNo, lots, replace, setValue]);
+
+  const totalGreyMtr = useMemo(() => {
+    return fields.reduce((sum, field: any) => sum + (Number(field.mtrs) || 0), 0);
+  }, [fields]);
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -98,121 +108,147 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
         <FormHeader title="Issue For Printing" icon={Printer} color="blue" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-          <div className="space-y-6">
-            <FormInput
-              label="Issue Date"
-              name="date"
-              type="date"
-              required
-              icon={Calendar}
-            />
-            
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Select Lot No</label>
-              <div className="relative">
-                <select
-                  {...methods.register('lotNo', { required: true })}
-                  className="w-full h-12 bg-card border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
-                >
-                  <option value="">Choose a lot...</option>
-                  {lots.map(lot => (
-                    <option key={lot.id} value={lot.lotNo}>Lot #{lot.lotNo} ({lot.batches.length} batches)</option>
-                  ))}
-                </select>
-                <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
-              </div>
-            </div>
-          </div>
+        {/* Centralized Form Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-8 max-w-5xl mx-auto">
+          {/* Row 1 */}
+          <FormInput
+            label="Date"
+            name="date"
+            type="date"
+            required
+            icon={Calendar}
+          />
+          <FormInput
+            label="Process Type"
+            name="processType"
+            readOnly
+            placeholder="Auto-filled from Lot"
+            icon={Tag}
+            className="bg-muted/30"
+          />
 
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Select Printer</label>
-              <div className="relative">
-                <select
-                  {...methods.register('printerId', { required: true })}
-                  className="w-full h-12 bg-card border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
-                >
-                  <option value="">Choose printer...</option>
-                  {printers.map(p => (
-                    <option key={p.id} value={p.id}>{p.vendorName}</option>
-                  ))}
-                </select>
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
-              </div>
-            </div>
+          {/* Row 2 */}
+          <FormSelect
+            label="Lot No"
+            name="lotNo"
+            required
+            icon={Layers}
+            options={lots.map(l => ({ 
+              label: `Lot #${l.lotNo} (${l.batches.length} batches)`, 
+              value: l.lotNo 
+            }))}
+            placeholder="Select a lot..."
+          />
+          <FormInput
+            label="Customers"
+            name="customerName"
+            readOnly
+            placeholder="Auto-filled from Lot"
+            icon={Building2}
+            className="bg-muted/30"
+          />
 
-            <FormInput
-              label="DC Number"
-              name="dcNo"
-              placeholder="Enter Challan No"
-              icon={FileText}
-            />
-          </div>
+          {/* Row 3 - Printer and DC (Added for functionality) */}
+          <FormSelect
+            label="Select Printer"
+            name="printerId"
+            required
+            icon={User}
+            options={printers.map(p => ({ label: p.vendorName, value: p.id }))}
+            placeholder="Choose printer..."
+          />
+          <FormInput
+            label="DC Number"
+            name="dcNo"
+            placeholder="Enter Challan No"
+            icon={FileText}
+          />
         </div>
 
-        {/* Batch Table */}
-        <div className="mt-10">
-          <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest">Batches to Issue</h4>
-            <Info size={14} className="text-muted-foreground" />
+        {/* Batch Table Section */}
+        <div className="max-w-5xl mx-auto mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-sm font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <Layers size={16} className="text-blue-500" />
+              Batch Info
+            </h4>
           </div>
           
-          <div className="overflow-hidden rounded-2xl border border-border/50 bg-muted/20">
+          <div className="overflow-hidden rounded-3xl border border-border/50 bg-muted/10 shadow-inner">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-muted/50 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              <thead className="bg-muted/50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 <tr>
-                  <th className="px-6 py-4">Batch No</th>
-                  <th className="px-6 py-4 text-right">Grey Meters</th>
-                  <th className="px-6 py-4 text-right">RFD Meters</th>
+                  <th className="px-8 py-5 w-20">Sr No</th>
+                  <th className="px-8 py-5">Batch No</th>
+                  <th className="px-8 py-5 text-right">Grey Mts</th>
+                  <th className="px-8 py-5 text-right">RFD Mtr</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
                 {fields.map((field, index) => (
-                  <tr key={field.id} className="hover:bg-card/50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-bold text-foreground">
-                      {methods.watch(`batches.${index}.batchNo`)}
+                  <tr key={field.id} className="hover:bg-card/50 transition-colors group">
+                    <td className="px-8 py-5 text-xs font-black text-muted-foreground/50">
+                      {String(index + 1).padStart(2, '0')}
                     </td>
-                    <td className="px-6 py-4 text-right text-sm font-bold text-muted-foreground">
-                      {methods.watch(`batches.${index}.mtrs`)}
+                    <td className="px-8 py-5 text-sm font-bold text-foreground">
+                      {watch(`batches.${index}.batchNo`)}
                     </td>
-                    <td className="px-6 py-4 text-right text-sm font-black text-blue-600">
-                      {methods.watch(`batches.${index}.rfdMtrs`)}
+                    <td className="px-8 py-5 text-right text-sm font-bold text-muted-foreground">
+                      {watch(`batches.${index}.mtrs`).toFixed(2)}
+                    </td>
+                    <td className="px-8 py-5 text-right text-sm font-black text-blue-600">
+                      {watch(`batches.${index}.rfdMtrs`).toFixed(2)}
                     </td>
                   </tr>
                 ))}
                 {fields.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-6 py-10 text-center text-sm text-muted-foreground italic">
-                      Select a lot to view batches
+                    <td colSpan={4} className="px-8 py-16 text-center text-sm text-muted-foreground italic bg-background/30">
+                      <div className="flex flex-col items-center gap-3">
+                        <Info size={24} className="text-muted-foreground/30" />
+                        <span>Select a lot to view its ready batches</span>
+                      </div>
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Summary Row */}
+          <div className="mt-8 flex justify-end">
+            <div className="bg-card border border-border/50 p-6 rounded-2xl shadow-sm min-w-[300px]">
+              <div className="flex justify-between items-center gap-8">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Grey Mtr</span>
+                <span className="text-xl font-black text-blue-600 tracking-tighter">
+                  {totalGreyMtr.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 mt-10">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4 pt-6 max-w-5xl mx-auto">
           <FormButton 
               type="submit" 
               variant="primary" 
               disabled={isSubmitting || fields.length === 0}
-              className="h-12 px-10 rounded-xl font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 flex gap-2"
+              className="h-14 px-12 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 flex gap-3 transition-all hover:scale-105"
           >
-            <Save size={18} />
-            {isSubmitting ? 'Issuing...' : 'Save Issue'}
+            <Save size={20} />
+            {isSubmitting ? 'Issuing...' : 'Submit'}
           </FormButton>
           <FormButton 
               type="button" 
               onClick={() => { reset(); replace([]); }} 
               variant="secondary" 
-              className="h-12 px-10 rounded-xl font-black uppercase tracking-wider flex gap-2"
+              className="h-14 px-12 rounded-2xl font-black uppercase tracking-widest flex gap-3 transition-all hover:bg-muted"
           >
-            <RotateCcw size={18} />
+            <RotateCcw size={20} />
             Reset
           </FormButton>
         </div>
