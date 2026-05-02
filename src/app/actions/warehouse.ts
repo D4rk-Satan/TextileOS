@@ -130,6 +130,10 @@ export async function getBatches(status?: string) {
       ...batch,
       mtrs: batch.mtrs ? Number(batch.mtrs) : 0,
       weight: batch.weight ? Number(batch.weight) : 0,
+      rfdMtrs: batch.rfdMtrs ? Number(batch.rfdMtrs) : 0,
+      millShortage: batch.millShortage ? Number(batch.millShortage) : 0,
+      printMtrs: batch.printMtrs ? Number(batch.printMtrs) : 0,
+      printShortage: batch.printShortage ? Number(batch.printShortage) : 0,
       greyInward: {
         ...batch.greyInward,
         totalMtr: Number(batch.greyInward.totalMtr)

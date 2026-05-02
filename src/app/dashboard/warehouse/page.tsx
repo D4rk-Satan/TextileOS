@@ -90,6 +90,9 @@ function WarehousePageContent() {
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lot No</th>
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Mtrs</th>
+              {activeTab === 'ready-for-printing' && (
+                <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Shortage</th>
+              )}
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
             </tr>
           </thead>
@@ -106,8 +109,29 @@ function WarehousePageContent() {
                   {batch.greyInward?.lotNo}
                 </td>
                 <td className="px-8 py-5">
-                  <span className="text-sm font-black text-blue-600">{(batch.mtrs || 0).toFixed(2)} Mtr</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-black text-blue-600">{(batch.mtrs || 0).toFixed(2)} Mtr</span>
+                    {activeTab === 'ready-for-printing' && (
+                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
+                        RFD: {(batch.rfdMtrs || 0).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                 </td>
+                {activeTab === 'ready-for-printing' && (
+                  <td className="px-8 py-5">
+                    <div className="flex flex-col">
+                      <span className={`text-xs font-bold ${Number(batch.millShortage) < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                        {batch.millShortage}%
+                      </span>
+                      {batch.isTP && (
+                        <span className="text-[9px] bg-indigo-500/10 text-indigo-500 px-1.5 py-0.5 rounded font-black uppercase mt-1 w-fit">
+                          {batch.tpDetail}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                )}
                 <td className="px-8 py-5">
                   <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
                     batch.status === 'In-Warehouse' ? 'bg-muted text-muted-foreground' :
@@ -122,7 +146,7 @@ function WarehousePageContent() {
             ))}
             {batches.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-8 py-20 text-center text-muted-foreground italic font-medium">
+                <td colSpan={activeTab === 'ready-for-printing' ? 6 : 5} className="px-8 py-20 text-center text-muted-foreground italic font-medium">
                   No batches found in this section.
                 </td>
               </tr>
