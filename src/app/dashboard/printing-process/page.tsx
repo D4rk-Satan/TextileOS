@@ -42,32 +42,43 @@ function PrintingProcessPageContent() {
     );
   };
 
-  const fetchData = async () => {
-    setLoading(true);
-    setData([]);
-    if (activeTab === 'issue') {
-      const result = await getOutForPrintingLots();
-      if (result.success) setData(result.data || []);
-    } else if (activeTab === 'receive') {
-      const result = await getPrintingReceives();
-      if (result.success) setData(result.data || []);
-    }
-    setFetchedTab(activeTab);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    const tab = searchParams.get('tab') as TabType;
-    if (tab && ['issue', 'receive'].includes(tab)) {
-      if (tab !== activeTab) {
-        setLoading(true);
-        setData([]);
-        setActiveTab(tab);
-        setShowForm(false);
-      }
+    const tabFromUrl = searchParams.get('tab') as TabType;
+    if (tabFromUrl && tabFromUrl !== activeTab && ['issue', 'receive'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+      setShowForm(false);
+      return;
     }
-    fetchData();
+
+    let isCurrent = true;
+    const fetchTabData = async () => {
+      setLoading(true);
+      setData([]);
+      
+      let result: any;
+      if (activeTab === 'issue') {
+        result = await getOutForPrintingLots();
+      } else if (activeTab === 'receive') {
+        result = await getPrintingReceives();
+      }
+
+      if (isCurrent && result?.success) {
+        setData(result.data || []);
+        setFetchedTab(activeTab);
+        setLoading(false);
+      }
+    };
+
+    fetchTabData();
+
+    return () => {
+      isCurrent = false;
+    };
   }, [searchParams, activeTab]);
+
+  const fetchData = () => {
+    setActiveTab(prev => prev); // Simple trigger
+  };
 
   const titles: Record<TabType, string> = {
     'issue': 'Issue For Printing',

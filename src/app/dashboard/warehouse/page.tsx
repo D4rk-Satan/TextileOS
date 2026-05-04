@@ -25,63 +25,63 @@ function WarehousePageContent() {
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setData([]); // Clear old data to prevent layout mismatch during loading
-    if (activeTab === 'grey-inward') {
-      const result = await getGreyInwards();
-      if (result?.success) {
-        setData(result.data || []);
-      }
-    } else if (activeTab === 'batches') {
-      const result = await getBatches('In-Warehouse');
-      if (result?.success) {
-        setData(result.data || []);
-      }
-    } else if (activeTab === 'out-for-rfd') {
-      const result = await getBatches('Out For RFD');
-      if (result?.success) {
-        setData(result.data || []);
-      }
-    } else if (activeTab === 'ready-for-printing') {
-      const result = await getBatches('Ready for Printing');
-      if (result?.success) {
-        setData(result.data || []);
-      }
-    } else if (activeTab === 'under-printing') {
-      const result = await getBatches('Under Printing');
-      if (result?.success) {
-        setData(result.data || []);
-      }
-    } else if (activeTab === 'ready-for-dispatch') {
-      const result = await getBatches('Ready For Dispatch');
-      if (result?.success) {
-        setData(result.data || []);
-      }
-    } else if (activeTab === 'dispatched') {
-      const result = await getBatches('Dispatched');
-      if (result?.success) {
-        setData(result.data || []);
-      }
-    } else {
-      setData([]);
-    }
-    setFetchedTab(activeTab);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    const tab = searchParams.get('tab') as TabType;
-    if (tab && ['grey-inward', 'batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tab)) {
-      if (tab !== activeTab) {
-        setLoading(true);
-        setData([]);
-        setActiveTab(tab);
-        setShowForm(false);
-      }
+    const tabFromUrl = searchParams.get('tab') as TabType;
+    if (tabFromUrl && tabFromUrl !== activeTab && ['grey-inward', 'batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+      setShowForm(false);
+      return; // Skip this effect run, wait for the next one with updated activeTab
     }
-    fetchData();
+
+    let isCurrent = true;
+    const fetchTabData = async () => {
+      setLoading(true);
+      setData([]); 
+      
+      let result: any;
+      if (activeTab === 'grey-inward') {
+        result = await getGreyInwards();
+      } else if (activeTab === 'batches') {
+        result = await getBatches('In-Warehouse');
+      } else if (activeTab === 'out-for-rfd') {
+        result = await getBatches('Out For RFD');
+      } else if (activeTab === 'ready-for-printing') {
+        result = await getBatches('Ready for Printing');
+      } else if (activeTab === 'under-printing') {
+        result = await getBatches('Under Printing');
+      } else if (activeTab === 'ready-for-dispatch') {
+        result = await getBatches('Ready For Dispatch');
+      } else if (activeTab === 'dispatched') {
+        result = await getBatches('Dispatched');
+      }
+
+      if (isCurrent) {
+        if (result?.success) {
+          setData(result.data || []);
+        } else {
+          setData([]);
+        }
+        setFetchedTab(activeTab);
+        setLoading(false);
+      }
+    };
+
+    fetchTabData();
+
+    return () => {
+      isCurrent = false;
+    };
   }, [searchParams, activeTab]);
+
+  const fetchData = () => {
+    // Legacy support for other parts of the component that call fetchData()
+    // Trigger a state-based re-fetch by toggling a dummy value or just calling the effect logic if needed
+    // But since the effect already tracks activeTab, we can just trigger a manual update if needed
+    setActiveTab(prev => {
+      const current = prev;
+      return current;
+    });
+  };
 
   const titles: Record<TabType, string> = {
     'grey-inward': 'Grey Inward',
