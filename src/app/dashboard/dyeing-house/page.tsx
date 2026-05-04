@@ -29,6 +29,7 @@ function DyeingHousePageContent() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
+  const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
 
   const toggleRow = (id: string) => {
@@ -47,6 +48,7 @@ function DyeingHousePageContent() {
       const result = await getRFDInwards();
       if (result?.success) setData(result.data || []);
     }
+    setFetchedTab(activeTab);
     setLoading(false);
   };
 
@@ -112,7 +114,7 @@ function DyeingHousePageContent() {
       </HeaderPortal>
       
       <AnimatePresence mode="wait">
-        {loading ? (
+        {loading || fetchedTab !== activeTab ? (
           <motion.div 
             key="loading"
             initial={{ opacity: 0 }}

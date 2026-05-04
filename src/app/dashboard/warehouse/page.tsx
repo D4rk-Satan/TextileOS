@@ -23,6 +23,7 @@ function WarehousePageContent() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
+  const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -65,6 +66,7 @@ function WarehousePageContent() {
     } else {
       setData([]);
     }
+    setFetchedTab(activeTab);
     setLoading(false);
   };
 
@@ -257,6 +259,16 @@ function WarehousePageContent() {
                   {activeTab === 'grey-inward' && <GreyInwardForm onSuccess={handleRecordAdded} />}
                 </div>
              </GlassCard>
+          </motion.div>
+        ) : fetchedTab !== activeTab ? (
+          <motion.div 
+            key="loading-tab-sync"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="h-96 flex items-center justify-center"
+          >
+            <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
           </motion.div>
         ) : data.length === 0 && activeTab === 'grey-inward' ? (
           <motion.div 

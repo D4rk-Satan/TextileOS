@@ -33,6 +33,7 @@ function PrintingProcessPageContent() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
+  const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
 
   const toggleRow = (id: string) => {
@@ -51,6 +52,7 @@ function PrintingProcessPageContent() {
       const result = await getPrintingReceives();
       if (result.success) setData(result.data || []);
     }
+    setFetchedTab(activeTab);
     setLoading(false);
   };
 
@@ -116,7 +118,7 @@ function PrintingProcessPageContent() {
       </HeaderPortal>
 
       <AnimatePresence mode="wait">
-        {loading ? (
+        {loading || fetchedTab !== activeTab ? (
           <motion.div 
             key="loading"
             initial={{ opacity: 0 }}

@@ -25,6 +25,7 @@ function MasterPageContent() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
+  const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
 
   const fetchData = async (tab: TabType) => {
     setLoading(true);
@@ -37,6 +38,7 @@ function MasterPageContent() {
     if (result?.success) {
       setData(result.data || []);
     }
+    setFetchedTab(tab);
     setLoading(false);
   };
 
@@ -95,7 +97,7 @@ function MasterPageContent() {
 
       {/* Main Content Area */}
       <AnimatePresence mode="wait">
-        {loading ? (
+        {loading || fetchedTab !== activeTab ? (
           <motion.div 
             key="loading"
             initial={{ opacity: 0 }}
