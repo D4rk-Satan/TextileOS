@@ -190,6 +190,11 @@ function PrintingProcessPageContent() {
                                   <div className="text-sm font-bold">
                                     {activeTab === 'issue' ? `${batch.rfdMtrs} Mtr (RFD)` : `${batch.printMtrs} Mtr (Finish)`}
                                   </div>
+                                  {batch.isTP && (
+                                    <div className="mt-1 text-[9px] bg-indigo-500/10 text-indigo-500 px-1.5 py-0.5 rounded font-black uppercase w-fit">
+                                      TP: {batch.tpDetail}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>

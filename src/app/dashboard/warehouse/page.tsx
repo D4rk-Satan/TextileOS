@@ -140,6 +140,11 @@ function WarehousePageContent() {
                         RFD: {(batch.rfdMtrs || 0).toFixed(2)}
                       </span>
                     )}
+                    {batch.isTP && (
+                      <span className="text-[9px] bg-indigo-500/10 text-indigo-500 px-1.5 py-0.5 rounded font-black uppercase mt-1 w-fit">
+                        TP: {batch.tpDetail}
+                      </span>
+                    )}
                   </div>
                 </td>
                 {activeTab === 'ready-for-printing' && (
@@ -148,11 +153,6 @@ function WarehousePageContent() {
                       <span className={`text-xs font-bold ${Number(batch.millShortage) < 0 ? 'text-red-500' : 'text-green-500'}`}>
                         {batch.millShortage}%
                       </span>
-                      {batch.isTP && (
-                        <span className="text-[9px] bg-indigo-500/10 text-indigo-500 px-1.5 py-0.5 rounded font-black uppercase mt-1 w-fit">
-                          {batch.tpDetail}
-                        </span>
-                      )}
                     </div>
                   </td>
                 )}
