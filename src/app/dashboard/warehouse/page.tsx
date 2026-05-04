@@ -80,7 +80,6 @@ function WarehousePageContent() {
     }
     fetchData();
   }, [searchParams, activeTab]);
- Broadway
 
   const titles: Record<TabType, string> = {
     'grey-inward': 'Grey Inward',
