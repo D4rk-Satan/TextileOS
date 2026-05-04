@@ -177,7 +177,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
               <div className="relative">
                 <select
                   {...methods.register('customerId', { required: true })}
-                  className="w-full h-12 bg-card border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
+                  className="w-full h-12 bg-muted/50 border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none pointer-events-none outline-none"
+                  tabIndex={-1}
                 >
                   <option value="">Select Customer...</option>
                   {customers.map(c => (
@@ -209,18 +210,13 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Process Type</label>
-              <div className="relative">
-                <select
-                  {...methods.register('processType', { required: true })}
-                  className="w-full h-12 bg-card border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
-                >
-                  <option value="">Select Process...</option>
-                  <option value="RFD & Print">RFD & Print</option>
-                  <option value="Direct Print">Direct Print</option>
-                  <option value="Dyeing & Print">Dyeing & Print</option>
-                </select>
-                <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
-              </div>
+              <FormInput
+                name="processType"
+                icon={Layers}
+                readOnly
+                placeholder="Process Type"
+                className="bg-muted/50 cursor-default"
+              />
             </div>
           </div>
         </div>
