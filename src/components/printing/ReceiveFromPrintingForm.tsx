@@ -20,7 +20,7 @@ import {
 import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormButton } from '@/components/shared/FormButton';
-import { getPrinters, getOutForPrintingLots, createPrintingReceive, getNextProductionNumber } from '@/app/actions/printing';
+import { getOutForPrintingLots, createPrintingReceive, getNextProductionNumber } from '@/app/actions/printing';
 import { getCustomers } from '@/app/actions/master';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
@@ -30,7 +30,6 @@ interface ReceiveFromPrintingFormProps {
 }
 
 export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormProps) {
-  const [printers, setPrinters] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,14 +37,11 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   const methods = useForm({
     defaultValues: {
-      productionNumber: '',
       date: new Date().toISOString().split('T')[0],
       lotNo: '',
       printerId: '',
       customerId: '',
       processType: '',
-      billNo: '',
-      challanNo: '',
       remark: '',
       batches: [] as any[]
     }
@@ -59,16 +55,12 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   useEffect(() => {
     async function loadData() {
-      const [printerRes, lotRes, customerRes, prodRes] = await Promise.all([
-        getPrinters(),
+      const [lotRes, customerRes] = await Promise.all([
         getOutForPrintingLots(),
-        getCustomers(),
-        getNextProductionNumber()
+        getCustomers()
       ]);
-      if (printerRes.success) setPrinters(printerRes.data || []);
       if (lotRes.success) setLots(lotRes.data || []);
       if (customerRes.success) setCustomers(customerRes.data || []);
-      if (prodRes.success && prodRes.data) setValue('productionNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
@@ -79,18 +71,15 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
     if (selectedLotNo) {
       const lot = lots.find(l => l.lotNo === selectedLotNo);
       if (lot) {
-        setValue('printerId', lot.printerId);
         setValue('customerId', lot.customer?.id || '');
         setValue('processType', lot.processType || '');
-        setValue('challanNo', lot.challanNo || '');
-        setValue('billNo', lot.billNo || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
           ids: b.ids, // All linked IDs for this grouped row
           batchNo: b.batchNo,
           mtrs: b.mtrs,
           rfdMtrs: b.rfdMtrs,
-          printMtrs: b.rfdMtrs, // Default to RFD meters
+          printMtrs: '', // Default to blank
           printShortage: 0,
           isTP: b.isTP || false,
           tpDetail: b.tpDetail || ''
@@ -116,6 +105,11 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   useEffect(() => {
     batchesData?.forEach((batch: any, index: number) => {
+      // Clear TP details if isTP is unchecked
+      if (!batch.isTP && batch.tpDetail !== '') {
+        setValue(`batches.${index}.tpDetail`, '');
+      }
+
       let currentPrintMtrs = parseFloat(batch.printMtrs) || 0;
 
       // Handle TP Logic: If TP is checked, calculate Finish Mtr from TP Detail
@@ -159,15 +153,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <FormHeader title="Receive From Printing" icon={Printer} color="indigo" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
           <div className="space-y-6">
-            <FormInput
-              label="Production Number"
-              name="productionNumber"
-              icon={Hash}
-              readOnly
-              className="bg-muted/30 cursor-default"
-            />
             <FormInput
               label="Receive Date"
               name="date"
@@ -175,9 +162,6 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
               required
               icon={Calendar}
             />
-          </div>
-
-          <div className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Select Lot No</label>
               <div className="relative">
@@ -193,7 +177,9 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                 <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
               </div>
             </div>
+          </div>
 
+          <div className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Customer</label>
               <div className="relative">
@@ -210,25 +196,6 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
               </div>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Printer</label>
-              <div className="relative">
-                <select
-                  {...methods.register('printerId', { required: true })}
-                  className="w-full h-12 bg-muted/50 border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none pointer-events-none outline-none"
-                  tabIndex={-1}
-                >
-                  <option value="">Printer...</option>
-                  {printers.map(p => (
-                    <option key={p.id} value={p.id}>{p.vendorName}</option>
-                  ))}
-                </select>
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
-              </div>
-            </div>
 
             <div className="space-y-2">
               <FormInput
@@ -237,28 +204,6 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                 icon={Layers}
                 readOnly
                 placeholder="Process Type"
-                className="bg-muted/50 cursor-default font-bold"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <FormInput
-                label="DC No / Challan No"
-                name="challanNo"
-                icon={FileText}
-                readOnly
-                placeholder="DC No"
-                className="bg-muted/50 cursor-default font-bold"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <FormInput
-                label="Bill No"
-                name="billNo"
-                icon={FileText}
-                readOnly
-                placeholder="Bill No"
                 className="bg-muted/50 cursor-default font-bold"
               />
             </div>

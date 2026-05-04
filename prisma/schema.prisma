@@ -192,10 +192,11 @@ model RFDInward {
 
 model PrintingIssue {
   id              String      @id @default(cuid())
+  productionNumber String?
   date            DateTime
   lotNo           String
-  printerId       String
-  printer         Vendor      @relation("Printer", fields: [printerId], references: [id])
+  printerId       String?
+  printer         Vendor?     @relation("Printer", fields: [printerId], references: [id])
   challanNo       String?
   remark          String?
   
@@ -212,8 +213,8 @@ model PrintingReceive {
   productionNumber String?
   date            DateTime
   lotNo           String
-  printerId       String
-  printer         Vendor      @relation("PrinterReceive", fields: [printerId], references: [id])
+  printerId       String?
+  printer         Vendor?     @relation("PrinterReceive", fields: [printerId], references: [id])
   processType     String?
   customerId      String?
   customer        Customer?   @relation(fields: [customerId], references: [id])

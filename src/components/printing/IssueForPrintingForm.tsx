@@ -12,14 +12,15 @@ import {
   Info,
   Layers,
   Building2,
-  Tag
+  Tag,
+  Hash
 } from 'lucide-react';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
-import { getPrinters, getReadyForPrintingLots, createPrintingIssue } from '@/app/actions/printing';
+import { getReadyForPrintingLots, createPrintingIssue, getNextProductionNumber } from '@/app/actions/printing';
 import { toast } from 'sonner';
 
 interface IssueForPrintingFormProps {
@@ -27,17 +28,15 @@ interface IssueForPrintingFormProps {
 }
 
 export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
-  const [printers, setPrinters] = useState<any[]>([]);
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const methods = useForm({
     defaultValues: {
+      productionNumber: '',
       date: new Date().toISOString().split('T')[0],
       lotNo: '',
-      printerId: '',
-      dcNo: '',
       remark: '',
       processType: '',
       customerName: '',
@@ -53,12 +52,12 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
 
   useEffect(() => {
     async function loadData() {
-      const [printerRes, lotRes] = await Promise.all([
-        getPrinters(),
-        getReadyForPrintingLots()
+      const [lotRes, prodRes] = await Promise.all([
+        getReadyForPrintingLots(),
+        getNextProductionNumber()
       ]);
-      if (printerRes.success) setPrinters(printerRes.data || []);
       if (lotRes.success) setLots(lotRes.data || []);
+      if (prodRes.success && prodRes.data) setValue('productionNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
@@ -71,8 +70,6 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
       if (lot) {
         setValue('processType', lot.processType || 'N/A');
         setValue('customerName', lot.customer?.customerName || 'N/A');
-        const rfdDC = lot.batches[0]?.rfdInward?.challanNo;
-        setValue('dcNo', rfdDC || lot.challanNo || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
           ids: b.ids,
@@ -154,22 +151,14 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
             className="bg-muted/30"
           />
 
-          {/* Row 3 - Printer and DC (Added for functionality) */}
-          <FormSelect
-            label="Select Printer"
-            name="printerId"
-            required
-            icon={User}
-            options={printers.map(p => ({ label: p.vendorName, value: p.id }))}
-            placeholder="Choose printer..."
-          />
+          {/* Row 3 - Production Number */}
           <FormInput
-            label="DC Number"
-            name="dcNo"
+            label="Production Number"
+            name="productionNumber"
             readOnly
-            placeholder="Auto-filled from Lot"
-            icon={FileText}
-            className="bg-muted/30"
+            placeholder="Generating..."
+            icon={Hash}
+            className="bg-muted/30 font-bold"
           />
         </div>
 
