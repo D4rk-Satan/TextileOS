@@ -108,8 +108,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   useEffect(() => {
     batchesData?.forEach((batch: any, index: number) => {
-      if (batch.rfdMtrs !== undefined && batch.printMtrs !== undefined) {
-        const shortage = (batch.rfdMtrs - batch.printMtrs) / 100;
+      if (batch.rfdMtrs !== undefined && batch.printMtrs !== undefined && batch.rfdMtrs > 0) {
+        const shortage = ((batch.rfdMtrs - batch.printMtrs) / batch.rfdMtrs) * 100;
         const currentShortage = methods.getValues(`batches.${index}.printShortage`);
         if (currentShortage !== Number(shortage.toFixed(2))) {
           setValue(`batches.${index}.printShortage`, Number(shortage.toFixed(2)));
