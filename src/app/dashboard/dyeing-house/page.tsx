@@ -53,7 +53,12 @@ function DyeingHousePageContent() {
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
     if (tab && ['grey-outward', 'rfd-inward'].includes(tab)) {
-      setActiveTab(tab);
+      if (tab !== activeTab) {
+        setLoading(true);
+        setData([]);
+        setActiveTab(tab);
+        setShowForm(false);
+      }
     }
     fetchData();
   }, [searchParams, activeTab]);
@@ -139,7 +144,7 @@ function DyeingHousePageContent() {
           </div>
         ) : (
           <motion.div 
-            key="list"
+            key={`${activeTab}-list`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}

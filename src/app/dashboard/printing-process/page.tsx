@@ -43,6 +43,7 @@ function PrintingProcessPageContent() {
 
   const fetchData = async () => {
     setLoading(true);
+    setData([]);
     if (activeTab === 'issue') {
       const result = await getOutForPrintingLots();
       if (result.success) setData(result.data || []);
@@ -56,7 +57,12 @@ function PrintingProcessPageContent() {
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
     if (tab && ['issue', 'receive'].includes(tab)) {
-      setActiveTab(tab);
+      if (tab !== activeTab) {
+        setLoading(true);
+        setData([]);
+        setActiveTab(tab);
+        setShowForm(false);
+      }
     }
     fetchData();
   }, [searchParams, activeTab]);
@@ -111,9 +117,15 @@ function PrintingProcessPageContent() {
 
       <AnimatePresence mode="wait">
         {loading ? (
-          <div className="h-96 flex items-center justify-center">
+          <motion.div 
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="h-96 flex items-center justify-center"
+          >
             <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-          </div>
+          </motion.div>
         ) : showForm ? (
           <div className="max-w-7xl mx-auto">
             <div className="mb-6 flex items-center justify-between">
@@ -133,8 +145,10 @@ function PrintingProcessPageContent() {
           </div>
         ) : (
           <motion.div 
+            key={`${activeTab}-list`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
             className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
           >
             <div className="overflow-x-auto">

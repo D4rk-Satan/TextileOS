@@ -71,11 +71,16 @@ function WarehousePageContent() {
   useEffect(() => {
     const tab = searchParams.get('tab') as TabType;
     if (tab && ['grey-inward', 'batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tab)) {
-      setActiveTab(tab);
-      setShowForm(false);
+      if (tab !== activeTab) {
+        setLoading(true);
+        setData([]);
+        setActiveTab(tab);
+        setShowForm(false);
+      }
     }
     fetchData();
   }, [searchParams, activeTab]);
+ Broadway
 
   const titles: Record<TabType, string> = {
     'grey-inward': 'Grey Inward',
@@ -230,7 +235,13 @@ function WarehousePageContent() {
             <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
           </motion.div>
         ) : showForm ? (
-          <div key="form" className="max-w-7xl mx-auto">
+          <motion.div 
+            key={`${activeTab}-form`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="max-w-7xl mx-auto"
+          >
              <div className="mb-6 flex items-center justify-between">
                 <button 
                    onClick={() => setShowForm(false)}
@@ -247,10 +258,10 @@ function WarehousePageContent() {
                   {activeTab === 'grey-inward' && <GreyInwardForm onSuccess={handleRecordAdded} />}
                 </div>
              </GlassCard>
-          </div>
+          </motion.div>
         ) : data.length === 0 && activeTab === 'grey-inward' ? (
           <motion.div 
-            key="empty"
+            key={`${activeTab}-empty`}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -266,10 +277,12 @@ function WarehousePageContent() {
             </div>
           </motion.div>
         ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing' || activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
-          <BatchList batches={data} />
+          <div key={`${activeTab}-batchlist`}>
+            <BatchList batches={data} />
+          </div>
         ) : (
           <motion.div 
-            key="list"
+            key={`${activeTab}-list`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}

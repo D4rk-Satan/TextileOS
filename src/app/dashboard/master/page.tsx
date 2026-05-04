@@ -28,6 +28,7 @@ function MasterPageContent() {
 
   const fetchData = async (tab: TabType) => {
     setLoading(true);
+    setData([]);
     let result;
     if (tab === 'customers') result = await getCustomers();
     else if (tab === 'vendors') result = await getVendors();
@@ -105,7 +106,13 @@ function MasterPageContent() {
             <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
           </motion.div>
         ) : showForm ? (
-          <div key="form" className="max-w-5xl mx-auto">
+          <motion.div 
+            key={`${activeTab}-form`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="max-w-5xl mx-auto"
+          >
              <div className="mb-6 flex items-center justify-between">
                 <button 
                   onClick={() => setShowForm(false)}
@@ -124,7 +131,7 @@ function MasterPageContent() {
                   {activeTab === 'items' && <ItemForm onSuccess={handleRecordAdded} />}
                 </div>
              </GlassCard>
-          </div>
+          </motion.div>
         ) : (
           <motion.div 
             key="list"
