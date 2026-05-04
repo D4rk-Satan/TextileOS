@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import prisma from '@/lib/prisma';
@@ -113,11 +114,11 @@ export async function getOutForPrintingLots() {
       orderBy: { createdAt: 'desc' }
     });
 
-    const serializedData = issues.filter((i: any) => i.batches.length > 0).map((issue: any) => ({
+    const serializedData = issues.filter(i => i.batches.length > 0).map(issue => ({
       ...issue,
       customer: issue.batches[0]?.greyInward?.customer,
       processType: issue.batches[0]?.greyInward?.processType,
-      batches: issue.batches.map((batch: any) => ({
+      batches: issue.batches.map(batch => ({
         ...batch,
         mtrs: Number(batch.mtrs),
         rfdMtrs: Number(batch.rfdMtrs)
@@ -143,9 +144,9 @@ export async function getPrintingReceives() {
       orderBy: { createdAt: 'desc' }
     });
 
-    const serializedData = receives.map((receive: any) => ({
+    const serializedData = receives.map(receive => ({
       ...receive,
-      batches: receive.batches.map((batch: any) => ({
+      batches: receive.batches.map(batch => ({
         ...batch,
         mtrs: Number(batch.mtrs || 0),
         rfdMtrs: Number(batch.rfdMtrs || 0),

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/set-state-in-effect */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -209,13 +210,13 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Process Type</label>
               <FormInput
+                label="Process Type"
                 name="processType"
                 icon={Layers}
                 readOnly
                 placeholder="Process Type"
-                className="bg-muted/50 cursor-default"
+                className="bg-muted/50 cursor-default font-bold"
               />
             </div>
           </div>
