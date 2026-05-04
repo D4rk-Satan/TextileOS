@@ -86,6 +86,7 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
         setValue('billNo', lot.billNo || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
+          ids: b.ids, // All linked IDs for this grouped row
           batchNo: b.batchNo,
           mtrs: b.mtrs,
           rfdMtrs: b.rfdMtrs,

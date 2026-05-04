@@ -75,6 +75,7 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
         setValue('dcNo', rfdDC || lot.challanNo || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
+          ids: b.ids,
           batchNo: b.batchNo,
           mtrs: Number(b.mtrs),
           rfdMtrs: Number(b.rfdMtrs)

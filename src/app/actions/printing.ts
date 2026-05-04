@@ -52,15 +52,32 @@ export async function getReadyForPrintingLots() {
       orderBy: { updatedAt: 'desc' }
     });
 
-    const serializedData = inwards.map(inward => ({
-      ...inward,
-      totalMtr: Number(inward.totalMtr),
-      batches: inward.batches.map(batch => ({
-        ...batch,
-        mtrs: Number(batch.mtrs),
-        rfdMtrs: Number(batch.rfdMtrs)
-      }))
-    }));
+    const serializedData = inwards.map(inward => {
+      const groupedBatches: any[] = [];
+      inward.batches.forEach((batch: any) => {
+        const baseBatchNo = batch.batchNo.split(' (P')[0];
+        const existing = groupedBatches.find(b => b.batchNo === baseBatchNo);
+        if (existing) {
+          existing.ids.push(batch.id);
+          existing.mtrs += Number(batch.mtrs);
+          existing.rfdMtrs += Number(batch.rfdMtrs);
+        } else {
+          groupedBatches.push({
+            ...batch,
+            ids: [batch.id],
+            mtrs: Number(batch.mtrs),
+            rfdMtrs: Number(batch.rfdMtrs),
+            batchNo: baseBatchNo
+          });
+        }
+      });
+
+      return {
+        ...inward,
+        totalMtr: Number(inward.totalMtr),
+        batches: groupedBatches
+      };
+    });
 
     return { success: true, data: serializedData };
   } catch (error: any) {
@@ -81,13 +98,14 @@ export async function createPrintingIssue(data: any) {
         remark: data.remark,
         organizationId: orgId,
         batches: {
-          connect: data.batches.map((b: any) => ({ id: b.id }))
+          connect: data.batches.flatMap((b: any) => (b.ids || [b.id]).map((id: string) => ({ id })))
         }
       }
     });
 
+    const allIds = data.batches.flatMap((b: any) => (b.ids || [b.id]));
     await prisma.batch.updateMany({
-      where: { id: { in: data.batches.map((b: any) => b.id) } },
+      where: { id: { in: allIds } },
       data: { status: 'Under Printing' }
     });
 
@@ -118,17 +136,34 @@ export async function getOutForPrintingLots() {
       orderBy: { createdAt: 'desc' }
     });
 
-    const serializedData = issues.filter(i => i.batches.length > 0).map(issue => ({
-      ...issue,
-      customer: issue.batches[0]?.greyInward?.customer,
-      processType: issue.batches[0]?.greyInward?.processType,
-      billNo: issue.batches[0]?.rfdInward?.billNo,
-      batches: issue.batches.map(batch => ({
-        ...batch,
-        mtrs: Number(batch.mtrs),
-        rfdMtrs: Number(batch.rfdMtrs)
-      }))
-    }));
+    const serializedData = issues.filter(i => i.batches.length > 0).map(issue => {
+      const groupedBatches: any[] = [];
+      issue.batches.forEach((batch: any) => {
+        const baseBatchNo = batch.batchNo.split(' (P')[0];
+        const existing = groupedBatches.find(b => b.batchNo === baseBatchNo);
+        if (existing) {
+          existing.ids.push(batch.id);
+          existing.mtrs += Number(batch.mtrs);
+          existing.rfdMtrs += Number(batch.rfdMtrs);
+        } else {
+          groupedBatches.push({
+            ...batch,
+            ids: [batch.id],
+            mtrs: Number(batch.mtrs),
+            rfdMtrs: Number(batch.rfdMtrs),
+            batchNo: baseBatchNo
+          });
+        }
+      });
+
+      return {
+        ...issue,
+        customer: issue.batches[0]?.greyInward?.customer,
+        processType: issue.batches[0]?.greyInward?.processType,
+        billNo: issue.batches[0]?.rfdInward?.billNo,
+        batches: groupedBatches
+      };
+    });
 
     return { success: true, data: serializedData };
   } catch (error: any) {
@@ -195,7 +230,7 @@ export async function createPrintingReceive(data: any) {
       remark: data.remark,
       organizationId: orgId,
       batches: {
-        connect: data.batches.map((b: any) => ({ id: b.id }))
+        connect: data.batches.flatMap((b: any) => (b.ids || [b.id]).map((id: string) => ({ id })))
       }
     };
 
@@ -203,10 +238,46 @@ export async function createPrintingReceive(data: any) {
       data: receiveData
     });
 
-    // Use a transaction for better reliability
-    await prisma.$transaction(
-      data.batches.map((batch: any) => 
-        prisma.batch.update({
+    const updates = [];
+    for (const batch of data.batches) {
+      const ids = batch.ids || [batch.id];
+      
+      if (ids.length > 1) {
+        // Handle grouped batches (from TP split)
+        const parts = batch.isTP ? batch.tpDetail.split(/[+\s,]+/).map((p: string) => parseFloat(p)).filter((p: number) => !isNaN(p)) : [];
+        
+        // Fetch batches to know their original rfdMtrs for distribution
+        const originalBatches = await prisma.batch.findMany({ where: { id: { in: ids } } });
+        const sortedOriginals = originalBatches.sort((a, b) => a.batchNo.localeCompare(b.batchNo));
+
+        for (let i = 0; i < ids.length; i++) {
+          const original = sortedOriginals[i];
+          let finish = 0;
+          
+          if (parts.length > i) {
+            finish = parts[i];
+          } else if (i === 0) {
+            finish = batch.printMtrs; // Fallback to full amount on first part
+          } else {
+            finish = 0;
+          }
+
+          const rfd = Number(original.rfdMtrs || 1);
+          const shortage = ((rfd - finish) / rfd) * 100;
+
+          updates.push(prisma.batch.update({
+            where: { id: original.id },
+            data: {
+              status: 'Ready For Dispatch',
+              printMtrs: Number(finish.toFixed(2)),
+              printShortage: Number(shortage.toFixed(2)),
+              printingReceiveId: receive.id
+            }
+          }));
+        }
+      } else {
+        // Standard single batch update
+        updates.push(prisma.batch.update({
           where: { id: batch.id },
           data: {
             status: 'Ready For Dispatch',
@@ -214,9 +285,11 @@ export async function createPrintingReceive(data: any) {
             printShortage: batch.printShortage,
             printingReceiveId: receive.id
           }
-        })
-      )
-    );
+        }));
+      }
+    }
+
+    await prisma.$transaction(updates);
 
     revalidatePath('/dashboard/printing-process');
     revalidatePath('/dashboard/warehouse');
