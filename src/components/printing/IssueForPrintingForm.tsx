@@ -20,7 +20,7 @@ import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
-import { getReadyForPrintingLots, createPrintingIssue, getNextProductionNumber } from '@/app/actions/printing';
+import { getReadyForPrintingLots, createPrintingIssue, getNextJobCardNumber } from '@/app/actions/printing';
 import { toast } from 'sonner';
 
 interface IssueForPrintingFormProps {
@@ -34,7 +34,7 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
 
   const methods = useForm({
     defaultValues: {
-      productionNumber: '',
+      jobCardNumber: '',
       date: new Date().toISOString().split('T')[0],
       lotNo: '',
       remark: '',
@@ -54,10 +54,10 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
     async function loadData() {
       const [lotRes, prodRes] = await Promise.all([
         getReadyForPrintingLots(),
-        getNextProductionNumber()
+        getNextJobCardNumber()
       ]);
       if (lotRes.success) setLots(lotRes.data || []);
-      if (prodRes.success && prodRes.data) setValue('productionNumber', prodRes.data);
+      if (prodRes.success && prodRes.data) setValue('jobCardNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
@@ -151,10 +151,10 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
             className="bg-muted/30"
           />
 
-          {/* Row 3 - Production Number */}
+          {/* Row 3 - Job Card Number */}
           <FormInput
-            label="Production Number"
-            name="productionNumber"
+            label="Job Card Number"
+            name="jobCardNumber"
             readOnly
             placeholder="Generating..."
             icon={Hash}

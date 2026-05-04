@@ -91,7 +91,7 @@ export async function createPrintingIssue(data: any) {
     
     const issue = await prisma.printingIssue.create({
       data: {
-        productionNumber: data.productionNumber,
+        jobCardNumber: data.jobCardNumber,
         date: new Date(data.date),
         lotNo: data.lotNo,
         remark: data.remark,
@@ -200,13 +200,25 @@ export async function getPrintingReceives() {
   }
 }
 
-export async function getNextProductionNumber() {
+export async function getNextJobCardNumber() {
   try {
     const orgId = await getOrgId();
     const count = await prisma.printingIssue.count({
       where: { organizationId: orgId }
     });
-    return { success: true, data: `JC-${count + 755}` }; // Starting from 755 as per user request
+    return { success: true, data: `JC-${count + 755}` }; // Job Card series
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getNextReceiveProductionNumber() {
+  try {
+    const orgId = await getOrgId();
+    const count = await prisma.printingReceive.count({
+      where: { organizationId: orgId }
+    });
+    return { success: true, data: `PRN-${count + 1001}` }; // Production Number series for Receive
   } catch (error: any) {
     return { success: false, error: error.message };
   }

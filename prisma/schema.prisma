@@ -192,7 +192,7 @@ model RFDInward {
 
 model PrintingIssue {
   id              String      @id @default(cuid())
-  productionNumber String?
+  jobCardNumber   String?
   date            DateTime
   lotNo           String
   printerId       String?

@@ -20,7 +20,7 @@ import {
 import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormButton } from '@/components/shared/FormButton';
-import { getOutForPrintingLots, createPrintingReceive, getNextProductionNumber } from '@/app/actions/printing';
+import { getOutForPrintingLots, createPrintingReceive, getNextReceiveProductionNumber } from '@/app/actions/printing';
 import { getCustomers } from '@/app/actions/master';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
@@ -37,9 +37,10 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   const methods = useForm({
     defaultValues: {
+      productionNumber: '',
       date: new Date().toISOString().split('T')[0],
+      jobCardNumber: '',
       lotNo: '',
-      printerId: '',
       customerId: '',
       processType: '',
       remark: '',
@@ -55,22 +56,25 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   useEffect(() => {
     async function loadData() {
-      const [lotRes, customerRes] = await Promise.all([
+      const [lotRes, customerRes, prodRes] = await Promise.all([
         getOutForPrintingLots(),
-        getCustomers()
+        getCustomers(),
+        getNextReceiveProductionNumber()
       ]);
       if (lotRes.success) setLots(lotRes.data || []);
       if (customerRes.success) setCustomers(customerRes.data || []);
+      if (prodRes.success && prodRes.data) setValue('productionNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
   }, [setValue]);
 
-  const selectedLotNo = watch('lotNo');
+  const selectedJobCard = watch('jobCardNumber');
   useEffect(() => {
-    if (selectedLotNo) {
-      const lot = lots.find(l => l.lotNo === selectedLotNo);
+    if (selectedJobCard) {
+      const lot = lots.find(l => l.jobCardNumber === selectedJobCard);
       if (lot) {
+        setValue('lotNo', lot.lotNo);
         setValue('customerId', lot.customer?.id || '');
         setValue('processType', lot.processType || '');
         replace(lot.batches.map((b: any) => ({
@@ -88,7 +92,7 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
     } else {
       replace([]);
     }
-  }, [selectedLotNo, lots, replace, setValue]);
+  }, [selectedJobCard, lots, replace, setValue]);
 
   // Helper to parse TP Detail string (e.g. "90+10+20")
   const calculateTPSum = (detail: string) => {
@@ -153,8 +157,15 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <FormHeader title="Receive From Printing" icon={Printer} color="indigo" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-8">
           <div className="space-y-6">
+            <FormInput
+              label="Production Number"
+              name="productionNumber"
+              icon={Hash}
+              readOnly
+              className="bg-muted/30 cursor-default font-bold"
+            />
             <FormInput
               label="Receive Date"
               name="date"
@@ -162,24 +173,25 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
               required
               icon={Calendar}
             />
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Select Lot No</label>
-              <div className="relative">
-                <select
-                  {...methods.register('lotNo', { required: true })}
-                  className="w-full h-12 bg-card border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
-                >
-                  <option value="">Choose a lot...</option>
-                  {lots.map(lot => (
-                    <option key={lot.id} value={lot.lotNo}>Lot #{lot.lotNo} ({lot.batches.length} batches)</option>
-                  ))}
-                </select>
-                <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
-              </div>
-            </div>
           </div>
 
           <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Select Job Card</label>
+              <div className="relative">
+                <select
+                  {...methods.register('jobCardNumber', { required: true })}
+                  className="w-full h-12 bg-card border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
+                >
+                  <option value="">Choose a job card...</option>
+                  {lots.map(lot => (
+                    <option key={lot.id} value={lot.jobCardNumber}>JC #{lot.jobCardNumber} (Lot #{lot.lotNo})</option>
+                  ))}
+                </select>
+                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Customer</label>
               <div className="relative">
@@ -195,6 +207,19 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                 </select>
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <FormInput
+                label="Lot No"
+                name="lotNo"
+                icon={Layers}
+                readOnly
+                placeholder="Lot Number"
+                className="bg-muted/50 cursor-default font-bold"
+              />
             </div>
 
             <div className="space-y-2">
