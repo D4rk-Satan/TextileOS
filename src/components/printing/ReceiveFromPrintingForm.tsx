@@ -108,8 +108,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   useEffect(() => {
     batchesData?.forEach((batch: any, index: number) => {
-      if (batch.rfdMtrs !== undefined && batch.printMtrs !== undefined && batch.rfdMtrs > 0) {
-        const shortage = ((batch.rfdMtrs - batch.printMtrs) / batch.rfdMtrs) * 100;
+      if (batch.rfdMtrs !== undefined && batch.printMtrs !== undefined) {
+        const shortage = ((batch.rfdMtrs - batch.printMtrs) / 100) * 100;
         const currentShortage = methods.getValues(`batches.${index}.printShortage`);
         if (currentShortage !== Number(shortage.toFixed(2))) {
           setValue(`batches.${index}.printShortage`, Number(shortage.toFixed(2)));
@@ -264,7 +264,7 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                   <th className="px-4 py-4 text-center">Finish Mtr <span className="text-red-500">*</span></th>
                   <th className="px-4 py-4 text-center">TP</th>
                   <th className="px-4 py-4">TP Detail</th>
-                  <th className="px-4 py-4 text-right">Shortage (%)</th>
+                  <th className="px-4 py-4 text-right">Shortage</th>
                   <th className="px-4 py-4 w-12"></th>
                 </tr>
               </thead>
@@ -313,7 +313,7 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                       <div className="flex items-center justify-end gap-2">
                         {methods.watch(`batches.${index}.printShortage`) < 0 ? <TrendingUp size={12} className="text-green-500" /> : <TrendingDown size={12} className="text-red-500" />}
                         <span className={`text-sm font-black ${methods.watch(`batches.${index}.printShortage`) < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {methods.watch(`batches.${index}.printShortage`)}%
+                          {methods.watch(`batches.${index}.printShortage`)}
                         </span>
                       </div>
                     </td>
