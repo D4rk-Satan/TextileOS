@@ -160,20 +160,24 @@ export async function createPrintingReceive(data: any) {
       data: receiveData
     });
 
-    for (const batch of data.batches) {
-      await prisma.batch.update({
-        where: { id: batch.id },
-        data: {
-          status: 'Ready for Dispatch',
-          printMtrs: batch.printMtrs,
-          printShortage: batch.printShortage,
-          printingReceiveId: receive.id
-        }
-      });
-    }
+    // Use a transaction for better reliability
+    await prisma.$transaction(
+      data.batches.map((batch: any) => 
+        prisma.batch.update({
+          where: { id: batch.id },
+          data: {
+            status: 'Ready For Dispatch',
+            printMtrs: batch.printMtrs,
+            printShortage: batch.printShortage,
+            printingReceiveId: receive.id
+          }
+        })
+      )
+    );
 
     revalidatePath('/dashboard/printing-process');
     revalidatePath('/dashboard/warehouse');
+    revalidatePath('/dashboard/warehouse', 'layout');
     return { success: true, data: receive };
   } catch (error: any) {
     console.error('Error creating printing receive:', error);

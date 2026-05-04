@@ -53,7 +53,7 @@ function WarehousePageContent() {
         setData(result.data || []);
       }
     } else if (activeTab === 'ready-for-dispatch') {
-      const result = await getBatches('Ready for Dispatch');
+      const result = await getBatches('Ready For Dispatch');
       if (result?.success) {
         setData(result.data || []);
       }
