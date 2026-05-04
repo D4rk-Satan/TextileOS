@@ -100,6 +100,13 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
     }
   }, [selectedLotNo, lots, replace, setValue]);
 
+  // Helper to parse TP Detail string (e.g. "90+10+20")
+  const calculateTPSum = (detail: string) => {
+    if (!detail) return 0;
+    const parts = detail.split(/[+\s,]+/).map(p => parseFloat(p)).filter(p => !isNaN(p));
+    return parts.reduce((sum, p) => sum + p, 0);
+  };
+
   // Real-time calculation for print shortage
   const batchesData = useWatch({
     control,
@@ -108,8 +115,19 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   useEffect(() => {
     batchesData?.forEach((batch: any, index: number) => {
-      if (batch.rfdMtrs !== undefined && batch.printMtrs !== undefined && batch.rfdMtrs > 0) {
-        const shortage = ((batch.rfdMtrs - batch.printMtrs) / batch.rfdMtrs) * 100;
+      let currentPrintMtrs = parseFloat(batch.printMtrs) || 0;
+
+      // Handle TP Logic: If TP is checked, calculate Finish Mtr from TP Detail
+      if (batch.isTP) {
+        const calculatedSum = calculateTPSum(batch.tpDetail);
+        if (calculatedSum !== currentPrintMtrs) {
+          setValue(`batches.${index}.printMtrs`, parseFloat(calculatedSum.toFixed(2)));
+          currentPrintMtrs = calculatedSum;
+        }
+      }
+
+      if (batch.rfdMtrs !== undefined && currentPrintMtrs !== undefined && batch.rfdMtrs > 0) {
+        const shortage = ((batch.rfdMtrs - currentPrintMtrs) / batch.rfdMtrs) * 100;
         const currentShortage = methods.getValues(`batches.${index}.printShortage`);
         if (currentShortage !== Number(shortage.toFixed(2))) {
           setValue(`batches.${index}.printShortage`, Number(shortage.toFixed(2)));
@@ -289,7 +307,12 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                           {...methods.register(`batches.${index}.printMtrs`, { required: true, valueAsNumber: true })}
                           type="number"
                           step="0.01"
-                          className="w-24 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-center bg-card focus:border-indigo-500 outline-none transition-all"
+                          readOnly={methods.watch(`batches.${index}.isTP`)}
+                          className={`w-24 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-center outline-none transition-all ${
+                            methods.watch(`batches.${index}.isTP`) 
+                              ? "bg-muted/50 cursor-default" 
+                              : "bg-card focus:border-indigo-500"
+                          }`}
                         />
                       </div>
                     </td>
@@ -305,7 +328,12 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                     <td className="px-4 py-3">
                       <input
                         {...methods.register(`batches.${index}.tpDetail`)}
-                        className="w-full border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold bg-card focus:border-indigo-500 outline-none transition-all"
+                        readOnly={!methods.watch(`batches.${index}.isTP`)}
+                        className={`w-full border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold outline-none transition-all ${
+                          !methods.watch(`batches.${index}.isTP`) 
+                            ? "bg-muted/50 cursor-default" 
+                            : "bg-card focus:border-indigo-500"
+                        }`}
                         placeholder="Detail"
                       />
                     </td>
