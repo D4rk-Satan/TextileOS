@@ -82,6 +82,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
         setValue('printerId', lot.printerId);
         setValue('customerId', lot.customer?.id || '');
         setValue('processType', lot.processType || '');
+        setValue('challanNo', lot.challanNo || '');
+        setValue('billNo', lot.billNo || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
           batchNo: b.batchNo,
@@ -225,7 +227,9 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                 label="DC No / Challan No"
                 name="challanNo"
                 icon={FileText}
-                placeholder="Enter DC No"
+                readOnly
+                placeholder="DC No"
+                className="bg-muted/50 cursor-default font-bold"
               />
             </div>
 
@@ -234,7 +238,9 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                 label="Bill No"
                 name="billNo"
                 icon={FileText}
-                placeholder="Enter Bill No"
+                readOnly
+                placeholder="Bill No"
+                className="bg-muted/50 cursor-default font-bold"
               />
             </div>
           </div>

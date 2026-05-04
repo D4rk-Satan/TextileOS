@@ -107,7 +107,8 @@ export async function getOutForPrintingLots() {
           include: {
             greyInward: {
               include: { customer: true }
-            }
+            },
+            rfdInward: true
           }
         }
       },
@@ -118,6 +119,7 @@ export async function getOutForPrintingLots() {
       ...issue,
       customer: issue.batches[0]?.greyInward?.customer,
       processType: issue.batches[0]?.greyInward?.processType,
+      billNo: issue.batches[0]?.rfdInward?.billNo,
       batches: issue.batches.map(batch => ({
         ...batch,
         mtrs: Number(batch.mtrs),
