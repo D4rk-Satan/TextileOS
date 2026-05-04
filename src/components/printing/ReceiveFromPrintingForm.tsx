@@ -219,6 +219,24 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                 className="bg-muted/50 cursor-default font-bold"
               />
             </div>
+
+            <div className="space-y-2">
+              <FormInput
+                label="DC No / Challan No"
+                name="challanNo"
+                icon={FileText}
+                placeholder="Enter DC No"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <FormInput
+                label="Bill No"
+                name="billNo"
+                icon={FileText}
+                placeholder="Enter Bill No"
+              />
+            </div>
           </div>
         </div>
 
