@@ -67,7 +67,7 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
       if (printerRes.success) setPrinters(printerRes.data || []);
       if (lotRes.success) setLots(lotRes.data || []);
       if (customerRes.success) setCustomers(customerRes.data || []);
-      if (prodRes.success) setValue('productionNumber', prodRes.data);
+      if (prodRes.success && prodRes.data) setValue('productionNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
