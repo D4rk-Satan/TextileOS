@@ -43,7 +43,10 @@ export async function getReadyForPrintingLots() {
       include: {
         customer: true,
         batches: {
-          where: { status: 'Ready for Printing' }
+          where: { status: 'Ready for Printing' },
+          include: {
+            rfdInward: true
+          }
         }
       },
       orderBy: { updatedAt: 'desc' }

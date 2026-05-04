@@ -71,6 +71,8 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
       if (lot) {
         setValue('processType', lot.processType || 'N/A');
         setValue('customerName', lot.customer?.customerName || 'N/A');
+        const rfdDC = lot.batches[0]?.rfdInward?.challanNo;
+        setValue('dcNo', rfdDC || lot.challanNo || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
           batchNo: b.batchNo,
@@ -163,8 +165,10 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
           <FormInput
             label="DC Number"
             name="dcNo"
-            placeholder="Enter Challan No"
+            readOnly
+            placeholder="Auto-filled from Lot"
             icon={FileText}
+            className="bg-muted/30"
           />
         </div>
 
