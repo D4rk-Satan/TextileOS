@@ -52,6 +52,16 @@ function WarehousePageContent() {
       if (result?.success) {
         setData(result.data || []);
       }
+    } else if (activeTab === 'ready-for-dispatch') {
+      const result = await getBatches('Ready for Dispatch');
+      if (result?.success) {
+        setData(result.data || []);
+      }
+    } else if (activeTab === 'dispatched') {
+      const result = await getBatches('Dispatched');
+      if (result?.success) {
+        setData(result.data || []);
+      }
     } else {
       setData([]);
     }
@@ -255,16 +265,8 @@ function WarehousePageContent() {
               />
             </div>
           </motion.div>
-        ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing') ? (
+        ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing' || activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
           <BatchList batches={data} />
-        ) : (activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
-          <div key="placeholder" className="bg-card/50 rounded-[2.5rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm">
-             <EmptyState 
-                title={`${titles[activeTab]} Coming Soon`}
-                description={`The ${titles[activeTab].toLowerCase()} module is currently under development. Check back soon for updates!`}
-                icon={<Package size={48} className="text-blue-600/20" />}
-             />
-          </div>
         ) : (
           <motion.div 
             key="list"

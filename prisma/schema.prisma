@@ -50,6 +50,7 @@ model Customer {
   phone        String?
   gstin        String?
   inwards      GreyInward[]
+  printingReceives PrintingReceive[]
   
   organization   Organization? @relation(fields: [organizationId], references: [id])
   organizationId String?
@@ -208,10 +209,14 @@ model PrintingIssue {
 
 model PrintingReceive {
   id              String      @id @default(cuid())
+  productionNumber String?
   date            DateTime
   lotNo           String
   printerId       String
   printer         Vendor      @relation("PrinterReceive", fields: [printerId], references: [id])
+  processType     String?
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id])
   billNo          String?
   challanNo       String?
   remark          String?

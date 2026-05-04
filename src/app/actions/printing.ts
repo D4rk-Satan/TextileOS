@@ -123,30 +123,48 @@ export async function getOutForPrintingLots() {
   }
 }
 
+export async function getNextProductionNumber() {
+  try {
+    const orgId = await getOrgId();
+    const count = await prisma.printingReceive.count({
+      where: { organizationId: orgId }
+    });
+    return { success: true, data: `JC-${count + 755}` }; // Starting from 755 as per user image
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function createPrintingReceive(data: any) {
   try {
     const orgId = await getOrgId();
     
-    const receive = await prisma.printingReceive.create({
-      data: {
-        date: new Date(data.date),
-        lotNo: data.lotNo,
-        printerId: data.printerId,
-        billNo: data.billNo,
-        challanNo: data.challanNo,
-        remark: data.remark,
-        organizationId: orgId,
-        batches: {
-          connect: data.batches.map((b: any) => ({ id: b.id }))
-        }
+    // Explicitly define the data to avoid potential type issues during generation lag
+    const receiveData: any = {
+      productionNumber: data.productionNumber,
+      date: new Date(data.date),
+      lotNo: data.lotNo,
+      printerId: data.printerId,
+      processType: data.processType,
+      customerId: data.customerId,
+      billNo: data.billNo,
+      challanNo: data.challanNo,
+      remark: data.remark,
+      organizationId: orgId,
+      batches: {
+        connect: data.batches.map((b: any) => ({ id: b.id }))
       }
+    };
+
+    const receive = await prisma.printingReceive.create({
+      data: receiveData
     });
 
     for (const batch of data.batches) {
       await prisma.batch.update({
         where: { id: batch.id },
         data: {
-          status: 'Printing Received',
+          status: 'Ready for Dispatch',
           printMtrs: batch.printMtrs,
           printShortage: batch.printShortage,
           printingReceiveId: receive.id
@@ -155,8 +173,10 @@ export async function createPrintingReceive(data: any) {
     }
 
     revalidatePath('/dashboard/printing-process');
+    revalidatePath('/dashboard/warehouse');
     return { success: true, data: receive };
   } catch (error: any) {
+    console.error('Error creating printing receive:', error);
     return { success: false, error: error.message };
   }
 }
