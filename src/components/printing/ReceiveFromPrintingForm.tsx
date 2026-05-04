@@ -79,6 +79,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
       const lot = lots.find(l => l.lotNo === selectedLotNo);
       if (lot) {
         setValue('printerId', lot.printerId);
+        setValue('customerId', lot.customer?.id || '');
+        setValue('processType', lot.processType || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
           batchNo: b.batchNo,
@@ -103,8 +105,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   useEffect(() => {
     batchesData?.forEach((batch: any, index: number) => {
-      if (batch.rfdMtrs && batch.printMtrs) {
-        const shortage = ((batch.rfdMtrs - batch.printMtrs) / batch.rfdMtrs) * 100;
+      if (batch.rfdMtrs !== undefined && batch.printMtrs !== undefined) {
+        const shortage = (batch.rfdMtrs - batch.printMtrs) / 100;
         const currentShortage = methods.getValues(`batches.${index}.printShortage`);
         if (currentShortage !== Number(shortage.toFixed(2))) {
           setValue(`batches.${index}.printShortage`, Number(shortage.toFixed(2)));

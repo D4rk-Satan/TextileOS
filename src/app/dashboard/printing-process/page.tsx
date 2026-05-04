@@ -21,7 +21,7 @@ import { ReceiveFromPrintingForm } from '@/components/printing/ReceiveFromPrinti
 import { GlassCard } from '@/components/shared/GlassCard';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getOutForPrintingLots } from '@/app/actions/printing';
+import { getOutForPrintingLots, getPrintingReceives } from '@/app/actions/printing';
 
 type TabType = 'issue' | 'receive';
 
@@ -41,8 +41,11 @@ function PrintingProcessPageContent() {
 
   const fetchData = async () => {
     setLoading(true);
-    if (activeTab === 'issue' || activeTab === 'receive') {
+    if (activeTab === 'issue') {
       const result = await getOutForPrintingLots();
+      if (result.success) setData(result.data || []);
+    } else if (activeTab === 'receive') {
+      const result = await getPrintingReceives();
       if (result.success) setData(result.data || []);
     }
     setLoading(false);
@@ -164,9 +167,15 @@ function PrintingProcessPageContent() {
                         <td className="px-8 py-5 font-bold text-foreground">{item.printer?.vendorName}</td>
                         <td className="px-8 py-5 text-sm text-muted-foreground">{item.challanNo || '-'}</td>
                         <td className="px-8 py-5">
-                          <span className="text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider bg-orange-500/10 text-orange-500">
-                            Out for Printing
-                          </span>
+                          {activeTab === 'issue' ? (
+                            <span className="text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider bg-orange-500/10 text-orange-500">
+                              Out for Printing
+                            </span>
+                          ) : (
+                            <span className="text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider bg-green-500/10 text-green-500">
+                              Ready for Dispatch
+                            </span>
+                          )}
                         </td>
                       </tr>
                       {expandedRows.includes(item.id) && (
@@ -176,7 +185,9 @@ function PrintingProcessPageContent() {
                               {item.batches?.map((batch: any) => (
                                 <div key={batch.id} className="p-3 rounded-2xl bg-background border border-border/50">
                                   <div className="text-[10px] font-black text-blue-600 uppercase mb-1">{batch.batchNo}</div>
-                                  <div className="text-sm font-bold">{batch.rfdMtrs} Mtr (RFD)</div>
+                                  <div className="text-sm font-bold">
+                                    {activeTab === 'issue' ? `${batch.rfdMtrs} Mtr (RFD)` : `${batch.printMtrs} Mtr (Finish)`}
+                                  </div>
                                 </div>
                               ))}
                             </div>

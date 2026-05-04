@@ -102,7 +102,12 @@ export async function getOutForPrintingLots() {
       include: {
         printer: true,
         batches: {
-          where: { status: 'Under Printing' }
+          where: { status: 'Under Printing' },
+          include: {
+            greyInward: {
+              include: { customer: true }
+            }
+          }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -110,10 +115,42 @@ export async function getOutForPrintingLots() {
 
     const serializedData = issues.filter((i: any) => i.batches.length > 0).map((issue: any) => ({
       ...issue,
+      customer: issue.batches[0]?.greyInward?.customer,
+      processType: issue.batches[0]?.greyInward?.processType,
       batches: issue.batches.map((batch: any) => ({
         ...batch,
         mtrs: Number(batch.mtrs),
         rfdMtrs: Number(batch.rfdMtrs)
+      }))
+    }));
+
+    return { success: true, data: serializedData };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getPrintingReceives() {
+  try {
+    const orgId = await getOrgId();
+    const receives = await prisma.printingReceive.findMany({
+      where: { organizationId: orgId },
+      include: {
+        printer: true,
+        customer: true,
+        batches: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const serializedData = receives.map((receive: any) => ({
+      ...receive,
+      batches: receive.batches.map((batch: any) => ({
+        ...batch,
+        mtrs: Number(batch.mtrs || 0),
+        rfdMtrs: Number(batch.rfdMtrs || 0),
+        printMtrs: Number(batch.printMtrs || 0),
+        printShortage: Number(batch.printShortage || 0)
       }))
     }));
 
