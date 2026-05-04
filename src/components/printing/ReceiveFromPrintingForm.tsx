@@ -141,7 +141,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
               label="Production Number"
               name="productionNumber"
               icon={Hash}
-              disabled
+              readOnly
+              className="bg-muted/30 cursor-default"
             />
             <FormInput
               label="Receive Date"
@@ -192,8 +193,8 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
               <div className="relative">
                 <select
                   {...methods.register('printerId', { required: true })}
-                  disabled
-                  className="w-full h-12 bg-muted/50 border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none cursor-not-allowed outline-none"
+                  className="w-full h-12 bg-muted/50 border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none pointer-events-none outline-none"
+                  tabIndex={-1}
                 >
                   <option value="">Printer...</option>
                   {printers.map(p => (
