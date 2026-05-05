@@ -29,7 +29,8 @@ interface DeliveryChallanFormProps {
 export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
   const [customers, setCustomers] = useState<any[]>([]);
   const [readyLots, setReadyLots] = useState<any[]>([]);
-  const [selectedLots, setSelectedLots] = useState<any[]>([]);
+  const [selectedBatches, setSelectedBatches] = useState<any[]>([]);
+  const [expandedLots, setExpandedLots] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -64,43 +65,50 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
         const res = await getReadyForDispatchLots(selectedCustomerId);
         if (res.success) {
           setReadyLots(res.data || []);
-          setSelectedLots([]); // Reset selection when customer changes
+          setSelectedBatches([]); // Reset selection when customer changes
         }
       } else {
         setReadyLots([]);
-        setSelectedLots([]);
+        setSelectedBatches([]);
       }
     }
     loadLots();
   }, [selectedCustomerId]);
 
-  const addLot = (lot: any) => {
-    if (!selectedLots.find(l => l.lotNo === lot.lotNo)) {
-      setSelectedLots([...selectedLots, lot]);
-      setReadyLots(readyLots.filter(l => l.lotNo !== lot.lotNo));
+  const toggleBatch = (batch: any, lot: any) => {
+    const isSelected = selectedBatches.find(b => b.id === batch.id);
+    if (isSelected) {
+      setSelectedBatches(selectedBatches.filter(b => b.id !== batch.id));
+    } else {
+      setSelectedBatches([...selectedBatches, { ...batch, lotNo: lot.lotNo, quality: lot.quality, processType: lot.processType }]);
     }
   };
 
-  const removeLot = (lot: any) => {
-    setSelectedLots(selectedLots.filter(l => l.lotNo !== lot.lotNo));
-    setReadyLots([...readyLots, lot]);
+  const removeBatch = (batchId: string) => {
+    setSelectedBatches(selectedBatches.filter(b => b.id !== batchId));
+  };
+
+  const toggleLotExpansion = (lotNo: string) => {
+    setExpandedLots(prev => 
+      prev.includes(lotNo) ? prev.filter(l => l !== lotNo) : [...prev, lotNo]
+    );
   };
 
   const onSubmit = async (data: any) => {
-    if (selectedLots.length === 0) {
-      toast.error('Please select at least one lot to dispatch');
+    if (selectedBatches.length === 0) {
+      toast.error('Please select at least one batch to dispatch');
       return;
     }
 
     setIsSubmitting(true);
-    const batchIds = selectedLots.flatMap(lot => lot.batches.map((b: any) => b.id));
+    const batchIds = selectedBatches.map(b => b.id);
     const result = await createDeliveryChallan({ ...data, batchIds });
     setIsSubmitting(false);
 
     if (result.success) {
       toast.success('Delivery challan created successfully');
       reset();
-      setSelectedLots([]);
+      setSelectedBatches([]);
       if (onSuccess) onSuccess();
     } else {
       toast.error(result.error || 'Failed to create delivery challan');
@@ -151,68 +159,115 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
           <div className="space-y-4">
             <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
               <Package size={14} className="text-blue-500" />
-              Available Lots (Ready for Dispatch)
+              Available Batches (Grouped by Lot)
             </h4>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 no-scrollbar">
               {readyLots.length === 0 ? (
                 <div className="p-8 border border-dashed border-border rounded-2xl text-center text-muted-foreground text-xs italic">
                   {selectedCustomerId ? 'No lots ready for dispatch for this customer.' : 'Select a customer to see available lots.'}
                 </div>
               ) : (
-                readyLots.map(lot => (
-                  <div 
-                    key={lot.lotNo} 
-                    onClick={() => addLot(lot)}
-                    className="p-4 rounded-2xl border border-border bg-card/50 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all cursor-pointer group"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-sm font-black text-foreground">Lot #{lot.lotNo}</div>
-                        <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{lot.quality} | {lot.processType}</div>
+                readyLots.map(lot => {
+                  const isExpanded = expandedLots.includes(lot.lotNo);
+                  const selectedInLot = lot.batches.filter((b: any) => selectedBatches.find(sb => sb.id === b.id));
+                  
+                  return (
+                    <div 
+                      key={lot.lotNo} 
+                      className="rounded-2xl border border-border bg-card/50 overflow-hidden"
+                    >
+                      <div 
+                        onClick={() => toggleLotExpansion(lot.lotNo)}
+                        className="p-4 flex justify-between items-start cursor-pointer hover:bg-blue-500/5 transition-colors"
+                      >
+                        <div>
+                          <div className="text-sm font-black text-foreground flex items-center gap-2">
+                            Lot #{lot.lotNo}
+                            {selectedInLot.length > 0 && (
+                              <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 font-black">
+                                {selectedInLot.length} Selected
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{lot.quality} | {lot.processType}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs font-black text-blue-600">{lot.batches.length} Batches</div>
+                          <div className="text-[10px] text-muted-foreground font-bold">{lot.batches.reduce((sum: number, b: any) => sum + b.printMtrs, 0).toFixed(2)} Mtrs</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs font-black text-blue-600">{lot.batches.length} Batches</div>
-                        <div className="text-[10px] text-muted-foreground font-bold">{lot.batches.reduce((sum: number, b: any) => sum + b.printMtrs, 0).toFixed(2)} Mtrs</div>
-                      </div>
+                      
+                      {isExpanded && (
+                        <div className="px-4 pb-4 space-y-2 border-t border-border/50 pt-3 bg-muted/20">
+                          {lot.batches.map((batch: any) => {
+                            const isSelected = selectedBatches.find(sb => sb.id === batch.id);
+                            return (
+                              <div 
+                                key={batch.id}
+                                onClick={() => toggleBatch(batch, lot)}
+                                className={`p-3 rounded-xl border transition-all cursor-pointer flex justify-between items-center ${
+                                  isSelected 
+                                    ? 'bg-green-500/10 border-green-500/30' 
+                                    : 'bg-background border-border/50 hover:border-blue-500/30'
+                                }`}
+                              >
+                                <div>
+                                  <div className="text-[11px] font-black uppercase tracking-widest text-foreground">{batch.batchNo}</div>
+                                  <div className="text-[10px] text-muted-foreground font-medium">Finished Mtrs</div>
+                                </div>
+                                <div className="text-right flex items-center gap-3">
+                                  <div className="text-xs font-black text-foreground">{Number(batch.printMtrs).toFixed(2)}</div>
+                                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                                    isSelected ? 'bg-green-500 border-green-500' : 'border-border'
+                                  }`}>
+                                    {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
 
-          {/* Selected Lots Column */}
+          {/* Selected Batches Column */}
           <div className="space-y-4">
             <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
               <Truck size={14} className="text-green-500" />
-              Selected for Dispatch
+              Selected for Dispatch ({selectedBatches.length})
             </h4>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
-              {selectedLots.length === 0 ? (
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 no-scrollbar">
+              {selectedBatches.length === 0 ? (
                 <div className="p-8 border border-dashed border-border rounded-2xl text-center text-muted-foreground text-xs italic">
-                  Click on an available lot to add it to this dispatch.
+                  Select individual batches from the available lots to add them to this dispatch.
                 </div>
               ) : (
-                selectedLots.map(lot => (
+                selectedBatches.map(batch => (
                   <div 
-                    key={lot.lotNo}
-                    className="p-4 rounded-2xl border border-green-500/20 bg-green-500/5 relative group"
+                    key={batch.id}
+                    className="p-4 rounded-2xl border border-green-500/20 bg-green-500/5 relative group animate-in slide-in-from-right-4 duration-300"
                   >
                     <button 
                       type="button"
-                      onClick={() => removeLot(lot)}
+                      onClick={() => removeBatch(batch.id)}
                       className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                     >
                       <Trash2 size={12} />
                     </button>
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="text-sm font-black text-foreground">Lot #{lot.lotNo}</div>
-                        <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{lot.quality} | {lot.processType}</div>
+                        <div className="text-[11px] font-black text-foreground uppercase tracking-widest">
+                          {batch.batchNo} <span className="text-muted-foreground ml-2 font-bold opacity-50">Lot #{batch.lotNo}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{batch.quality} | {batch.processType}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs font-black text-green-600">{lot.batches.length} Batches</div>
-                        <div className="text-[10px] text-muted-foreground font-bold">{lot.batches.reduce((sum: number, b: any) => sum + b.printMtrs, 0).toFixed(2)} Mtrs</div>
+                        <div className="text-xs font-black text-green-600">{Number(batch.printMtrs).toFixed(2)} Mtrs</div>
                       </div>
                     </div>
                   </div>
@@ -241,7 +296,7 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
           </FormButton>
           <FormButton 
               type="button" 
-              onClick={() => { reset(); setSelectedLots([]); }} 
+              onClick={() => { reset(); setSelectedBatches([]); }} 
               variant="secondary" 
               className="h-12 px-10 rounded-xl font-black uppercase tracking-wider flex gap-2"
           >
