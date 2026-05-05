@@ -15,11 +15,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyInwards, getBatches } from '@/app/actions/warehouse'; // Import with updated signature
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 
-type TabType = 'grey-inward' | 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'under-printing' | 'ready-for-dispatch' | 'dispatched';
+type TabType = 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'under-printing' | 'ready-for-dispatch' | 'dispatched';
 
 function WarehousePageContent() {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabType>('grey-inward');
+  const [activeTab, setActiveTab] = useState<TabType>('batches');
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
@@ -27,7 +27,7 @@ function WarehousePageContent() {
 
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as TabType;
-    if (tabFromUrl && tabFromUrl !== activeTab && ['grey-inward', 'batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tabFromUrl)) {
+    if (tabFromUrl && tabFromUrl !== activeTab && ['batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl);
       setShowForm(false);
       return; // Skip this effect run, wait for the next one with updated activeTab
@@ -39,9 +39,7 @@ function WarehousePageContent() {
       setData([]); 
       
       let result: any;
-      if (activeTab === 'grey-inward') {
-        result = await getGreyInwards();
-      } else if (activeTab === 'batches') {
+      if (activeTab === 'batches') {
         result = await getBatches('In-Warehouse');
       } else if (activeTab === 'out-for-rfd') {
         result = await getBatches('Out For RFD');
@@ -84,7 +82,6 @@ function WarehousePageContent() {
   };
 
   const titles: Record<TabType, string> = {
-    'grey-inward': 'Grey Inward',
     'batches': 'In-Warehouse',
     'out-for-rfd': 'Out For RFD',
     'ready-for-printing': 'Ready For Printing',
@@ -198,28 +195,7 @@ function WarehousePageContent() {
             </h1>
           </div>
 
-          {!showForm && activeTab === 'grey-inward' && (
-            <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-                <Search size={16} />
-              </div>
-              <input 
-                type="text" 
-                placeholder={`Search ${titles[activeTab]}...`} 
-                className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
-              />
-            </div>
-          )}
-
           <div className="flex items-center gap-3 min-w-[200px] justify-end">
-            {!showForm && activeTab === 'grey-inward' && (
-              <button 
-                onClick={() => setShowForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[12px] whitespace-nowrap"
-              >
-                Add {titles[activeTab].replace('Entry', '')}
-              </button>
-            )}
           </div>
         </div>
       </HeaderPortal>
@@ -254,11 +230,6 @@ function WarehousePageContent() {
                   New {titles[activeTab]} Entry
                 </h2>
              </div>
-             <GlassCard>
-                <div className="p-10">
-                  {activeTab === 'grey-inward' && <GreyInwardForm onSuccess={handleRecordAdded} />}
-                </div>
-             </GlassCard>
           </motion.div>
         ) : fetchedTab !== activeTab ? (
           <motion.div 
@@ -269,23 +240,6 @@ function WarehousePageContent() {
             className="h-96 flex items-center justify-center"
           >
             <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-          </motion.div>
-        ) : data.length === 0 && activeTab === 'grey-inward' ? (
-          <motion.div 
-            key={`${activeTab}-empty`}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-card/50 rounded-[2.5rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm"
-          >
-            <div className="p-10">
-              <EmptyState 
-                title={`No ${titles[activeTab]} records`}
-                description={`You haven't recorded any ${activeTab.replace(/-/g, ' ')} entries yet.`}
-                onAdd={() => setShowForm(true)}
-                onImport={() => alert('Import feature coming soon!')}
-              />
-            </div>
           </motion.div>
         ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing' || activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
           <div key={`${activeTab}-batchlist`}>

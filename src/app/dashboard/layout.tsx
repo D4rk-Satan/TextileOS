@@ -63,12 +63,20 @@ export default function DashboardLayout({
         ]
     },
     { 
+      name: 'Grey', 
+      href: '/dashboard/grey', 
+      icon: Layers,
+      isDropdown: true,
+      subItems: [
+        { name: 'Grey Inward', href: '/dashboard/grey?tab=grey-inward', icon: Building2 },
+      ]
+    },
+    { 
       name: 'Batches', 
       href: '/dashboard/warehouse', 
       icon: Warehouse,
       isDropdown: true,
       subItems: [
-        { name: 'Grey Inward', href: '/dashboard/warehouse?tab=grey-inward', icon: Building2 },
         { name: 'In-Warehouse', href: '/dashboard/warehouse?tab=batches', icon: Boxes },
         { name: 'Out For RFD', href: '/dashboard/warehouse?tab=out-for-rfd', icon: RotateCcw },
         { name: 'Ready For Printing', href: '/dashboard/warehouse?tab=ready-for-printing', icon: Printer },
@@ -78,13 +86,13 @@ export default function DashboardLayout({
       ]
     },
     { 
-      name: 'Dyeing House', 
+      name: 'RFD Process', 
       href: '/dashboard/dyeing-house', 
       icon: Waves,
       isDropdown: true,
       subItems: [
-        { name: 'Grey Outward', href: '/dashboard/dyeing-house?tab=grey-outward', icon: Droplets },
-        { name: 'RFD Inward', href: '/dashboard/dyeing-house?tab=rfd-inward', icon: Layers },
+        { name: 'Issue for RFD', href: '/dashboard/dyeing-house?tab=grey-outward', icon: Droplets },
+        { name: 'Receive from RFD', href: '/dashboard/dyeing-house?tab=rfd-inward', icon: Layers },
       ]
     },
     { 

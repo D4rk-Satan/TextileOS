@@ -77,8 +77,8 @@ function DyeingHousePageContent() {
   };
 
   const titles: Record<TabType, string> = {
-    'grey-outward': 'Grey Outward',
-    'rfd-inward': 'RFD Inward'
+    'grey-outward': 'Issue for RFD',
+    'rfd-inward': 'Receive from RFD'
   };
 
   const handleRecordAdded = () => {
