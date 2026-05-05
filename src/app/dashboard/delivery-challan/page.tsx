@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -10,11 +11,17 @@ import {
   Package, 
   ChevronRight,
   FilePlus,
-  Info
+  Info,
+  Calendar,
+  User,
+  Hash,
+  ArrowRight
 } from 'lucide-react';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DeliveryChallanForm } from '@/components/dispatch/DeliveryChallanForm';
+import { getDeliveryChallans } from '@/app/actions/dispatch';
 
 type TabType = 'delivery-challan';
 
@@ -22,8 +29,24 @@ function DeliveryChallanPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('delivery-challan');
   const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
+  const [expandedRows, setExpandedRows] = useState<string[]>([]);
+
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => 
+      prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+    );
+  };
+
+  const fetchChallans = async () => {
+    setLoading(true);
+    const result = await getDeliveryChallans();
+    if (result.success) {
+      setData(result.data || []);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as TabType;
@@ -31,7 +54,13 @@ function DeliveryChallanPageContent() {
       setActiveTab(tabFromUrl);
       setShowForm(false);
     }
+    fetchChallans();
   }, [searchParams]);
+
+  const handleSuccess = () => {
+    setShowForm(false);
+    fetchChallans();
+  };
 
   const titles: Record<TabType, string> = {
     'delivery-challan': 'Delivery Challan'
@@ -85,14 +114,8 @@ function DeliveryChallanPageContent() {
               </button>
             </div>
             <GlassCard>
-              <div className="p-10 flex flex-col items-center justify-center min-h-[400px] text-center">
-                <div className="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-6">
-                  <FilePlus className="w-10 h-10 text-blue-600" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">Delivery Challan Form</h2>
-                <p className="text-muted-foreground max-w-md">
-                  This form is currently under development. Here you will be able to create delivery challans for dispatching batches.
-                </p>
+              <div className="p-10">
+                <DeliveryChallanForm onSuccess={handleSuccess} />
               </div>
             </GlassCard>
           </div>
@@ -102,17 +125,88 @@ function DeliveryChallanPageContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden min-h-[400px] flex items-center justify-center"
+            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
           >
-            <div className="text-center p-12">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                <Info className="w-8 h-8 text-muted-foreground/40" />
+            {loading ? (
+              <div className="h-64 flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">No Delivery Challans Found</h3>
-              <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-2 italic">
-                Start by creating a new delivery challan to send batches to dispatch.
-              </p>
-            </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-separate border-spacing-0">
+                  <thead>
+                    <tr className="bg-muted/50 border-b border-border">
+                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest w-12"></th>
+                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Date</th>
+                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Challan No</th>
+                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
+                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lots</th>
+                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest text-right">Total Mtrs</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/50">
+                    {data.map((item: any) => (
+                      <React.Fragment key={item.id}>
+                        <tr 
+                          className="hover:bg-muted/30 transition-colors cursor-pointer group"
+                          onClick={() => toggleRow(item.id)}
+                        >
+                          <td className="px-8 py-5 text-center">
+                            <ChevronRight 
+                              size={16} 
+                              className={`text-muted-foreground transition-transform ${expandedRows.includes(item.id) ? 'rotate-90' : ''}`} 
+                            />
+                          </td>
+                          <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
+                            {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-8 py-5 font-bold text-foreground">{item.challanNo}</td>
+                          <td className="px-8 py-5 font-bold text-foreground">{item.customer?.customerName}</td>
+                          <td className="px-8 py-5">
+                            <div className="flex flex-wrap gap-1">
+                              {item.lotNumbers?.map((lot: string) => (
+                                <span key={lot} className="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-black">#{lot}</span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-8 py-5 text-right font-black text-blue-600">
+                            {Number(item.totalMtrs).toFixed(2)}
+                          </td>
+                        </tr>
+                        {expandedRows.includes(item.id) && (
+                          <tr>
+                            <td colSpan={6} className="px-8 py-4 bg-muted/5">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {item.batches?.map((batch: any) => (
+                                  <div key={batch.id} className="p-4 rounded-2xl bg-background border border-border/50 shadow-sm">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{batch.batchNo}</div>
+                                      <div className="text-[9px] font-black text-muted-foreground uppercase">Lot #{batch.greyInward?.lotNo}</div>
+                                    </div>
+                                    <div className="flex items-end justify-between">
+                                      <div className="text-xs text-muted-foreground font-medium">Finished Mtrs</div>
+                                      <div className="text-lg font-black text-foreground">{Number(batch.printMtrs).toFixed(2)}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                    {data.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-8 py-20 text-center">
+                          <Package size={32} className="mx-auto text-muted-foreground/20 mb-3" />
+                          <p className="text-muted-foreground font-bold italic text-xs">No delivery challans found.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -122,7 +216,7 @@ function DeliveryChallanPageContent() {
 
 export default function DeliveryChallanPage() {
   return (
-    <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading Delivery Module...</div>}>
+    <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading Dispatch Module...</div>}>
       <DeliveryChallanPageContent />
     </Suspense>
   );

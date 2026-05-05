@@ -22,6 +22,7 @@ model Organization {
   rfdInwards   RFDInward[]
   printingIssues PrintingIssue[]
   printingReceives PrintingReceive[]
+  deliveryChallans DeliveryChallan[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -51,6 +52,7 @@ model Customer {
   gstin        String?
   inwards      GreyInward[]
   printingReceives PrintingReceive[]
+  deliveryChallans DeliveryChallan[]
   
   organization   Organization? @relation(fields: [organizationId], references: [id])
   organizationId String?
@@ -151,6 +153,9 @@ model Batch {
   printMtrs        Decimal?   @db.Decimal(10, 2)
   printShortage    Decimal?   @db.Decimal(10, 2)
   
+  deliveryChallan   DeliveryChallan? @relation(fields: [deliveryChallanId], references: [id])
+  deliveryChallanId String?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
 }
@@ -228,4 +233,20 @@ model PrintingReceive {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   batches         Batch[]
+}
+
+model DeliveryChallan {
+  id              String      @id @default(cuid())
+  challanNo       String?
+  date            DateTime
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id])
+  remark          String?
+  
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?
+  
+  batches         Batch[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
