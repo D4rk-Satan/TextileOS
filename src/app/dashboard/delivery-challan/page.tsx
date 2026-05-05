@@ -16,25 +16,25 @@ import { HeaderPortal } from '@/components/layout/HeaderPortal';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type TabType = 'send-to-dispatch';
+type TabType = 'delivery-challan';
 
 function DeliveryChallanPageContent() {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabType>('send-to-dispatch');
+  const [activeTab, setActiveTab] = useState<TabType>('delivery-challan');
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
 
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as TabType;
-    if (tabFromUrl && ['send-to-dispatch'].includes(tabFromUrl)) {
+    if (tabFromUrl && ['delivery-challan'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl);
       setShowForm(false);
     }
   }, [searchParams]);
 
   const titles: Record<TabType, string> = {
-    'send-to-dispatch': 'Send to Dispatch'
+    'delivery-challan': 'Delivery Challan'
   };
 
   return (
@@ -66,7 +66,7 @@ function DeliveryChallanPageContent() {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[12px] whitespace-nowrap"
               >
                 <Plus className="w-4 h-4" />
-                New Dispatch
+                New Challan
               </button>
             )}
           </div>
@@ -89,7 +89,7 @@ function DeliveryChallanPageContent() {
                 <div className="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-6">
                   <FilePlus className="w-10 h-10 text-blue-600" />
                 </div>
-                <h2 className="text-2xl font-bold mb-2">Send to Dispatch Form</h2>
+                <h2 className="text-2xl font-bold mb-2">Delivery Challan Form</h2>
                 <p className="text-muted-foreground max-w-md">
                   This form is currently under development. Here you will be able to create delivery challans for dispatching batches.
                 </p>

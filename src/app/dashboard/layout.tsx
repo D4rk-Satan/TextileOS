@@ -98,12 +98,12 @@ export default function DashboardLayout({
       ]
     },
     { 
-      name: 'Delivery Challan', 
+      name: 'Dispatch', 
       href: '/dashboard/delivery-challan', 
       icon: Truck,
       isDropdown: true,
       subItems: [
-        { name: 'Send to Dispatch', href: '/dashboard/delivery-challan?tab=send-to-dispatch', icon: FilePlus },
+        { name: 'Delivery Challan', href: '/dashboard/delivery-challan?tab=delivery-challan', icon: FilePlus },
       ]
     },
     { name: 'Reports', href: '/dashboard/reports', icon: FileText },
