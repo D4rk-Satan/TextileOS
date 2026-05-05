@@ -64,12 +64,27 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
       if (selectedCustomerId) {
         const res = await getReadyForDispatchLots(selectedCustomerId);
         if (res.success) {
-          setReadyLots(res.data || []);
-          setSelectedBatches([]); // Reset selection when customer changes
+          const lots = res.data || [];
+          setReadyLots(lots);
+          
+          // Auto-select all batches by default
+          const allBatches = lots.flatMap((lot: any) => 
+            lot.batches.map((batch: any) => ({
+              ...batch,
+              lotNo: lot.lotNo,
+              quality: lot.quality,
+              processType: lot.processType
+            }))
+          );
+          setSelectedBatches(allBatches);
+          
+          // Expand all lots by default
+          setExpandedLots(lots.map((l: any) => l.lotNo));
         }
       } else {
         setReadyLots([]);
         setSelectedBatches([]);
+        setExpandedLots([]);
       }
     }
     loadLots();
