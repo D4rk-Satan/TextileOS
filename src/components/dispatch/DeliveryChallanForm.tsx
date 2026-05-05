@@ -288,7 +288,7 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
           <FormButton 
               type="submit" 
               variant="primary" 
-              disabled={isSubmitting || selectedLots.length === 0}
+              disabled={isSubmitting || selectedBatches.length === 0}
               className="h-12 px-10 rounded-xl font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 flex gap-2"
           >
             <Save size={18} />
