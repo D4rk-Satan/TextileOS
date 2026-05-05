@@ -21,7 +21,6 @@ import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormButton } from '@/components/shared/FormButton';
 import { getOutForPrintingLots, createPrintingReceive, getNextReceiveProductionNumber } from '@/app/actions/printing';
-import { getCustomers } from '@/app/actions/master';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 
@@ -30,7 +29,6 @@ interface ReceiveFromPrintingFormProps {
 }
 
 export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormProps) {
-  const [customers, setCustomers] = useState<any[]>([]);
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,6 +40,7 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
       jobCardNumber: '',
       lotNo: '',
       customerId: '',
+      customerName: '',
       processType: '',
       remark: '',
       batches: [] as any[]
@@ -56,26 +55,25 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
 
   useEffect(() => {
     async function loadData() {
-      const [lotRes, customerRes, prodRes] = await Promise.all([
+      const [lotRes, prodRes] = await Promise.all([
         getOutForPrintingLots(),
-        getCustomers(),
         getNextReceiveProductionNumber()
       ]);
       if (lotRes.success) setLots(lotRes.data || []);
-      if (customerRes.success) setCustomers(customerRes.data || []);
       if (prodRes.success && prodRes.data) setValue('productionNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
   }, [setValue]);
 
-  const selectedJobCard = watch('jobCardNumber');
+  const selectedJobCardId = watch('jobCardNumber');
   useEffect(() => {
-    if (selectedJobCard) {
-      const lot = lots.find(l => l.jobCardNumber === selectedJobCard);
+    if (selectedJobCardId) {
+      const lot = lots.find(l => l.id === selectedJobCardId);
       if (lot) {
         setValue('lotNo', lot.lotNo);
         setValue('customerId', lot.customer?.id || '');
+        setValue('customerName', lot.customer?.customerName || '');
         setValue('processType', lot.processType || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
@@ -90,9 +88,13 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
         })));
       }
     } else {
+      setValue('lotNo', '');
+      setValue('customerId', '');
+      setValue('customerName', '');
+      setValue('processType', '');
       replace([]);
     }
-  }, [selectedJobCard, lots, replace, setValue]);
+  }, [selectedJobCardId, lots, replace, setValue]);
 
   // Helper to parse TP Detail string (e.g. "90+10+20")
   const calculateTPSum = (detail: string) => {
@@ -185,7 +187,9 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
                 >
                   <option value="">Choose a job card...</option>
                   {lots.map(lot => (
-                    <option key={lot.id} value={lot.jobCardNumber}>JC #{lot.jobCardNumber} (Lot #{lot.lotNo})</option>
+                    <option key={lot.id} value={lot.id}>
+                      {lot.jobCardNumber ? `JC #${lot.jobCardNumber}` : 'No JC#'} (Lot #{lot.lotNo})
+                    </option>
                   ))}
                 </select>
                 <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
@@ -193,20 +197,15 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Customer</label>
-              <div className="relative">
-                <select
-                  {...methods.register('customerId', { required: true })}
-                  className="w-full h-12 bg-muted/50 border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none pointer-events-none outline-none"
-                  tabIndex={-1}
-                >
-                  <option value="">Select Customer...</option>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.customerName}</option>
-                  ))}
-                </select>
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={18} />
-              </div>
+              <FormInput
+                label="Customer"
+                name="customerName"
+                icon={User}
+                readOnly
+                placeholder="Select Job Card first..."
+                className="bg-muted/50 cursor-default font-bold"
+              />
+              <input type="hidden" {...methods.register('customerId')} />
             </div>
           </div>
 
