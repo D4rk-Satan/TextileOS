@@ -165,11 +165,20 @@ export async function createGreyOutward(data: DyeingActionData) {
   }
 }
 
-export async function getGreyOutwards() {
+export async function getGreyOutwards(search?: string) {
   try {
     const orgId = await getOrgId();
     const outwards = await prisma.greyOutward.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? {
+          OR: [
+            { lotNo: { contains: search, mode: 'insensitive' } },
+            { challanNo: { contains: search, mode: 'insensitive' } },
+            { dyeingHouse: { vendorName: { contains: search, mode: 'insensitive' } } }
+          ]
+        } : {})
+      },
       include: {
         dyeingHouse: true,
         batches: true
@@ -354,11 +363,21 @@ export async function getGreyOutwardsByHouse(dyeingHouseId: string) {
   }
 }
 
-export async function getRFDInwards() {
+export async function getRFDInwards(search?: string) {
     try {
       const orgId = await getOrgId();
     const outwards = await prisma.rFDInward.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? {
+          OR: [
+            { lotNo: { contains: search, mode: 'insensitive' } },
+            { billNo: { contains: search, mode: 'insensitive' } },
+            { challanNo: { contains: search, mode: 'insensitive' } },
+            { dyeingHouse: { vendorName: { contains: search, mode: 'insensitive' } } }
+          ]
+        } : {})
+      },
       include: {
         dyeingHouse: true,
         batches: true

@@ -24,6 +24,7 @@ import { GlassCard } from '@/components/shared/GlassCard';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getOutForPrintingLots, getPrintingReceives } from '@/app/actions/printing';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'issue' | 'receive';
 
@@ -35,6 +36,9 @@ function PrintingProcessPageContent() {
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => 
@@ -57,9 +61,9 @@ function PrintingProcessPageContent() {
       
       let result: any;
       if (activeTab === 'issue') {
-        result = await getOutForPrintingLots();
+        result = await getOutForPrintingLots(debouncedSearch);
       } else if (activeTab === 'receive') {
-        result = await getPrintingReceives();
+        result = await getPrintingReceives(debouncedSearch);
       }
 
       if (isCurrent && result?.success) {
@@ -74,7 +78,7 @@ function PrintingProcessPageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab]);
+  }, [searchParams, activeTab, debouncedSearch]);
 
   const fetchData = () => {
     setActiveTab(prev => prev); // Simple trigger
@@ -108,6 +112,8 @@ function PrintingProcessPageContent() {
               </div>
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={`Search ${titles[activeTab]}...`} 
                 className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
               />

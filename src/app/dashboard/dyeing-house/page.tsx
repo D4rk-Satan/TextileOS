@@ -20,6 +20,7 @@ import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyOutwards, getRFDInwards } from '@/app/actions/dyeing';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'grey-outward' | 'rfd-inward';
 
@@ -31,6 +32,9 @@ function DyeingHousePageContent() {
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => 
@@ -53,9 +57,9 @@ function DyeingHousePageContent() {
       
       let result: any;
       if (activeTab === 'grey-outward') {
-        result = await getGreyOutwards();
+        result = await getGreyOutwards(debouncedSearch);
       } else if (activeTab === 'rfd-inward') {
-        result = await getRFDInwards();
+        result = await getRFDInwards(debouncedSearch);
       }
 
       if (isCurrent && result?.success) {
@@ -70,7 +74,7 @@ function DyeingHousePageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab]);
+  }, [searchParams, activeTab, debouncedSearch]);
 
   const fetchData = () => {
     setActiveTab(prev => prev);
@@ -105,6 +109,8 @@ function DyeingHousePageContent() {
               </div>
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={`Search ${titles[activeTab]}...`} 
                 className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
               />

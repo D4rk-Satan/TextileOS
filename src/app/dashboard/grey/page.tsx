@@ -12,6 +12,7 @@ import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyInwards } from '@/app/actions/warehouse';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'grey-inward';
 
@@ -21,10 +22,13 @@ function GreyPageContent() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   const fetchTabData = async () => {
     setLoading(true);
-    const result = await getGreyInwards();
+    const result = await getGreyInwards(debouncedSearch);
     if (result?.success) {
       setData(result.data || []);
     } else {
@@ -35,7 +39,7 @@ function GreyPageContent() {
 
   useEffect(() => {
     fetchTabData();
-  }, []);
+  }, [debouncedSearch]);
 
   const titles: Record<TabType, string> = {
     'grey-inward': 'Grey Inward'
@@ -64,6 +68,8 @@ function GreyPageContent() {
               </div>
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={`Search ${titles[activeTab]}...`} 
                 className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
               />

@@ -14,6 +14,7 @@ import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyInwards, getBatches } from '@/app/actions/warehouse'; // Import with updated signature
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'under-printing' | 'ready-for-dispatch' | 'dispatched';
 
@@ -24,6 +25,9 @@ function WarehousePageContent() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as TabType;
@@ -40,17 +44,17 @@ function WarehousePageContent() {
       
       let result: any;
       if (activeTab === 'batches') {
-        result = await getBatches('In-Warehouse');
+        result = await getBatches('In-Warehouse', debouncedSearch);
       } else if (activeTab === 'out-for-rfd') {
-        result = await getBatches('Out For RFD');
+        result = await getBatches('Out For RFD', debouncedSearch);
       } else if (activeTab === 'ready-for-printing') {
-        result = await getBatches('Ready for Printing');
+        result = await getBatches('Ready for Printing', debouncedSearch);
       } else if (activeTab === 'under-printing') {
-        result = await getBatches('Under Printing');
+        result = await getBatches('Under Printing', debouncedSearch);
       } else if (activeTab === 'ready-for-dispatch') {
-        result = await getBatches('Ready For Dispatch');
+        result = await getBatches('Ready For Dispatch', debouncedSearch);
       } else if (activeTab === 'dispatched') {
-        result = await getBatches('Dispatched');
+        result = await getBatches('Dispatched', debouncedSearch);
       }
 
       if (isCurrent) {
@@ -69,7 +73,7 @@ function WarehousePageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab]);
+  }, [searchParams, activeTab, debouncedSearch]);
 
   const fetchData = () => {
     // Legacy support for other parts of the component that call fetchData()
@@ -194,6 +198,21 @@ function WarehousePageContent() {
               {titles[activeTab]}
             </h1>
           </div>
+
+          {!showForm && (
+            <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
+                <Search size={16} />
+              </div>
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`Search ${titles[activeTab]}...`} 
+                className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
+              />
+            </div>
+          )}
 
           <div className="flex items-center gap-3 min-w-[200px] justify-end">
           </div>

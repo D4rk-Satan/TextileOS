@@ -102,11 +102,19 @@ export async function createDeliveryChallan(data: any) {
   }
 }
 
-export async function getDeliveryChallans() {
+export async function getDeliveryChallans(search?: string) {
   try {
     const orgId = await getOrgId();
     const challans = await prisma.deliveryChallan.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? {
+          OR: [
+            { challanNo: { contains: search, mode: 'insensitive' } },
+            { customer: { customerName: { contains: search, mode: 'insensitive' } } }
+          ]
+        } : {})
+      },
       include: {
         customer: true,
         batches: {

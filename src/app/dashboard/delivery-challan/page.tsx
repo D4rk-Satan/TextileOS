@@ -22,6 +22,7 @@ import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DeliveryChallanForm } from '@/components/dispatch/DeliveryChallanForm';
 import { getDeliveryChallans } from '@/app/actions/dispatch';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'delivery-challan';
 
@@ -32,6 +33,9 @@ function DeliveryChallanPageContent() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 500);
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => 
@@ -41,7 +45,7 @@ function DeliveryChallanPageContent() {
 
   const fetchChallans = async () => {
     setLoading(true);
-    const result = await getDeliveryChallans();
+    const result = await getDeliveryChallans(debouncedSearch);
     if (result.success) {
       setData(result.data || []);
     }
@@ -55,7 +59,7 @@ function DeliveryChallanPageContent() {
       setShowForm(false);
     }
     fetchChallans();
-  }, [searchParams]);
+  }, [searchParams, debouncedSearch]);
 
   const handleSuccess = () => {
     setShowForm(false);
@@ -83,6 +87,8 @@ function DeliveryChallanPageContent() {
             </div>
             <input 
               type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Search ${titles[activeTab]}...`} 
               className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
             />

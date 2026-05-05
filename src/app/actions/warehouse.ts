@@ -79,11 +79,21 @@ export async function createGreyInward(data: any) {
   }
 }
 
-export async function getGreyInwards() {
+export async function getGreyInwards(search?: string) {
   try {
     const orgId = await getOrgId();
     const greyInwards = await prisma.greyInward.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? {
+          OR: [
+            { lotNo: { contains: search, mode: 'insensitive' } },
+            { challanNo: { contains: search, mode: 'insensitive' } },
+            { customer: { customerName: { contains: search, mode: 'insensitive' } } },
+            { quality: { contains: search, mode: 'insensitive' } }
+          ]
+        } : {})
+      },
       include: {
         customer: true,
         batches: true,
@@ -105,16 +115,28 @@ export async function getGreyInwards() {
   }
 }
 
-/** Fetches batches filtered by status */
-export async function getBatches(status?: string) {
+/** Fetches batches filtered by status and search */
+export async function getBatches(status?: string, search?: string) {
   try {
     const orgId = await getOrgId();
     const batches = await prisma.batch.findMany({
       where: { 
         greyInward: {
-          organizationId: orgId
+          organizationId: orgId,
+          ...(search ? {
+            OR: [
+              { lotNo: { contains: search, mode: 'insensitive' } },
+              { customer: { customerName: { contains: search, mode: 'insensitive' } } },
+              { quality: { contains: search, mode: 'insensitive' } }
+            ]
+          } : {})
         },
-        ...(status ? { status } : {})
+        ...(status ? { status } : {}),
+        ...(search ? {
+          OR: [
+            { batchNo: { contains: search, mode: 'insensitive' } }
+          ]
+        } : {})
       },
       include: {
         greyInward: {

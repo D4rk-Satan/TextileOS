@@ -115,11 +115,21 @@ export async function createPrintingIssue(data: any) {
   }
 }
 
-export async function getOutForPrintingLots() {
+export async function getOutForPrintingLots(search?: string) {
   try {
     const orgId = await getOrgId();
     const issues = await prisma.printingIssue.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? {
+          OR: [
+            { jobCardNumber: { contains: search, mode: 'insensitive' } },
+            { lotNo: { contains: search, mode: 'insensitive' } },
+            { printer: { vendorName: { contains: search, mode: 'insensitive' } } },
+            { batches: { some: { greyInward: { customer: { customerName: { contains: search, mode: 'insensitive' } } } } } }
+          ]
+        } : {})
+      },
       include: {
         printer: true,
         batches: {
@@ -170,11 +180,21 @@ export async function getOutForPrintingLots() {
   }
 }
 
-export async function getPrintingReceives() {
+export async function getPrintingReceives(search?: string) {
   try {
     const orgId = await getOrgId();
     const receives = await prisma.printingReceive.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? {
+          OR: [
+            { productionNumber: { contains: search, mode: 'insensitive' } },
+            { lotNo: { contains: search, mode: 'insensitive' } },
+            { printer: { vendorName: { contains: search, mode: 'insensitive' } } },
+            { customer: { customerName: { contains: search, mode: 'insensitive' } } }
+          ]
+        } : {})
+      },
       include: {
         printer: true,
         customer: true,
