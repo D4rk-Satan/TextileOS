@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Droplets,
   Layers,
-  Waves
+  Waves,
+  FilePlus
 } from 'lucide-react';
 import DashboardShell, { NavItem } from '@/components/layout/DashboardShell';
 import { getOrgBranding } from '@/app/actions/superadmin';
@@ -94,6 +95,15 @@ export default function DashboardLayout({
       subItems: [
         { name: 'Issue For Printing', href: '/dashboard/printing-process?tab=issue', icon: FileText },
         { name: 'Receive From Printing', href: '/dashboard/printing-process?tab=receive', icon: RotateCcw },
+      ]
+    },
+    { 
+      name: 'Delivery Challan', 
+      href: '/dashboard/delivery-challan', 
+      icon: Truck,
+      isDropdown: true,
+      subItems: [
+        { name: 'Send to Dispatch', href: '/dashboard/delivery-challan?tab=send-to-dispatch', icon: FilePlus },
       ]
     },
     { name: 'Reports', href: '/dashboard/reports', icon: FileText },
