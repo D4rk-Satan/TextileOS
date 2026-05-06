@@ -1,5 +1,3 @@
-'use client';
-
 import React, { Suspense } from 'react';
 import { 
   LayoutDashboard, 
@@ -23,34 +21,21 @@ import DashboardShell, { NavItem } from '@/components/layout/DashboardShell';
 import { getOrgBranding } from '@/app/actions/superadmin';
 import { verifySession } from '@/lib/dal';
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [profile, setProfile] = React.useState({
-    name: 'User',
-    role: 'Admin',
-    initials: '..',
-    orgName: 'TextileOS'
-  });
-
-  React.useEffect(() => {
-    async function fetchData() {
-      const session = await verifySession();
-      const branding = await getOrgBranding();
-      
-      if (branding.success && branding.org) {
-        setProfile({
-          name: branding.org.name,
-          role: session?.role || 'Admin',
-          initials: branding.org.name.substring(0, 2).toUpperCase(),
-          orgName: branding.org.name
-        });
-      }
-    }
-    fetchData();
-  }, []);
+  // Fetch data on the server
+  const session = await verifySession();
+  const branding = await getOrgBranding();
+  
+  const profile = {
+    name: branding.success && branding.org ? branding.org.name : 'User',
+    role: session?.role || 'Admin',
+    initials: branding.success && branding.org ? branding.org.name.substring(0, 2).toUpperCase() : '..',
+    orgName: branding.success && branding.org ? branding.org.name : 'TextileOS'
+  };
 
   const navigation: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
