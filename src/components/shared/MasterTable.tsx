@@ -7,11 +7,13 @@ import { cn } from '@/lib/utils';
 interface MasterTableProps {
   data: any[];
   type: 'customers' | 'vendors' | 'items';
+  userRole?: string;
   onEdit?: (item: any) => void;
   onDelete?: (id: string) => void;
 }
 
-export function MasterTable({ data, type, onEdit, onDelete }: MasterTableProps) {
+export function MasterTable({ data, type, userRole = 'Admin', onEdit, onDelete }: MasterTableProps) {
+  const isReadOnly = userRole === 'User' && (type === 'customers' || type === 'vendors');
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -51,7 +53,7 @@ export function MasterTable({ data, type, onEdit, onDelete }: MasterTableProps) 
               {type === 'items' ? 'Created At' : 'Location'}
             </th>
             <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-            <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider w-16"></th>
+            {!isReadOnly && <th className="px-6 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider w-16"></th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -117,11 +119,13 @@ export function MasterTable({ data, type, onEdit, onDelete }: MasterTableProps) 
                 <td className="px-6 py-5">
                   <StatusBadge status={item.status || 'Active'} />
                 </td>
-                <td className="px-6 py-5">
-                  <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                    <MoreHorizontal size={18} />
-                  </button>
-                </td>
+                {!isReadOnly && (
+                  <td className="px-6 py-5">
+                    <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+                      <MoreHorizontal size={18} />
+                    </button>
+                  </td>
+                )}
               </tr>
             );
           })}

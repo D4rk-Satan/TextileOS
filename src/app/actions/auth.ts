@@ -157,3 +157,9 @@ export async function getOrganizationUsers() {
     return { success: false, users: [] };
   }
 }
+
+export async function getUserRole() {
+  const cookieStore = await cookies();
+  const role = cookieStore.get('user_role')?.value;
+  return role || 'User';
+}

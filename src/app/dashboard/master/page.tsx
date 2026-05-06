@@ -15,6 +15,7 @@ import { GlassCard } from '@/components/shared/GlassCard';
 import { MasterTable } from '@/components/shared/MasterTable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCustomers, getVendors, getItems } from '@/app/actions/master';
+import { getUserRole } from '@/app/actions/auth';
 import { HeaderPortal } from '@/components/layout/HeaderPortal';
 
 type TabType = 'customers' | 'vendors' | 'items' | 'batches' | 'reports';
@@ -26,9 +27,13 @@ function MasterPageContent() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
+  const [userRole, setUserRole] = useState<string>('Admin');
 
   const fetchData = async (tab: TabType) => {
     setLoading(true);
+    const role = await getUserRole();
+    setUserRole(role);
+
     setData([]);
     let result;
     if (tab === 'customers') result = await getCustomers();
@@ -46,7 +51,7 @@ function MasterPageContent() {
     const tab = searchParams.get('tab') as TabType;
     if (tab && ['customers', 'vendors', 'items', 'batches', 'reports'].includes(tab)) {
       setActiveTab(tab);
-      setShowForm(false); // Reset form view when switching tabs
+      setShowForm(false);
       fetchData(tab);
     } else {
       fetchData(activeTab);
@@ -57,6 +62,9 @@ function MasterPageContent() {
     setShowForm(false);
     fetchData(activeTab);
   };
+
+  // RBAC: Staff (User role) can only add Items, not Customers or Vendors
+  const canAdd = userRole === 'Admin' || activeTab === 'items';
 
   return (
     <div className="space-y-8">
@@ -83,7 +91,7 @@ function MasterPageContent() {
           )}
 
           <div className="flex items-center gap-3 min-w-[200px] justify-end">
-            {!showForm && (
+            {!showForm && canAdd && (
               <button 
                 onClick={() => setShowForm(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[12px] whitespace-nowrap"
@@ -149,13 +157,17 @@ function MasterPageContent() {
                   <EmptyState 
                     title={`No ${activeTab} found`}
                     description={`You haven't added any ${activeTab} yet. Start by creating your first one.`}
-                    onAdd={() => setShowForm(true)}
+                    onAdd={canAdd ? () => setShowForm(true) : undefined}
                     onImport={() => alert('Import feature coming soon!')}
                   />
                </div>
             ) : (
                <div className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden">
-                 <MasterTable data={data} type={activeTab === 'customers' ? 'customers' : activeTab === 'vendors' ? 'vendors' : 'items'} />
+                 <MasterTable 
+                    data={data} 
+                    userRole={userRole}
+                    type={activeTab === 'customers' ? 'customers' : activeTab === 'vendors' ? 'vendors' : 'items'} 
+                  />
                </div>
             )}
           </motion.div>

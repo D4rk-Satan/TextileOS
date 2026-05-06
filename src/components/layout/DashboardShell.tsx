@@ -312,8 +312,9 @@ export default function DashboardShell({
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto no-scrollbar">
           {navigation
             .filter(item => {
-              // RBAC Logic: Standard users cannot see Master Data or Settings
-              if (userProfile.role === 'User' && (item.name === 'Master' || item.name === 'Settings')) {
+              // RBAC Logic: Standard users can see Master Data (Read-only for Cust/Vend, Create for Items)
+              // But they still cannot see Organization Settings
+              if (userProfile.role === 'User' && item.name === 'Settings') {
                 return false;
               }
               return true;
