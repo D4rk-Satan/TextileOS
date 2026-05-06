@@ -17,6 +17,12 @@ export function proxy(request: NextRequest) {
     if (!role) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
+
+    // Granular RBAC for Dashboard sub-routes
+    // Only Admin can access Settings/Team
+    if (path.startsWith('/dashboard/settings') && role !== 'Admin') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   // 3. Redirect logged-in users away from auth pages

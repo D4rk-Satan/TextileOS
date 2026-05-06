@@ -12,8 +12,9 @@ interface MasterTableProps {
   onDelete?: (id: string) => void;
 }
 
-export function MasterTable({ data, type, userRole = 'Admin', onEdit, onDelete }: MasterTableProps) {
-  const isReadOnly = userRole === 'User' && (type === 'customers' || type === 'vendors');
+export function MasterTable({ data, type, userRole = 'User', onEdit, onDelete }: MasterTableProps) {
+  const role = userRole?.toLowerCase();
+  const isReadOnly = role !== 'admin' && (type === 'customers' || type === 'vendors');
   const getInitials = (name: string) => {
     return name
       .split(' ')

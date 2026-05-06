@@ -13,9 +13,12 @@ export default async function DashboardLayout({
   const session = await verifySession();
   const branding = await getOrgBranding();
   
+  // Default to 'User' role for safety if session is missing or invalid
+  const userRole = session?.role || 'User';
+  
   const profile = {
     name: branding.success && branding.org ? branding.org.name : 'User',
-    role: session?.role || 'Admin',
+    role: userRole,
     initials: branding.success && branding.org ? branding.org.name.substring(0, 2).toUpperCase() : '..',
     orgName: branding.success && branding.org ? branding.org.name : 'TextileOS'
   };

@@ -3,18 +3,25 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-async function getOrgId() {
+async function getSessionContext() {
   const cookieStore = await cookies();
   const orgId = cookieStore.get('org_id')?.value;
-  if (!orgId) throw new Error('Unauthorized: No organization ID found');
-  return orgId;
+  const role = cookieStore.get('user_role')?.value;
+  
+  if (!orgId || !role) throw new Error('Unauthorized: Missing session context');
+  return { orgId, role };
 }
 
 // --- Customer Actions ---
 
 export async function createCustomer(data: any) {
   try {
-    const orgId = await getOrgId();
+    const { orgId, role } = await getSessionContext();
+    
+    if (role !== 'Admin') {
+      return { success: false, error: 'Permission denied: Only administrators can create customers' };
+    }
+
     const customer = await prisma.customer.create({
       data: {
         customerName: data.customerName,
@@ -40,7 +47,7 @@ export async function createCustomer(data: any) {
 
 export async function getCustomers() {
   try {
-    const orgId = await getOrgId();
+    const { orgId } = await getSessionContext();
     const customers = await prisma.customer.findMany({
       where: { organizationId: orgId },
       orderBy: { customerName: 'asc' },
@@ -55,7 +62,12 @@ export async function getCustomers() {
 
 export async function createVendor(data: any) {
   try {
-    const orgId = await getOrgId();
+    const { orgId, role } = await getSessionContext();
+
+    if (role !== 'Admin') {
+      return { success: false, error: 'Permission denied: Only administrators can create vendors' };
+    }
+
     const vendor = await prisma.vendor.create({
       data: {
         vendorName: data.vendorName,
@@ -82,7 +94,7 @@ export async function createVendor(data: any) {
 
 export async function getVendors() {
   try {
-    const orgId = await getOrgId();
+    const { orgId } = await getSessionContext();
     const vendors = await prisma.vendor.findMany({
       where: { organizationId: orgId },
       orderBy: { vendorName: 'asc' },
@@ -95,7 +107,7 @@ export async function getVendors() {
 
 export async function getDashboardStats() {
   try {
-    const orgId = await getOrgId();
+    const { orgId } = await getSessionContext();
     const [customerCount, vendorCount, itemCount] = await Promise.all([
       prisma.customer.count({ where: { organizationId: orgId } }),
       prisma.vendor.count({ where: { organizationId: orgId } }),
@@ -118,7 +130,7 @@ export async function getDashboardStats() {
 
 export async function createItem(data: any) {
   try {
-    const orgId = await getOrgId();
+    const { orgId } = await getSessionContext();
     const item = await prisma.item.create({
       data: {
         itemName: data.itemName,
@@ -136,7 +148,7 @@ export async function createItem(data: any) {
 
 export async function getItems() {
   try {
-    const orgId = await getOrgId();
+    const { orgId } = await getSessionContext();
     const items = await prisma.item.findMany({
       where: { organizationId: orgId },
       orderBy: { itemName: 'asc' },

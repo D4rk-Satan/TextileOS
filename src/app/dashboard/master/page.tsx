@@ -28,7 +28,7 @@ function MasterPageContent() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
-  const [userRole, setUserRole] = useState<string>('Admin');
+  const [userRole, setUserRole] = useState<string>('User');
 
   const fetchData = async (tab: TabType) => {
     setLoading(true);
@@ -64,8 +64,9 @@ function MasterPageContent() {
     fetchData(activeTab);
   };
 
-  // RBAC: Staff (User role) can only add Items, not Customers or Vendors
-  const canAdd = userRole === 'Admin' || activeTab === 'items';
+  // RBAC: Only Admin can add Customers/Vendors. All can add Items.
+  const role = userRole?.toLowerCase();
+  const canAdd = role === 'admin' || activeTab === 'items';
 
   return (
     <div className="space-y-8">
