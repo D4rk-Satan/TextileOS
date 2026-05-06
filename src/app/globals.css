@@ -1,33 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc; /* Light Slate Gray for better contrast */
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #1e293b;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --border: #e2e8f0;
-  --input: #ffffff;
-  --ring: #3b82f6;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --background: #F8F9FA; /* Soft Gray-White */
+  --foreground: #1A1D21; /* Deep Charcoal */
+  --card: #FFFFFF; /* Pure White */
+  --card-foreground: #1A1D21;
+  --primary: #4F46E5; /* Indigo */
+  --primary-hover: #4338CA;
+  --border: #E2E8F0;
+  --input: #FFFFFF;
+  --ring: #4F46E5;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B; /* Cool Slate */
+  --success: #10B981; /* Ink Ready */
+  --success-foreground: #FFFFFF;
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.5);
 }
 
 .dark {
-  --background: #0f172a; /* Deep Navy/Charcoal */
-  --foreground: #f1f5f9;
-  --card: #1e293b;
-  --card-foreground: #f8fafc;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --border: #334155;
-  --input: #1e293b;
-  --ring: #60a5fa;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
+  --background: #0F172A; /* Deep Navy */
+  --foreground: #F1F5F9; /* Almost White */
+  --card: #1E293B; /* Slate Gray */
+  --card-foreground: #F1F5F9;
+  --primary: #818CF8; /* Lightened Indigo */
+  --primary-hover: #6366F1;
+  --border: #334155; /* Subtle separation */
+  --input: #1E293B;
+  --ring: #818CF8;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8; /* Muted Blue-Gray */
+  --success: #10B981;
+  --success-foreground: #0F172A;
   --glass-bg: rgba(15, 23, 42, 0.6);
   --glass-border: rgba(255, 255, 255, 0.1);
 }
@@ -44,8 +48,15 @@
   --color-ring: var(--ring);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-glass: var(--glass-bg);
   --color-glass-border: var(--glass-border);
+
+  /* Legacy Aliases for Centralized Theme Management */
+  --color-blue-500: var(--primary);
+  --color-blue-600: var(--primary);
+  --color-blue-700: var(--primary-hover);
 }
 
 body {

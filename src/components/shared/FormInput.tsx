@@ -33,11 +33,11 @@ export function FormInput({ name, label, required, icon: Icon, rules, className,
     >
       <label htmlFor={name} className="text-xs font-semibold text-foreground/80 flex gap-0.5 ml-1">
         {label}
-        {required && <span className="text-blue-600 font-bold">*</span>}
+        {required && <span className="text-primary font-bold">*</span>}
       </label>
       <div className="relative group">
         {Icon && (
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-blue-600 transition-colors pointer-events-none">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none">
             <Icon size={16} />
           </div>
         )}
@@ -50,17 +50,17 @@ export function FormInput({ name, label, required, icon: Icon, rules, className,
           suppressHydrationWarning
           className={cn(
             'flex h-11 w-full rounded-xl border border-border py-2 text-sm transition-all shadow-sm',
-            'placeholder:text-muted-foreground/50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-medium',
+            'placeholder:text-muted-foreground/50 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary font-medium',
             'disabled:cursor-not-allowed disabled:opacity-50',
             variant === 'dark' 
               ? 'bg-muted/80 border-border/80 text-foreground font-bold shadow-inner' 
               : 'bg-card text-foreground',
             Icon ? 'pl-11 pr-4' : 'px-4',
-            error ? 'border-red-500/50 focus:ring-red-500/10 focus:border-red-500' : 'hover:border-blue-500/50'
+            error ? 'border-red-500/50 focus:ring-red-500/10 focus:border-red-500' : 'hover:border-primary/50'
           )}
           {...props}
         />
-        <div className="absolute inset-0 rounded-lg bg-blue-500/0 group-hover:bg-blue-500/[0.02] pointer-events-none transition-colors" />
+        <div className="absolute inset-0 rounded-lg bg-primary/0 group-hover:bg-primary/[0.02] pointer-events-none transition-colors" />
       </div>
       {error && (
         <motion.span 

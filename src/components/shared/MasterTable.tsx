@@ -27,7 +27,7 @@ export function MasterTable({ data, type, onEdit, onDelete }: MasterTableProps) 
       <span className={cn(
         "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
         isActive 
-          ? "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-400/10 dark:text-blue-400" 
+          ? "bg-success/10 text-success border-success/20 dark:bg-success/10 dark:text-success" 
           : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:bg-slate-400/10 dark:text-slate-400"
       )}>
         {status || 'Unknown'}
@@ -70,11 +70,11 @@ export function MasterTable({ data, type, onEdit, onDelete }: MasterTableProps) 
                 </td>
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-lg shadow-blue-600/10 group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-white text-xs font-black shadow-lg shadow-primary/10 group-hover:scale-110 transition-transform">
                       {initials}
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold text-foreground group-hover:text-blue-600 transition-colors">{name}</div>
+                      <div className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors">{name}</div>
                       <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                          {item.vendorNumber && <span className="flex items-center gap-1"><Hash size={10} /> {item.vendorNumber}</span>}
                          {item.masterName && <span className="ml-2 opacity-60">| {item.masterName}</span>}
@@ -85,7 +85,7 @@ export function MasterTable({ data, type, onEdit, onDelete }: MasterTableProps) 
                 <td className="px-6 py-5">
                   <div className="space-y-1">
                     {type === 'items' ? (
-                      <div className="text-[13px] font-mono text-blue-600 dark:text-blue-400 font-bold">{item.sku}</div>
+                      <div className="text-[13px] font-mono text-primary font-bold">{item.sku}</div>
                     ) : (
                       <>
                         <div className="text-[13px] font-medium text-foreground flex items-center gap-2">
@@ -107,7 +107,7 @@ export function MasterTable({ data, type, onEdit, onDelete }: MasterTableProps) 
                     ) : (
                       <>
                         <span className="flex items-center gap-2 font-medium text-foreground/80">
-                          <MapPin size={12} className="text-blue-500" /> {item.city || 'N/A'}
+                          <MapPin size={12} className="text-primary" /> {item.city || 'N/A'}
                         </span>
                         <span className="text-xs ml-5">{item.state || 'N/A'}, {item.country || 'India'}</span>
                       </>

@@ -101,9 +101,9 @@ export default function DashboardShell({
             className={cn(
               'flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[13px] font-medium transition-all group outline-none relative overflow-hidden',
               isActive && depth === 0
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-bold' 
+                ? 'bg-primary text-white shadow-lg shadow-primary/20 font-bold' 
                 : isActive && depth > 0
-                ? 'text-blue-600 bg-blue-600/10 border-l-4 border-blue-600 rounded-none rounded-r-xl font-bold translate-x-1'
+                ? 'text-primary bg-primary/10 border-l-4 border-primary rounded-none rounded-r-xl font-bold translate-x-1'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               depth > 0 && 'py-2 px-3 text-[11px]'
             )}
@@ -111,7 +111,7 @@ export default function DashboardShell({
             {item.icon && (
               <item.icon size={depth === 0 ? 20 : 16} className={cn(
                 'flex-shrink-0 transition-colors',
-                isActive && depth === 0 ? 'text-white' : isActive ? 'text-blue-600' : 'text-muted-foreground group-hover:text-foreground'
+                isActive && depth === 0 ? 'text-white' : isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
               )} />
             )}
             <span className={cn("transition-all duration-300 whitespace-nowrap", isMinimized ? "opacity-0 w-0 translate-x-4" : "opacity-100 w-auto translate-x-0")}>
@@ -159,9 +159,9 @@ export default function DashboardShell({
         className={cn(
           'flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-medium transition-all group outline-none overflow-hidden',
           isActive && depth === 0
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-bold' 
+            ? 'bg-primary text-white shadow-lg shadow-primary/20 font-bold' 
             : isActive && depth > 0
-            ? 'text-blue-600 bg-blue-600/10 border-l-4 border-blue-600 rounded-none rounded-r-xl font-bold translate-x-1'
+            ? 'text-primary bg-primary/10 border-l-4 border-primary rounded-none rounded-r-xl font-bold translate-x-1'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground',
           depth > 0 && 'py-2 px-3 text-[11px]'
         )}
@@ -169,7 +169,7 @@ export default function DashboardShell({
         {item.icon && (
           <item.icon size={depth === 0 ? 20 : 16} className={cn(
             'flex-shrink-0 transition-colors',
-            isActive && depth === 0 ? 'text-white' : isActive ? 'text-blue-600' : 'text-muted-foreground group-hover:text-foreground'
+            isActive && depth === 0 ? 'text-white' : isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
           )} />
         )}
         <span className={cn("transition-all duration-300 whitespace-nowrap", isMinimized ? "opacity-0 w-0 translate-x-4" : "opacity-100 w-auto translate-x-0")}>
@@ -194,10 +194,10 @@ export default function DashboardShell({
       >
         <div className="p-6 flex items-center justify-between border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-16">
           <div className={cn("flex items-center gap-3 overflow-hidden transition-all duration-300", isMinimized ? "w-0 opacity-0" : "w-auto opacity-100")}>
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-lg text-white">T</div>
+            <div className="w-8 h-8 bg-primary rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-lg text-white">T</div>
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-foreground whitespace-nowrap">TextileOS</span>
-              <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest block whitespace-nowrap">{userProfile.orgName}</span>
+              <span className="text-[10px] text-primary font-bold uppercase tracking-widest block whitespace-nowrap">{userProfile.orgName}</span>
             </div>
           </div>
           
@@ -225,7 +225,7 @@ export default function DashboardShell({
             isMinimized ? "flex-col items-center gap-4" : "items-center justify-between"
           )}>
             <div className={cn("flex flex-col", isMinimized && "hidden")}>
-               <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">{userProfile.orgName}</span>
+               <span className="text-[10px] text-primary font-bold uppercase tracking-widest">{userProfile.orgName}</span>
                <span className="text-xs font-bold text-foreground">Organization</span>
             </div>
             
