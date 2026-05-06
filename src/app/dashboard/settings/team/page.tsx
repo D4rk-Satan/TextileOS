@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import React from 'react';
 import { 
@@ -15,10 +16,12 @@ import { GlassCard } from '@/components/shared/GlassCard';
 import { FormButton } from '@/components/shared/FormButton';
 import { FormInput } from '@/components/shared/FormInput';
 import { useForm, FormProvider } from 'react-hook-form';
-import { createStaffUser, getOrganizationUsers } from '@/app/actions/auth';
+import { createStaffUser, getOrganizationUsers, getUserRole } from '@/app/actions/auth';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function TeamPage() {
+  const router = useRouter();
   const [users, setUsers] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAddingUser, setIsAddingUser] = React.useState(false);
@@ -41,8 +44,16 @@ export default function TeamPage() {
   };
 
   React.useEffect(() => {
-    fetchUsers();
-  }, []);
+    const checkAccess = async () => {
+      const role = await getUserRole();
+      if (role !== 'Admin') {
+        router.push('/dashboard');
+        return;
+      }
+      fetchUsers();
+    };
+    checkAccess();
+  }, [router]);
 
   const onSubmit = async (data: any) => {
     const result = await createStaffUser(data);
@@ -217,7 +228,7 @@ export default function TeamPage() {
             <div>
               <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-1">Standard User Role</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Standard users can handle all operational workflows but cannot access Master Data (Vendors/Customers) or Organization Settings.
+                Standard users can handle all operational workflows and manage Items. They have read-only access to Customers/Vendors and cannot access Organization Settings.
               </p>
             </div>
           </div>

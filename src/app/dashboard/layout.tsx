@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import React, { Suspense } from 'react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { getOrgBranding } from '@/app/actions/superadmin';
