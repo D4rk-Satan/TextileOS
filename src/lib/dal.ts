@@ -6,12 +6,13 @@ export async function verifySession() {
   const cookieStore = await cookies();
   const role = cookieStore.get('user_role')?.value;
   const orgId = cookieStore.get('org_id')?.value;
+  const email = cookieStore.get('user_email')?.value;
 
   if (!role || !orgId) {
     return null;
   }
 
-  return { role, orgId };
+  return { role, orgId, email };
 }
 
 export async function getUserRole() {

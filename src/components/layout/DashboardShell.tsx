@@ -129,6 +129,7 @@ interface DashboardShellProps {
   userProfile?: {
     name: string;
     role: string;
+    userEmail?: string;
     initials: string;
     orgName?: string;
   };
@@ -140,6 +141,7 @@ export default function DashboardShell({
   userProfile = {
     name: 'User',
     role: 'Member',
+    userEmail: 'user@textileos.com',
     initials: 'U',
     orgName: 'TextileOS'
   }
@@ -341,9 +343,9 @@ export default function DashboardShell({
             "flex transition-all duration-300",
             isMinimized ? "flex-col items-center gap-4" : "items-center justify-between"
           )}>
-            <div className={cn("flex flex-col", isMinimized && "hidden")}>
-               <span className="text-[10px] text-primary font-bold uppercase tracking-widest">{userProfile.orgName}</span>
-               <span className="text-xs font-bold text-foreground">Organization</span>
+            <div className={cn("flex flex-col overflow-hidden", isMinimized && "hidden")}>
+               <span className="text-xs font-bold text-foreground truncate max-w-[140px]">{userProfile.userEmail}</span>
+               <span className="text-[10px] text-primary font-bold uppercase tracking-widest truncate">{userProfile.orgName}</span>
             </div>
             
             <div className={cn("flex items-center gap-2", isMinimized && "flex-col")}>

@@ -67,6 +67,7 @@ export async function loginUser(data: any) {
     const cookieStore = await cookies();
     cookieStore.set('user_role', user.role, { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production' });
     cookieStore.set('org_id', user.organizationId || '', { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+    cookieStore.set('user_email', user.email, { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production' });
 
     // In a real app, you would set a session/cookie here
     return { 
@@ -88,6 +89,7 @@ export async function logoutUser() {
   const cookieStore = await cookies();
   cookieStore.delete('user_role');
   cookieStore.delete('org_id');
+  cookieStore.delete('user_email');
   return { success: true };
 }
 
