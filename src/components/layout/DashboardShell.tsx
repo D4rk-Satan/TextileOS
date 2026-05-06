@@ -214,9 +214,18 @@ export default function DashboardShell({
         </div>
 
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto no-scrollbar">
-          {navigation.map((item) => (
-            <NavLink key={item.name} item={item} />
-          ))}
+          {navigation
+            .filter(item => {
+              // RBAC Logic: Standard users cannot see Master Data or Settings
+              if (userProfile.role === 'User' && (item.name === 'Master' || item.name === 'Settings')) {
+                return false;
+              }
+              return true;
+            })
+            .map((item) => (
+              <NavLink key={item.name} item={item} />
+            ))
+          }
         </nav>
 
         <div className="p-4 border-t border-border bg-card/50 mt-auto">

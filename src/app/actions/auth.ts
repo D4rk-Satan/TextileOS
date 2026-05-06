@@ -90,3 +90,70 @@ export async function logoutUser() {
   cookieStore.delete('org_id');
   return { success: true };
 }
+
+export async function createStaffUser(data: any) {
+  try {
+    const cookieStore = await cookies();
+    const adminRole = cookieStore.get('user_role')?.value;
+    const orgId = cookieStore.get('org_id')?.value;
+
+    if (adminRole !== 'Admin') {
+      return { success: false, error: 'Only administrators can create staff users' };
+    }
+
+    if (!orgId) {
+      return { success: false, error: 'Organization context missing' };
+    }
+
+    // 1. Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      return { success: false, error: 'User with this email already exists' };
+    }
+
+    // 2. Hash Password
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // 3. Create Staff User
+    const user = await prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        role: data.role || 'User',
+        organizationId: orgId,
+      },
+    });
+
+    revalidatePath('/dashboard/settings/team');
+    return { success: true, user };
+  } catch (error: any) {
+    console.error('Create Staff Error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getOrganizationUsers() {
+  try {
+    const cookieStore = await cookies();
+    const orgId = cookieStore.get('org_id')?.value;
+
+    if (!orgId) return { success: false, users: [] };
+
+    const users = await prisma.user.findMany({
+      where: { organizationId: orgId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      }
+    });
+
+    return { success: true, users };
+  } catch (error) {
+    return { success: false, users: [] };
+  }
+}

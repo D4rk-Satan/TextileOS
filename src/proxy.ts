@@ -19,10 +19,19 @@ export function proxy(request: NextRequest) {
     }
   }
 
+  // 3. Redirect logged-in users away from auth pages
+  if (path === '/login' || path === '/signup') {
+    if (role === 'SuperAdmin') {
+      return NextResponse.redirect(new URL('/superadmin', request.url));
+    }
+    if (role) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
-  matcher: ['/dashboard/:path*', '/superadmin/:path*'],
+  matcher: ['/dashboard/:path*', '/superadmin/:path*', '/login', '/signup'],
 };

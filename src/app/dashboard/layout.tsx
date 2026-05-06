@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import DashboardShell, { NavItem } from '@/components/layout/DashboardShell';
 import { getOrgBranding } from '@/app/actions/superadmin';
+import { verifySession } from '@/lib/dal';
 
 export default function DashboardLayout({
   children,
@@ -29,24 +30,26 @@ export default function DashboardLayout({
 }) {
   const [profile, setProfile] = React.useState({
     name: 'User',
-    role: 'Administrator',
+    role: 'Admin',
     initials: '..',
     orgName: 'TextileOS'
   });
 
   React.useEffect(() => {
-    async function fetchBranding() {
-      const result = await getOrgBranding();
-      if (result.success && result.org) {
+    async function fetchData() {
+      const session = await verifySession();
+      const branding = await getOrgBranding();
+      
+      if (branding.success && branding.org) {
         setProfile({
-          name: result.org.name,
-          role: 'Administrator',
-          initials: result.org.name.substring(0, 2).toUpperCase(),
-          orgName: result.org.name
+          name: branding.org.name,
+          role: session?.role || 'Admin',
+          initials: branding.org.name.substring(0, 2).toUpperCase(),
+          orgName: branding.org.name
         });
       }
     }
-    fetchBranding();
+    fetchData();
   }, []);
 
   const navigation: NavItem[] = [
@@ -115,7 +118,16 @@ export default function DashboardLayout({
       ]
     },
     { name: 'Reports', href: '/dashboard/reports', icon: FileText },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+    { 
+      name: 'Settings', 
+      href: '/dashboard/settings', 
+      icon: Settings,
+      isDropdown: true,
+      subItems: [
+        { name: 'General', href: '/dashboard/settings', icon: Settings },
+        { name: 'Organization Team', href: '/dashboard/settings/team', icon: Users },
+      ]
+    },
   ];
 
   return (
