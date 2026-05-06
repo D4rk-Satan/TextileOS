@@ -3,6 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from './ThemeToggle';
 import { 
   Bell, 
   Search,
@@ -11,11 +14,103 @@ import {
   ChevronRight,
   ChevronLeft,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  LayoutDashboard,
+  Boxes,
+  FileText,
+  Settings,
+  Users,
+  Building2,
+  Warehouse,
+  Package,
+  Printer,
+  ShoppingCart,
+  Truck,
+  RotateCcw,
+  Droplets,
+  Layers,
+  Waves,
+  FilePlus
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ThemeToggle } from './ThemeToggle';
+
+// Move default navigation here to avoid passing functions from Server Components
+const DEFAULT_ORG_NAVIGATION: NavItem[] = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { 
+    name: 'Master', 
+    href: '/dashboard/master', 
+    icon: Boxes,
+    isDropdown: true,
+      subItems: [
+        { name: 'Customers', href: '/dashboard/master?tab=customers', icon: Users },
+        { name: 'Vendors', href: '/dashboard/master?tab=vendors', icon: Building2 },
+        { name: 'Items', href: '/dashboard/master?tab=items', icon: Package },
+      ]
+  },
+  { 
+    name: 'Grey', 
+    href: '/dashboard/grey', 
+    icon: Layers,
+    isDropdown: true,
+    subItems: [
+      { name: 'Grey Inward', href: '/dashboard/grey?tab=grey-inward', icon: Building2 },
+    ]
+  },
+  { 
+    name: 'Batches', 
+    href: '/dashboard/warehouse', 
+    icon: Warehouse,
+    isDropdown: true,
+    subItems: [
+      { name: 'In-Warehouse', href: '/dashboard/warehouse?tab=batches', icon: Boxes },
+      { name: 'Out For RFD', href: '/dashboard/warehouse?tab=out-for-rfd', icon: RotateCcw },
+      { name: 'Ready For Printing', href: '/dashboard/warehouse?tab=ready-for-printing', icon: Printer },
+      { name: 'Under Printing', href: '/dashboard/warehouse?tab=under-printing', icon: Printer },
+      { name: 'Ready For Dispatch', href: '/dashboard/warehouse?tab=ready-for-dispatch', icon: ShoppingCart },
+      { name: 'Dispatched', href: '/dashboard/warehouse?tab=dispatched', icon: Truck },
+    ]
+  },
+  { 
+    name: 'RFD Process', 
+    href: '/dashboard/dyeing-house', 
+    icon: Waves,
+    isDropdown: true,
+    subItems: [
+      { name: 'Issue for RFD', href: '/dashboard/dyeing-house?tab=grey-outward', icon: Droplets },
+      { name: 'Receive from RFD', href: '/dashboard/dyeing-house?tab=rfd-inward', icon: Layers },
+    ]
+  },
+  { 
+    name: 'Printing Process', 
+    href: '/dashboard/printing-process', 
+    icon: Printer,
+    isDropdown: true,
+    subItems: [
+      { name: 'Issue For Printing', href: '/dashboard/printing-process?tab=issue', icon: FileText },
+      { name: 'Receive From Printing', href: '/dashboard/printing-process?tab=receive', icon: RotateCcw },
+    ]
+  },
+  { 
+    name: 'Dispatch', 
+    href: '/dashboard/delivery-challan', 
+    icon: Truck,
+    isDropdown: true,
+    subItems: [
+      { name: 'Delivery Challan', href: '/dashboard/delivery-challan?tab=delivery-challan', icon: FilePlus },
+    ]
+  },
+  { name: 'Reports', href: '/dashboard/reports', icon: FileText },
+  { 
+    name: 'Settings', 
+    href: '/dashboard/settings', 
+    icon: Settings,
+    isDropdown: true,
+    subItems: [
+      { name: 'General', href: '/dashboard/settings', icon: Settings },
+      { name: 'Organization Team', href: '/dashboard/settings/team', icon: Users },
+    ]
+  },
+];
 
 export interface NavItem {
   name: string;
@@ -27,7 +122,7 @@ export interface NavItem {
 
 interface DashboardShellProps {
   children: React.ReactNode;
-  navigation: NavItem[];
+  navigation?: NavItem[];
   userProfile?: {
     name: string;
     role: string;
@@ -38,7 +133,7 @@ interface DashboardShellProps {
 
 export default function DashboardShell({
   children,
-  navigation,
+  navigation: providedNavigation,
   userProfile = {
     name: 'User',
     role: 'Member',
@@ -46,6 +141,7 @@ export default function DashboardShell({
     orgName: 'TextileOS'
   }
 }: DashboardShellProps) {
+  const navigation = providedNavigation || DEFAULT_ORG_NAVIGATION;
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = React.useState(false);
