@@ -30,8 +30,11 @@ import {
   Droplets,
   Layers,
   Waves,
-  FilePlus
+  FilePlus,
+  LogOut
 } from 'lucide-react';
+import { logoutUser } from '@/app/actions/auth';
+import { useRouter } from 'next/navigation';
 
 // Move default navigation here to avoid passing functions from Server Components
 const DEFAULT_ORG_NAVIGATION: NavItem[] = [
@@ -141,12 +144,19 @@ export default function DashboardShell({
     orgName: 'TextileOS'
   }
 }: DashboardShellProps) {
+  const router = useRouter();
   const navigation = providedNavigation || DEFAULT_ORG_NAVIGATION;
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
+
+  const handleLogout = async () => {
+    await logoutUser();
+    router.push('/login');
+    router.refresh();
+  };
 
   React.useEffect(() => {
     setMounted(true);
@@ -363,6 +373,17 @@ export default function DashboardShell({
             
             {/* Portal target for page-specific title and actions */}
             <div id="page-header-portal" className="flex-1 flex items-center gap-6" />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-red-500 hover:bg-red-500/10 font-bold transition-all text-xs border border-transparent hover:border-red-500/20 shadow-sm"
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
         </header>
 
