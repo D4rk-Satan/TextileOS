@@ -9,12 +9,13 @@ export async function verifySession() {
   const role = cookieStore.get('user_role')?.value;
   const orgId = cookieStore.get('org_id')?.value;
   const email = cookieStore.get('user_email')?.value;
+  const roleId = cookieStore.get('role_id')?.value;
 
   if (!role || !orgId) {
     return null;
   }
 
-  return { role, orgId, email };
+  return { role, orgId, email, roleId };
 }
 
 export async function getUserRole() {
