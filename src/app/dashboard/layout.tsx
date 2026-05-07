@@ -25,11 +25,11 @@ export default async function DashboardLayout({
   const userRole = session?.role || 'User';
   
   const profile = {
-    name: branding?.success && branding?.org ? branding.org.name : 'User',
+    name: branding?.org?.name || 'User',
     role: userRole,
-    userEmail: session?.email || 'user@textileos.com',
-    initials: branding?.success && branding?.org ? branding.org.name.substring(0, 2).toUpperCase() : '..',
-    orgName: branding?.success && branding?.org ? branding.org.name : 'TextileOS',
+    userEmail: session?.email || '',
+    initials: branding?.org?.name?.substring(0, 2).toUpperCase() || '..',
+    orgName: branding?.org?.name || 'TextileOS',
     permissions: permissions || []
   };
 

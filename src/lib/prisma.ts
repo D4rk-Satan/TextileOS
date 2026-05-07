@@ -24,4 +24,5 @@ const prisma = globalThis.prisma ?? prismaClientSingleton();
 
 export default prisma;
 
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
+// Always preserve the singleton to prevent connection pool exhaustion on Vercel warm starts
+globalThis.prisma = prisma;
