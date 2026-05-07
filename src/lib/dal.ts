@@ -34,12 +34,16 @@ export async function getUserPermissions() {
 
   if (!session.roleId) return [];
 
-  const role = await (prisma as any).appRole.findUnique({
-    where: { id: session.roleId },
-    select: { permissions: true }
-  });
-
-  return role?.permissions || [];
+  try {
+    const role = await (prisma as any).appRole.findUnique({
+      where: { id: session.roleId },
+      select: { permissions: true }
+    });
+    return role?.permissions || [];
+  } catch (error) {
+    console.error('Error fetching role permissions:', error);
+    return [];
+  }
 }
 
 export async function getUserRole() {

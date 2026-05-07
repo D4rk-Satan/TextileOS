@@ -335,8 +335,8 @@ export default function DashboardShell({
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto no-scrollbar">
           {navigation
             .filter(item => {
-              const role = userProfile.role?.toLowerCase();
-              const userPermissions = userProfile.permissions || [];
+              const role = userProfile?.role?.toLowerCase();
+              const userPermissions = userProfile?.permissions || [];
               
               // RBAC Logic: 
               // 1. SuperAdmin sees everything
