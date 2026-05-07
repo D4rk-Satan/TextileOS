@@ -2,7 +2,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import prisma from './prisma';
-import { Permission, hasPermission } from './permissions';
+import { Permission, hasPermission, ALL_PERMISSIONS } from './permissions';
 
 export async function verifySession() {
   const cookieStore = await cookies();
@@ -24,13 +24,11 @@ export async function getUserPermissions() {
 
   // SuperAdmin has all permissions
   if (session.role === 'SuperAdmin') {
-    const { ALL_PERMISSIONS } = await import('./permissions');
     return ALL_PERMISSIONS;
   }
 
   // Admin (Legacy) also gets everything by default if no roleId is set
   if (session.role === 'Admin' && !session.roleId) {
-    const { ALL_PERMISSIONS } = await import('./permissions');
     return ALL_PERMISSIONS;
   }
 
