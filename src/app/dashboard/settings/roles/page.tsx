@@ -90,6 +90,15 @@ export default function RolesPage() {
     }
   };
 
+  // Final Safety Render Guard
+  if (isLoading && roles.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] text-muted-foreground font-medium animate-pulse">
+        Initializing roles system...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
