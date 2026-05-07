@@ -238,23 +238,23 @@ export default function RolesPage() {
 
               <h3 className="text-lg font-bold text-foreground mb-1">{role.name}</h3>
               <p className="text-xs text-muted-foreground mb-6 font-medium">
-                {role._count.users} member{role._count.users !== 1 ? 's' : ''} assigned
+                {role?._count?.users || 0} member{role?._count?.users !== 1 ? 's' : ''} assigned
               </p>
 
               <div className="mt-auto space-y-3">
                 <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <ShieldCheck size={12} className="text-primary" />
-                  Permissions ({role.permissions.length})
+                  Permissions ({role?.permissions?.length || 0})
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {role.permissions.slice(0, 5).map((p: string) => (
+                  {(role?.permissions || []).slice(0, 5).map((p: string) => (
                     <span key={p} className="px-2 py-0.5 bg-muted rounded-md text-[9px] font-bold text-muted-foreground border border-border/50">
                       {p.split(':')[1] || p}
                     </span>
                   ))}
-                  {role.permissions.length > 5 && (
+                  {(role?.permissions || []).length > 5 && (
                     <span className="px-2 py-0.5 bg-muted rounded-md text-[9px] font-bold text-muted-foreground border border-border/50">
-                      +{role.permissions.length - 5} more
+                      +{(role?.permissions || []).length - 5} more
                     </span>
                   )}
                 </div>
