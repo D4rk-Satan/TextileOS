@@ -273,8 +273,8 @@ export default function DashboardShell({
         isMinimized ? "pl-[80px]" : "pl-[280px]"
       )}>
         {/* Top Navbar */}
-        <header className="sticky top-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-40 px-8 flex items-center justify-between">
-          <div className="flex items-center gap-4 text-muted-foreground">
+        <header className="sticky top-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-40 px-8 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-muted-foreground min-w-[200px]">
              <Menu size={20} className="lg:hidden" />
              <div className="flex items-center gap-2 text-xs font-medium">
                 <span>Dashboard</span>
@@ -283,13 +283,19 @@ export default function DashboardShell({
              </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-border">
+          <div className="flex-1 max-w-md mx-auto">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-border">
                <Search size={16} />
-               <span className="text-xs font-medium">Search modules...</span>
+               <input 
+                 type="text" 
+                 placeholder="Search modules..." 
+                 className="bg-transparent border-none outline-none text-xs font-medium w-full placeholder:text-muted-foreground/50"
+               />
                <span className="ml-4 text-[10px] opacity-50 font-bold border border-border px-1.5 py-0.5 rounded">⌘K</span>
             </div>
+          </div>
 
+          <div className="flex items-center gap-6 min-w-[200px] justify-end">
             <div className="flex items-center gap-3">
                <button className="relative p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                   <Bell size={20} />
