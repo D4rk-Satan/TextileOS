@@ -5,19 +5,20 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { Permission } from '@/lib/permissions';
 
+import { checkPermission } from '@/lib/dal';
+
 async function getSessionContext() {
   const cookieStore = await cookies();
   const orgId = cookieStore.get('org_id')?.value;
-  const role = cookieStore.get('user_role')?.value;
   
-  if (!orgId || !role) throw new Error('Unauthorized: Missing session context');
-  return { orgId, role };
+  if (!orgId) throw new Error('Unauthorized: Missing session context');
+  return { orgId };
 }
 
 export async function getRoles() {
   try {
     const { orgId } = await getSessionContext();
-    const roles = await prisma.appRole.findMany({
+    const roles = await (prisma as any).appRole.findMany({
       where: { organizationId: orgId },
       include: {
         _count: {
@@ -34,14 +35,13 @@ export async function getRoles() {
 
 export async function createRole(data: { name: string; permissions: string[] }) {
   try {
-    const { orgId, role } = await getSessionContext();
+    const { orgId } = await getSessionContext();
     
-    // Only Admin (Legacy) can manage roles for now
-    if (role !== 'Admin') {
-      return { success: false, error: 'Permission denied: Only administrators can manage roles' };
+    if (!await checkPermission('settings:roles')) {
+      return { success: false, error: 'Permission denied' };
     }
 
-    const newRole = await prisma.appRole.create({
+    const newRole = await (prisma as any).appRole.create({
       data: {
         name: data.name,
         permissions: data.permissions,
@@ -58,13 +58,13 @@ export async function createRole(data: { name: string; permissions: string[] }) 
 
 export async function updateRole(id: string, data: { name: string; permissions: string[] }) {
   try {
-    const { orgId, role } = await getSessionContext();
+    const { orgId } = await getSessionContext();
     
-    if (role !== 'Admin') {
+    if (!await checkPermission('settings:roles')) {
       return { success: false, error: 'Permission denied' };
     }
 
-    const updatedRole = await prisma.appRole.update({
+    const updatedRole = await (prisma as any).appRole.update({
       where: { id, organizationId: orgId },
       data: {
         name: data.name,
@@ -81,22 +81,22 @@ export async function updateRole(id: string, data: { name: string; permissions: 
 
 export async function deleteRole(id: string) {
   try {
-    const { orgId, role } = await getSessionContext();
+    const { orgId } = await getSessionContext();
     
-    if (role !== 'Admin') {
+    if (!await checkPermission('settings:roles')) {
       return { success: false, error: 'Permission denied' };
     }
 
     // Check if role is in use
     const userCount = await prisma.user.count({
-      where: { roleId: id }
+      where: { roleId: id } as any
     });
 
     if (userCount > 0) {
       return { success: false, error: 'Cannot delete role that is assigned to users' };
     }
 
-    await prisma.appRole.delete({
+    await (prisma as any).appRole.delete({
       where: { id, organizationId: orgId }
     });
 

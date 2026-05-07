@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { checkPermission } from '@/lib/dal';
 
 export async function registerOrganization(data: any) {
   try {
@@ -28,7 +29,7 @@ export async function registerOrganization(data: any) {
 
     // 3. Create Default Admin Role
     const { ALL_PERMISSIONS } = await import('@/lib/permissions');
-    const adminRole = await prisma.appRole.create({
+    const adminRole = await (prisma as any).appRole.create({
       data: {
         name: 'Administrator',
         permissions: ALL_PERMISSIONS,
@@ -46,8 +47,7 @@ export async function registerOrganization(data: any) {
         password: hashedPassword,
         role: 'Admin',
         roleId: adminRole.id,
-        organizationId: organization.id,
-      },
+      } as any,
     });
 
     return { success: true, organization, user };
@@ -81,8 +81,8 @@ export async function loginUser(data: any) {
     cookieStore.set('user_role', user.role, cookieOptions);
     cookieStore.set('org_id', user.organizationId || '', cookieOptions);
     cookieStore.set('user_email', user.email, cookieOptions);
-    if (user.roleId) {
-      cookieStore.set('role_id', user.roleId, cookieOptions);
+    if ((user as any).roleId) {
+      cookieStore.set('role_id', (user as any).roleId, cookieOptions);
     }
 
     // In a real app, you would set a session/cookie here
@@ -113,11 +113,10 @@ export async function logoutUser() {
 export async function createStaffUser(data: any) {
   try {
     const cookieStore = await cookies();
-    const adminRole = cookieStore.get('user_role')?.value;
     const orgId = cookieStore.get('org_id')?.value;
-
-    if (adminRole !== 'Admin') {
-      return { success: false, error: 'Only administrators can create staff users' };
+    
+    if (!await checkPermission('settings:team')) {
+      return { success: false, error: 'Permission denied' };
     }
 
     if (!orgId) {
@@ -144,7 +143,7 @@ export async function createStaffUser(data: any) {
         role: 'User',
         roleId: data.roleId,
         organizationId: orgId,
-      },
+      } as any,
     });
 
     revalidatePath('/dashboard/settings/team');
@@ -175,7 +174,7 @@ export async function getOrganizationUsers() {
           }
         },
         createdAt: true,
-      }
+      } as any
     });
 
     return { success: true, users };
