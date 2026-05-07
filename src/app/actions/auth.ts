@@ -141,7 +141,7 @@ export async function createStaffUser(data: any) {
         email: data.email,
         password: hashedPassword,
         role: 'User',
-        roleId: data.roleId,
+        roleId: data.roleId || null,
         organizationId: orgId,
       } as any,
     });

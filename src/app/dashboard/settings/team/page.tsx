@@ -95,7 +95,13 @@ export default function TeamPage() {
         </div>
         
         <FormButton 
-          onClick={() => setIsAddingUser(!isAddingUser)}
+          onClick={() => {
+            if (roles.length === 0) {
+              alert('Please create at least one Role in "Roles & Permissions" before adding team members.');
+              return;
+            }
+            setIsAddingUser(!isAddingUser);
+          }}
           variant={isAddingUser ? 'secondary' : 'primary'}
           className="flex items-center gap-2"
         >
