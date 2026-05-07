@@ -1,27 +1,24 @@
 export const dynamic = 'force-dynamic';
-import React, { Suspense } from 'react';
+import React from 'react';
 import DashboardShell from '@/components/layout/DashboardShell';
-import { getOrgBranding } from '@/app/actions/superadmin';
 import { verifySession, getUserPermissions } from '@/lib/dal';
+import { getOrgBranding } from '@/app/actions/superadmin';
+import { redirect } from 'next/navigation';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Fetch data on the server
   const session = await verifySession();
-  
-  let permissions: string[] = [];
-  try {
-    permissions = await getUserPermissions();
-  } catch (error) {
-    console.error('Error fetching permissions in layout:', error);
+
+  if (!session) {
+    redirect('/login');
   }
 
+  const permissions = await getUserPermissions();
   const branding = await getOrgBranding();
   
-  // Default to 'User' role for safety if session is missing or invalid
   const userRole = session?.role || 'User';
   
   const profile = {
@@ -30,14 +27,12 @@ export default async function DashboardLayout({
     userEmail: session?.email || '',
     initials: branding?.org?.name?.substring(0, 2).toUpperCase() || '..',
     orgName: branding?.org?.name || 'TextileOS',
-    permissions: permissions || []
+    permissions: permissions
   };
 
   return (
-    <Suspense fallback={null}>
-      <DashboardShell userProfile={profile}>
-        {children}
-      </DashboardShell>
-    </Suspense>
+    <DashboardShell userProfile={profile as any}>
+      {children}
+    </DashboardShell>
   );
 }

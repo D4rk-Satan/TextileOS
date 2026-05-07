@@ -4,7 +4,6 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { checkPermission } from '@/lib/dal';
 
 export async function registerOrganization(data: any) {
   try {
@@ -32,9 +31,9 @@ export async function registerOrganization(data: any) {
     const adminRole = await (prisma as any).appRole.create({
       data: {
         name: 'Administrator',
-        permissions: ALL_PERMISSIONS,
         organizationId: organization.id,
-      }
+        permissions: [...ALL_PERMISSIONS]
+      } as any
     });
 
     // 4. Hash Password
@@ -47,6 +46,7 @@ export async function registerOrganization(data: any) {
         password: hashedPassword,
         role: 'Admin',
         roleId: adminRole.id,
+        organizationId: organization.id,
       } as any,
     });
 
@@ -85,7 +85,6 @@ export async function loginUser(data: any) {
       cookieStore.set('role_id', (user as any).roleId, cookieOptions);
     }
 
-    // In a real app, you would set a session/cookie here
     return { 
       success: true, 
       user: { 
@@ -115,6 +114,7 @@ export async function createStaffUser(data: any) {
     const cookieStore = await cookies();
     const orgId = cookieStore.get('org_id')?.value;
     
+    const { checkPermission } = await import('@/lib/dal');
     if (!await checkPermission('settings:team')) {
       return { success: false, error: 'Permission denied' };
     }
@@ -154,6 +154,12 @@ export async function createStaffUser(data: any) {
   }
 }
 
+export async function getUserRole() {
+  const cookieStore = await cookies();
+  const role = cookieStore.get('user_role')?.value;
+  return role || 'User';
+}
+
 export async function getOrganizationUsers() {
   try {
     const cookieStore = await cookies();
@@ -181,10 +187,4 @@ export async function getOrganizationUsers() {
   } catch (error) {
     return { success: false, users: [] };
   }
-}
-
-export async function getUserRole() {
-  const cookieStore = await cookies();
-  const role = cookieStore.get('user_role')?.value;
-  return role || 'User';
 }

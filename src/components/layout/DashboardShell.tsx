@@ -37,7 +37,15 @@ import {
 import { logoutUser } from '@/app/actions/auth';
 import { useRouter } from 'next/navigation';
 
-// Move default navigation here to avoid passing functions from Server Components
+export interface NavItem {
+  name: string;
+  href: string;
+  icon: any;
+  isDropdown?: boolean;
+  subItems?: NavItem[];
+  permission?: string;
+}
+
 const DEFAULT_ORG_NAVIGATION: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { 
@@ -46,11 +54,11 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     icon: Boxes,
     isDropdown: true,
     permission: 'module:master',
-      subItems: [
-        { name: 'Customers', href: '/dashboard/master?tab=customers', icon: Users },
-        { name: 'Vendors', href: '/dashboard/master?tab=vendors', icon: Building2 },
-        { name: 'Items', href: '/dashboard/master?tab=items', icon: Package },
-      ]
+    subItems: [
+      { name: 'Customers', href: '/dashboard/master?tab=customers', icon: Users },
+      { name: 'Vendors', href: '/dashboard/master?tab=vendors', icon: Building2 },
+      { name: 'Items', href: '/dashboard/master?tab=items', icon: Package },
+    ]
   },
   { 
     name: 'Grey', 
@@ -116,21 +124,11 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     icon: Settings,
     isDropdown: true,
     subItems: [
-      { name: 'General', href: '/dashboard/settings', icon: Settings },
       { name: 'Roles & Permissions', href: '/dashboard/settings/roles', icon: Shield, permission: 'settings:roles' },
       { name: 'Organization Team', href: '/dashboard/settings/team', icon: Users, permission: 'settings:team' },
     ]
   },
 ];
-
-export interface NavItem {
-  name: string;
-  href: string;
-  icon: any;
-  isDropdown?: boolean;
-  subItems?: NavItem[];
-  permission?: string;
-}
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -141,7 +139,6 @@ interface DashboardShellProps {
     userEmail?: string;
     initials: string;
     orgName?: string;
-    permissions?: string[];
   };
 }
 
@@ -154,7 +151,6 @@ export default function DashboardShell({
     userEmail: 'user@textileos.com',
     initials: 'U',
     orgName: 'TextileOS',
-    permissions: []
   }
 }: DashboardShellProps) {
   const router = useRouter();
@@ -163,160 +159,35 @@ export default function DashboardShell({
   const searchParams = useSearchParams();
   const [mounted, setMounted] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
-  const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     await logoutUser();
     router.push('/login');
-    router.refresh();
   };
 
-  React.useEffect(() => {
-    setMounted(true);
-    // Initialize expanded items after mount to prevent hydration mismatch
-    const initialExpanded: string[] = [];
-    const findExpanded = (items: NavItem[]) => {
-      items.forEach(item => {
-        if (item.isDropdown && pathname.startsWith(item.href)) {
-          initialExpanded.push(item.name);
-          if (item.subItems) findExpanded(item.subItems);
-        }
-      });
-    };
-    findExpanded(navigation);
-    setExpandedItems(initialExpanded);
-  }, [pathname, navigation]);
-
-  const toggleExpanded = (name: string, depth: number) => {
-    if (isMinimized) return;
-    setExpandedItems(prev => {
-      const isCurrentlyExpanded = prev.includes(name);
-      
-      if (depth === 0) {
-        // For top-level items, only allow one to be open at a time
-        return isCurrentlyExpanded ? [] : [name];
-      }
-      
-      // For nested items, toggle normally
-      return isCurrentlyExpanded 
-        ? prev.filter(i => i !== name) 
-        : [...prev, name];
-    });
-  };
-
-  const NavLink = ({ item, depth = 0 }: { item: NavItem; depth?: number }) => {
-    const currentFullUrl = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
-    const isActive = item.href.includes('?') 
-      ? currentFullUrl === item.href 
-      : pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
-    const isExpanded = expandedItems.includes(item.name);
-    const hasSubItems = item.subItems && item.subItems.length > 0;
-
-    if (item.isDropdown) {
-      return (
-        <div className="space-y-1">
-          <button
-            onClick={() => toggleExpanded(item.name, depth)}
-            className={cn(
-              'flex items-center gap-3 px-4 py-3 w-full rounded-xl text-[13px] font-medium transition-all group outline-none relative overflow-hidden',
-              isActive && depth === 0
-                ? 'bg-primary text-white shadow-lg shadow-primary/20 font-bold' 
-                : isActive && depth > 0
-                ? 'text-primary bg-primary/10 border-l-4 border-primary rounded-none rounded-r-xl font-bold translate-x-1'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              depth > 0 && 'py-2 px-3 text-[11px]'
-            )}
-          >
-            {item.icon && (
-              <item.icon size={depth === 0 ? 20 : 16} className={cn(
-                'flex-shrink-0 transition-colors',
-                isActive && depth === 0 ? 'text-white' : isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-              )} />
-            )}
-            <span className={cn("transition-all duration-300 whitespace-nowrap", isMinimized ? "opacity-0 w-0 translate-x-4" : "opacity-100 w-auto translate-x-0")}>
-              {item.name}
-            </span>
-            {!isMinimized && (
-              <motion.div
-                animate={{ rotate: isExpanded ? 90 : 0 }}
-                transition={{ duration: 0.2 }}
-                className="ml-auto"
-              >
-                <ChevronRight size={14} />
-              </motion.div>
-            )}
-          </button>
-          
-          <AnimatePresence>
-            {isExpanded && !isMinimized && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="overflow-hidden"
-              >
-                <div className={cn(
-                  "mt-1 space-y-1",
-                  depth === 0 ? "ml-4 pl-4 border-l-2 border-border" : "ml-6 pl-4 border-l border-border/50"
-                )}>
-                  {item.subItems?.map((subItem) => (
-                    <NavLink key={subItem.name} item={subItem} depth={depth + 1} />
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      );
-    }
-
-    return (
-      <Link
-        href={item.href}
-        onClick={() => depth === 0 && setExpandedItems([])}
-        className={cn(
-          'flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-medium transition-all group outline-none overflow-hidden',
-          isActive && depth === 0
-            ? 'bg-primary text-white shadow-lg shadow-primary/20 font-bold' 
-            : isActive && depth > 0
-            ? 'text-primary bg-primary/10 border-l-4 border-primary rounded-none rounded-r-xl font-bold translate-x-1'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-          depth > 0 && 'py-2 px-3 text-[11px]'
-        )}
-      >
-        {item.icon && (
-          <item.icon size={depth === 0 ? 20 : 16} className={cn(
-            'flex-shrink-0 transition-colors',
-            isActive && depth === 0 ? 'text-white' : isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-          )} />
-        )}
-        <span className={cn("transition-all duration-300 whitespace-nowrap", isMinimized ? "opacity-0 w-0 translate-x-4" : "opacity-100 w-auto translate-x-0")}>
-          {item.name}
-        </span>
-      </Link>
-    );
-  };
-
-  if (!mounted) {
-    return <div className="min-h-screen bg-background" />;
-  }
+  if (!mounted) return null;
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside 
-        className={cn(
-          "bg-card border-r border-border flex flex-col fixed h-full z-50 shadow-sm transition-all duration-300 ease-in-out overflow-x-hidden no-scrollbar",
-          isMinimized ? "w-20" : "w-64"
-        )}
+      <motion.aside 
+        initial={false}
+        animate={{ width: isMinimized ? '80px' : '280px' }}
+        className="fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col z-50 transition-all duration-300 ease-in-out"
       >
-        <div className="p-6 flex items-center justify-between border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-16">
-          <div className={cn("flex items-center gap-3 overflow-hidden transition-all duration-300", isMinimized ? "w-0 opacity-0" : "w-auto opacity-100")}>
-            <div className="w-8 h-8 bg-primary rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-lg text-white">T</div>
+        {/* Sidebar Header */}
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <div className={cn("flex items-center gap-3", isMinimized && "hidden")}>
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-black text-xl">T</span>
+            </div>
             <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight text-foreground whitespace-nowrap">TextileOS</span>
-              <span className="text-[10px] text-primary font-bold uppercase tracking-widest block whitespace-nowrap">{userProfile.orgName}</span>
+              <span className="text-sm font-black tracking-tighter text-foreground uppercase">TextileOS</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">Enterprise</span>
             </div>
           </div>
           
@@ -336,21 +207,21 @@ export default function DashboardShell({
           {navigation
             .filter(item => {
               const role = userProfile?.role?.toLowerCase();
-              const userPermissions = userProfile?.permissions || [];
+              const userPermissions = (userProfile as any)?.permissions || [];
               
               // RBAC Logic: 
               // 1. SuperAdmin sees everything
               if (role === 'superadmin' || role === 'super admin') return true;
               
               // 2. Filter item by its permission requirement
-              if (item.permission && !userPermissions.includes(item.permission)) {
+              if ((item as any).permission && !userPermissions.includes((item as any).permission)) {
                 return false;
               }
 
               // 3. For dropdowns, filter sub-items and hide if all sub-items are filtered out
               if (item.subItems) {
                 const visibleSubItems = item.subItems.filter(sub => 
-                  !sub.permission || userPermissions.includes(sub.permission)
+                  !(sub as any).permission || userPermissions.includes((sub as any).permission)
                 );
                 
                 // Special case for Settings: if user is legacy Admin, they see it
@@ -367,11 +238,11 @@ export default function DashboardShell({
               return true;
             })
             .map((item) => (
-              <NavLink key={item.name} item={item} />
-            ))
-          }
+            <NavLink key={item.name} item={item} isMinimized={isMinimized} />
+          ))}
         </nav>
 
+        {/* User Info & Profile */}
         <div className="p-4 border-t border-border bg-card/50 mt-auto">
           <div className={cn(
             "flex transition-all duration-300",
@@ -384,52 +255,150 @@ export default function DashboardShell({
             
             <div className={cn("flex items-center gap-2", isMinimized && "flex-col")}>
               <ThemeToggle />
-              <button className="relative p-2 text-muted-foreground hover:bg-muted rounded-xl transition-colors">
-                <Bell size={18} />
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border border-card"></span>
+              <button 
+                onClick={handleLogout}
+                className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                title="Logout"
+              >
+                <LogOut size={18} />
               </button>
             </div>
           </div>
         </div>
-      </aside>
+      </motion.aside>
 
-      {/* Main Content */}
-      <div 
-        className={cn(
-          "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
-          isMinimized ? "pl-20" : "pl-64"
-        )}
-      >
-        {/* Header */}
-        <header className="h-16 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-40 flex items-center justify-between px-8 transition-colors duration-300">
-          <div className="flex items-center gap-8 flex-1">
-            <button className="p-2 lg:hidden text-foreground">
-              <Menu size={20} />
-            </button>
-            
-            {/* Portal target for page-specific title and actions */}
-            <div id="page-header-portal" className="flex-1 flex items-center gap-6" />
+      {/* Main Content Area */}
+      <main className={cn(
+        "flex-1 transition-all duration-300",
+        isMinimized ? "pl-[80px]" : "pl-[280px]"
+      )}>
+        {/* Top Navbar */}
+        <header className="sticky top-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-40 px-8 flex items-center justify-between">
+          <div className="flex items-center gap-4 text-muted-foreground">
+             <Menu size={20} className="lg:hidden" />
+             <div className="flex items-center gap-2 text-xs font-medium">
+                <span>Dashboard</span>
+                <ChevronRight size={14} />
+                <span className="text-foreground font-bold">{pathname.split('/').pop()?.replace(/-/g, ' ')}</span>
+             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-red-500 hover:bg-red-500/10 font-bold transition-all text-xs border border-transparent hover:border-red-500/20 shadow-sm"
-              title="Sign Out"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Sign Out</span>
-            </button>
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-border">
+               <Search size={16} />
+               <span className="text-xs font-medium">Search modules...</span>
+               <span className="ml-4 text-[10px] opacity-50 font-bold border border-border px-1.5 py-0.5 rounded">⌘K</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+               <button className="relative p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                  <Bell size={20} />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background"></span>
+               </button>
+               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-background ring-offset-2 ring-offset-border cursor-pointer">
+                  {userProfile.initials}
+               </div>
+            </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-8 overflow-x-hidden">
-          <div className="max-w-[1600px] mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
+        {/* Content Wrapper */}
+        <div className="p-8 max-w-7xl mx-auto">
+          {children}
+        </div>
+      </main>
     </div>
+  );
+}
+
+function NavLink({ item, isMinimized }: { item: NavItem, isMinimized: boolean }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isOpen, setIsOpen] = React.useState(false);
+  
+  const fullPath = searchParams.toString() 
+    ? `${item.href}?${searchParams.toString()}`
+    : item.href;
+    
+  const isActive = pathname === item.href || (item.isDropdown && pathname.startsWith(item.href));
+
+  if (item.isDropdown && item.subItems) {
+    return (
+      <div className="space-y-1">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={cn(
+            "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
+            isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            isMinimized && "justify-center"
+          )}
+        >
+          <item.icon size={20} className={cn(
+            "transition-colors",
+            isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+          )} />
+          {!isMinimized && (
+            <>
+              <span className="ml-3 flex-1 text-left">{item.name}</span>
+              <motion.div
+                animate={{ rotate: isOpen ? 90 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronRight size={16} className="opacity-50" />
+              </motion.div>
+            </>
+          )}
+        </button>
+        
+        <AnimatePresence>
+          {isOpen && !isMinimized && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden pl-11 space-y-1"
+            >
+              {item.subItems.map((sub) => (
+                <Link
+                  key={sub.name}
+                  href={sub.href}
+                  className={cn(
+                    "block px-3 py-2 rounded-md text-xs font-medium transition-colors",
+                    pathname + (searchParams.toString() ? '?' + searchParams.toString() : '') === sub.href
+                      ? "text-primary bg-primary/5"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  {sub.name}
+                </Link>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={item.href}
+      className={cn(
+        "flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
+        isActive ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        isMinimized && "justify-center"
+      )}
+    >
+      <item.icon size={20} className={cn(
+        "transition-colors",
+        isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+      )} />
+      {!isMinimized && <span className="ml-3">{item.name}</span>}
+      {isActive && !isMinimized && (
+        <motion.div 
+          layoutId="active-indicator"
+          className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" 
+        />
+      )}
+    </Link>
   );
 }
