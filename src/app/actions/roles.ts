@@ -16,19 +16,22 @@ async function getSessionContext() {
 }
 
 export async function getRoles() {
+  console.time('getRoles-action');
   try {
     const { orgId } = await getSessionContext();
+    console.log('Fetching roles for org:', orgId);
+    
     const roles = await (prisma as any).appRole.findMany({
       where: { organizationId: orgId },
-      include: {
-        _count: {
-          select: { users: true }
-        }
-      },
-      orderBy: { createdAt: 'asc' }
+      orderBy: { createdAt: 'asc' },
+      take: 50 // Limit results for safety
     });
+    
+    console.timeEnd('getRoles-action');
     return { success: true, data: roles };
   } catch (error: any) {
+    console.timeEnd('getRoles-action');
+    console.error('getRoles Error:', error);
     return { success: false, error: error.message };
   }
 }
