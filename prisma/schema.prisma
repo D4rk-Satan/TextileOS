@@ -14,6 +14,7 @@ model Organization {
   status       String        @default("Active") // Active, Pending, Suspended
   plan         String        @default("Basic")  // Basic, Pro, Enterprise
   users        User[]
+  roles        AppRole[]
   customers    Customer[]
   vendors      Vendor[]
   items        Item[]
@@ -27,11 +28,26 @@ model Organization {
   updatedAt    DateTime      @updatedAt
 }
 
+model AppRole {
+  id             String       @id @default(cuid())
+  name           String
+  permissions    String[]     // Array of permission strings
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  users          User[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([name, organizationId])
+}
+
 model User {
   id             String       @id @default(cuid())
   email          String       @unique
   password       String       // Hashed
-  role           String       @default("Admin") // SuperAdmin, Admin, User
+  role           String       @default("Admin") // SuperAdmin, Admin, User (Legacy)
+  roleId         String?
+  dynamicRole    AppRole?     @relation(fields: [roleId], references: [id])
   organization   Organization? @relation(fields: [organizationId], references: [id])
   organizationId String?
   createdAt      DateTime     @default(now())

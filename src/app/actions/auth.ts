@@ -26,15 +26,26 @@ export async function registerOrganization(data: any) {
       },
     });
 
-    // 3. Hash Password
+    // 3. Create Default Admin Role
+    const { ALL_PERMISSIONS } = await import('@/lib/permissions');
+    const adminRole = await prisma.appRole.create({
+      data: {
+        name: 'Administrator',
+        permissions: ALL_PERMISSIONS,
+        organizationId: organization.id,
+      }
+    });
+
+    // 4. Hash Password
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // 4. Create Admin User for this Org
+    // 5. Create Admin User for this Org
     const user = await prisma.user.create({
       data: {
         email: data.email,
         password: hashedPassword,
         role: 'Admin',
+        roleId: adminRole.id,
         organizationId: organization.id,
       },
     });
@@ -65,9 +76,14 @@ export async function loginUser(data: any) {
 
     // Set Cookies for Session
     const cookieStore = await cookies();
-    cookieStore.set('user_role', user.role, { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-    cookieStore.set('org_id', user.organizationId || '', { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-    cookieStore.set('user_email', user.email, { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+    const cookieOptions = { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production' };
+    
+    cookieStore.set('user_role', user.role, cookieOptions);
+    cookieStore.set('org_id', user.organizationId || '', cookieOptions);
+    cookieStore.set('user_email', user.email, cookieOptions);
+    if (user.roleId) {
+      cookieStore.set('role_id', user.roleId, cookieOptions);
+    }
 
     // In a real app, you would set a session/cookie here
     return { 
@@ -90,6 +106,7 @@ export async function logoutUser() {
   cookieStore.delete('user_role');
   cookieStore.delete('org_id');
   cookieStore.delete('user_email');
+  cookieStore.delete('role_id');
   return { success: true };
 }
 
@@ -124,7 +141,8 @@ export async function createStaffUser(data: any) {
       data: {
         email: data.email,
         password: hashedPassword,
-        role: data.role || 'User',
+        role: 'User',
+        roleId: data.roleId,
         organizationId: orgId,
       },
     });
@@ -150,6 +168,12 @@ export async function getOrganizationUsers() {
         id: true,
         email: true,
         role: true,
+        roleId: true,
+        dynamicRole: {
+          select: {
+            name: true
+          }
+        },
         createdAt: true,
       }
     });

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import React, { Suspense } from 'react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { getOrgBranding } from '@/app/actions/superadmin';
-import { verifySession } from '@/lib/dal';
+import { verifySession, getUserPermissions } from '@/lib/dal';
 
 export default async function DashboardLayout({
   children,
@@ -11,6 +11,7 @@ export default async function DashboardLayout({
 }) {
   // Fetch data on the server
   const session = await verifySession();
+  const permissions = await getUserPermissions();
   const branding = await getOrgBranding();
   
   // Default to 'User' role for safety if session is missing or invalid
@@ -21,7 +22,8 @@ export default async function DashboardLayout({
     role: userRole,
     userEmail: session?.email || 'user@textileos.com',
     initials: branding.success && branding.org ? branding.org.name.substring(0, 2).toUpperCase() : '..',
-    orgName: branding.success && branding.org ? branding.org.name : 'TextileOS'
+    orgName: branding.success && branding.org ? branding.org.name : 'TextileOS',
+    permissions: permissions
   };
 
   return (

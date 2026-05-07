@@ -31,6 +31,7 @@ import {
   Layers,
   Waves,
   FilePlus,
+  Shield,
   LogOut
 } from 'lucide-react';
 import { logoutUser } from '@/app/actions/auth';
@@ -44,6 +45,7 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     href: '/dashboard/master', 
     icon: Boxes,
     isDropdown: true,
+    permission: 'module:master',
       subItems: [
         { name: 'Customers', href: '/dashboard/master?tab=customers', icon: Users },
         { name: 'Vendors', href: '/dashboard/master?tab=vendors', icon: Building2 },
@@ -55,6 +57,7 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     href: '/dashboard/grey', 
     icon: Layers,
     isDropdown: true,
+    permission: 'module:grey',
     subItems: [
       { name: 'Grey Inward', href: '/dashboard/grey?tab=grey-inward', icon: Building2 },
     ]
@@ -64,6 +67,7 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     href: '/dashboard/warehouse', 
     icon: Warehouse,
     isDropdown: true,
+    permission: 'module:warehouse',
     subItems: [
       { name: 'In-Warehouse', href: '/dashboard/warehouse?tab=batches', icon: Boxes },
       { name: 'Out For RFD', href: '/dashboard/warehouse?tab=out-for-rfd', icon: RotateCcw },
@@ -78,6 +82,7 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     href: '/dashboard/dyeing-house', 
     icon: Waves,
     isDropdown: true,
+    permission: 'module:rfd',
     subItems: [
       { name: 'Issue for RFD', href: '/dashboard/dyeing-house?tab=grey-outward', icon: Droplets },
       { name: 'Receive from RFD', href: '/dashboard/dyeing-house?tab=rfd-inward', icon: Layers },
@@ -88,6 +93,7 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     href: '/dashboard/printing-process', 
     icon: Printer,
     isDropdown: true,
+    permission: 'module:printing',
     subItems: [
       { name: 'Issue For Printing', href: '/dashboard/printing-process?tab=issue', icon: FileText },
       { name: 'Receive From Printing', href: '/dashboard/printing-process?tab=receive', icon: RotateCcw },
@@ -98,11 +104,12 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     href: '/dashboard/delivery-challan', 
     icon: Truck,
     isDropdown: true,
+    permission: 'module:dispatch',
     subItems: [
       { name: 'Delivery Challan', href: '/dashboard/delivery-challan?tab=delivery-challan', icon: FilePlus },
     ]
   },
-  { name: 'Reports', href: '/dashboard/reports', icon: FileText },
+  { name: 'Reports', href: '/dashboard/reports', icon: FileText, permission: 'module:reports' },
   { 
     name: 'Settings', 
     href: '/dashboard/settings', 
@@ -110,7 +117,8 @@ const DEFAULT_ORG_NAVIGATION: NavItem[] = [
     isDropdown: true,
     subItems: [
       { name: 'General', href: '/dashboard/settings', icon: Settings },
-      { name: 'Organization Team', href: '/dashboard/settings/team', icon: Users },
+      { name: 'Roles & Permissions', href: '/dashboard/settings/roles', icon: Shield, permission: 'settings:roles' },
+      { name: 'Organization Team', href: '/dashboard/settings/team', icon: Users, permission: 'settings:team' },
     ]
   },
 ];
@@ -121,6 +129,7 @@ export interface NavItem {
   icon: any;
   isDropdown?: boolean;
   subItems?: NavItem[];
+  permission?: string;
 }
 
 interface DashboardShellProps {
@@ -132,6 +141,7 @@ interface DashboardShellProps {
     userEmail?: string;
     initials: string;
     orgName?: string;
+    permissions?: string[];
   };
 }
 
@@ -143,7 +153,8 @@ export default function DashboardShell({
     role: 'Member',
     userEmail: 'user@textileos.com',
     initials: 'U',
-    orgName: 'TextileOS'
+    orgName: 'TextileOS',
+    permissions: []
   }
 }: DashboardShellProps) {
   const router = useRouter();
@@ -325,11 +336,34 @@ export default function DashboardShell({
           {navigation
             .filter(item => {
               const role = userProfile.role?.toLowerCase();
+              const userPermissions = userProfile.permissions || [];
               
-              // RBAC Logic: Standard users (non-admin) cannot see Settings
+              // RBAC Logic: 
+              // 1. SuperAdmin sees everything
+              if (role === 'superadmin' || role === 'super admin') return true;
+              
+              // 2. Filter item by its permission requirement
+              if (item.permission && !userPermissions.includes(item.permission)) {
+                return false;
+              }
+
+              // 3. For dropdowns, filter sub-items and hide if all sub-items are filtered out
+              if (item.subItems) {
+                const visibleSubItems = item.subItems.filter(sub => 
+                  !sub.permission || userPermissions.includes(sub.permission)
+                );
+                
+                // Special case for Settings: if user is legacy Admin, they see it
+                if (item.name === 'Settings' && role === 'admin') return true;
+                
+                return visibleSubItems.length > 0;
+              }
+
+              // Legacy check for Settings if no permissions system is yet active for the user
               if (role !== 'admin' && item.name === 'Settings') {
                 return false;
               }
+              
               return true;
             })
             .map((item) => (

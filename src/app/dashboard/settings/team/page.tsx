@@ -17,6 +17,7 @@ import { FormButton } from '@/components/shared/FormButton';
 import { FormInput } from '@/components/shared/FormInput';
 import { useForm, FormProvider } from 'react-hook-form';
 import { createStaffUser, getOrganizationUsers, getUserRole } from '@/app/actions/auth';
+import { getRoles } from '@/app/actions/roles';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -25,12 +26,14 @@ export default function TeamPage() {
   const [users, setUsers] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAddingUser, setIsAddingUser] = React.useState(false);
+  const [roles, setRoles] = React.useState<any[]>([]);
+  const [isRolesLoading, setIsRolesLoading] = React.useState(true);
 
   const methods = useForm({
     defaultValues: {
       email: '',
       password: '',
-      role: 'User'
+      roleId: ''
     }
   });
 
@@ -43,6 +46,18 @@ export default function TeamPage() {
     setIsLoading(false);
   };
 
+  const fetchRoles = async () => {
+    setIsRolesLoading(true);
+    const result = await getRoles();
+    if (result.success && result.data) {
+      setRoles(result.data);
+      if (result.data.length > 0) {
+        methods.setValue('roleId', result.data[0].id);
+      }
+    }
+    setIsRolesLoading(false);
+  };
+
   React.useEffect(() => {
     const checkAccess = async () => {
       const role = await getUserRole();
@@ -51,6 +66,7 @@ export default function TeamPage() {
         return;
       }
       fetchUsers();
+      fetchRoles();
     };
     checkAccess();
   }, [router]);
@@ -114,11 +130,15 @@ export default function TeamPage() {
                   Access Level
                 </label>
                 <select 
-                  {...methods.register('role')}
-                  className="w-full h-12 bg-muted/50 border border-border rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none"
+                  {...methods.register('roleId')}
+                  disabled={isRolesLoading}
+                  className="w-full h-12 bg-muted/50 border border-border rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none disabled:opacity-50"
                 >
-                  <option value="User">Standard User (Staff)</option>
-                  <option value="Admin">Administrator</option>
+                  {roles.map(role => (
+                    <option key={role.id} value={role.id}>{role.name}</option>
+                  ))}
+                  {roles.length === 0 && !isRolesLoading && <option value="">No roles defined</option>}
+                  {isRolesLoading && <option value="">Loading roles...</option>}
                 </select>
               </div>
               <div className="md:col-span-3 flex justify-end">
@@ -179,7 +199,7 @@ export default function TeamPage() {
                           : "bg-blue-500/10 text-blue-600 border-blue-500/20"
                       )}>
                         {user.role === 'Admin' ? <ShieldCheck size={12} /> : <Shield size={12} />}
-                        {user.role}
+                        {user.dynamicRole?.name || user.role}
                       </div>
                     </td>
                     <td className="px-6 py-4">

@@ -3,23 +3,24 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { checkPermission } from '@/lib/dal';
+
 async function getSessionContext() {
   const cookieStore = await cookies();
   const orgId = cookieStore.get('org_id')?.value;
-  const role = cookieStore.get('user_role')?.value;
   
-  if (!orgId || !role) throw new Error('Unauthorized: Missing session context');
-  return { orgId, role };
+  if (!orgId) throw new Error('Unauthorized: Missing session context');
+  return { orgId };
 }
 
 // --- Customer Actions ---
 
 export async function createCustomer(data: any) {
   try {
-    const { orgId, role } = await getSessionContext();
+    const { orgId } = await getSessionContext();
     
-    if (role !== 'Admin') {
-      return { success: false, error: 'Permission denied: Only administrators can create customers' };
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
     }
 
     const customer = await prisma.customer.create({
@@ -62,10 +63,10 @@ export async function getCustomers() {
 
 export async function createVendor(data: any) {
   try {
-    const { orgId, role } = await getSessionContext();
+    const { orgId } = await getSessionContext();
 
-    if (role !== 'Admin') {
-      return { success: false, error: 'Permission denied: Only administrators can create vendors' };
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
     }
 
     const vendor = await prisma.vendor.create({
@@ -131,6 +132,10 @@ export async function getDashboardStats() {
 export async function createItem(data: any) {
   try {
     const { orgId } = await getSessionContext();
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
+    }
+
     const item = await prisma.item.create({
       data: {
         itemName: data.itemName,
