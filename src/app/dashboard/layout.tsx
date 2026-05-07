@@ -11,7 +11,14 @@ export default async function DashboardLayout({
 }) {
   // Fetch data on the server
   const session = await verifySession();
-  const permissions = await getUserPermissions();
+  
+  let permissions: string[] = [];
+  try {
+    permissions = await getUserPermissions();
+  } catch (error) {
+    console.error('Error fetching permissions in layout:', error);
+  }
+
   const branding = await getOrgBranding();
   
   // Default to 'User' role for safety if session is missing or invalid
