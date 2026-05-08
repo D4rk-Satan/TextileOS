@@ -28,13 +28,14 @@ export function MasterTable({ data, type, userRole = 'User', onEdit, onDelete }:
     const isActive = status?.toLowerCase() === 'active' || status?.toLowerCase() === 'success';
     return (
       <span className={cn(
-        "px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
+        "px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] border transition-all",
         isActive 
-          ? "bg-success/10 text-success border-success/20 dark:bg-success/10 dark:text-success" 
-          : "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:bg-slate-400/10 dark:text-slate-400"
+          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]" 
+          : "bg-slate-500/10 text-slate-500 border-slate-500/20"
       )}>
         {status || 'Unknown'}
       </span>
+    );
     );
   };
 
@@ -73,14 +74,14 @@ export function MasterTable({ data, type, userRole = 'User', onEdit, onDelete }:
                 </td>
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-white text-xs font-black shadow-lg shadow-primary/10 group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary/20 via-primary/5 to-transparent flex items-center justify-center text-primary text-xs font-black border border-primary/10 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                       {initials}
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors">{name}</div>
-                      <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                         {item.vendorNumber && <span className="flex items-center gap-1"><Hash size={10} /> {item.vendorNumber}</span>}
-                         {item.masterName && <span className="ml-2 opacity-60">| {item.masterName}</span>}
+                      <div className="text-sm font-black text-foreground group-hover:text-primary transition-colors tracking-tight">{name}</div>
+                      <div className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest flex items-center gap-2 mt-1">
+                         {item.vendorNumber && <span className="flex items-center gap-1"><Hash size={10} className="text-primary/40" /> {item.vendorNumber}</span>}
+                         {item.masterName && <span>• {item.masterName}</span>}
                       </div>
                     </div>
                   </div>

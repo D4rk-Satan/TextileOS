@@ -71,33 +71,45 @@ function MasterPageContent() {
   return (
     <div className="space-y-8">
       <HeaderPortal>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3 min-w-[200px]">
-            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-            <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
-              {activeTab}
-            </h1>
+        <div className="flex items-center justify-between w-full h-full">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+               {activeTab === 'customers' ? <Users size={20} /> : activeTab === 'vendors' ? <ShoppingBag size={20} /> : <Package size={20} />}
+            </div>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-black text-foreground capitalize tracking-tight leading-none mb-1">
+                {activeTab}
+              </h1>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                 <span>Master</span>
+                 <div className="w-1 h-1 rounded-full bg-border" />
+                 <span>Directory</span>
+              </div>
+            </div>
           </div>
 
           {!showForm && (
-            <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-                <Users size={16} />
+            <div className="relative flex-1 max-w-lg hidden lg:block mx-8">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40 group-focus-within:text-primary transition-colors">
+                <Search size={18} />
               </div>
               <input 
                 type="text" 
-                placeholder={`Search ${activeTab}...`} 
-                className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
+                placeholder={`Search through ${activeTab}...`} 
+                className="w-full h-12 pl-12 pr-4 rounded-2xl border border-border/50 bg-muted/20 focus:bg-background focus:ring-4 focus:ring-primary/10 focus:border-primary/40 outline-none transition-all text-sm font-bold text-foreground placeholder:text-muted-foreground/30 shadow-sm"
               />
             </div>
           )}
 
-          <div className="flex items-center gap-3 min-w-[200px] justify-end">
+          <div className="flex items-center gap-4">
             {!showForm && canAdd && (
               <button 
                 onClick={() => setShowForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[12px] whitespace-nowrap"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
               >
+                <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
+                   <span className="text-lg leading-none">+</span>
+                </div>
                 Add {activeTab.slice(0, -1)}
               </button>
             )}
