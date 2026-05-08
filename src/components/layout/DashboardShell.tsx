@@ -285,14 +285,18 @@ export default function DashboardShell({
         <div className="p-4 border-t border-border bg-card/50 mt-auto">
           <div className={cn(
             "flex transition-all duration-300",
-            isMinimized ? "flex-col items-center gap-4" : "items-center justify-between"
+            isMinimized ? "flex-col items-center gap-4" : "items-center gap-3"
           )}>
-            <div className={cn("flex flex-col overflow-hidden", isMinimized && "hidden")}>
-               <span className="text-xs font-bold text-foreground truncate max-w-[140px]">{userProfile.userEmail}</span>
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-black text-sm shadow-lg shadow-primary/20 shrink-0">
+               {userProfile.initials}
+            </div>
+            
+            <div className={cn("flex flex-col overflow-hidden flex-1", isMinimized && "hidden")}>
+               <span className="text-xs font-bold text-foreground truncate">{userProfile.userEmail}</span>
                <span className="text-[10px] text-primary font-bold uppercase tracking-widest truncate">{userProfile.orgName}</span>
             </div>
             
-            <div className={cn("flex items-center gap-2", isMinimized && "flex-col")}>
+            <div className={cn("flex items-center gap-1", isMinimized && "flex-col")}>
               <ThemeToggle />
               <button 
                 onClick={handleLogout}
@@ -354,14 +358,11 @@ export default function DashboardShell({
                    </div>
                  </div>
 
-                 <div className="flex items-center gap-6 min-w-[120px] justify-end pointer-events-auto">
+                 <div className="flex items-center gap-6 min-w-[60px] justify-end pointer-events-auto">
                     <button className="relative p-2.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-all hover:scale-105 active:scale-95">
                        <Bell size={20} />
                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-background animate-pulse"></span>
                     </button>
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-black text-sm shadow-lg shadow-primary/20 cursor-pointer hover:scale-110 active:scale-90 transition-all">
-                       {userProfile.initials}
-                    </div>
                  </div>
                </motion.div>
              )}
@@ -369,10 +370,7 @@ export default function DashboardShell({
              {/* Always show Profile/Theme if portal is used but doesn't provide them */}
              {!isHeaderEmpty && (
                <div className="flex items-center gap-4 pl-6 border-l border-border/50 ml-6">
-                 <ThemeToggle />
-                 <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-foreground font-black text-xs border border-border shadow-sm">
-                    {userProfile.initials}
-                 </div>
+                 {/* Theme Toggle and Profile removed from here as per user request */}
                </div>
              )}
           </div>
