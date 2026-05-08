@@ -166,18 +166,36 @@ export default function DashboardShell({
   React.useEffect(() => {
     setMounted(true);
     
-    const observer = new MutationObserver(() => {
+    const checkPortal = () => {
       if (headerPortalRef.current) {
-        setIsHeaderEmpty(headerPortalRef.current.children.length === 0);
+        // We check for both element children and text content to be safe
+        const hasContent = headerPortalRef.current.children.length > 0 || 
+                           headerPortalRef.current.textContent?.trim().length! > 0;
+        setIsHeaderEmpty(!hasContent);
       }
-    });
+    };
+
+    // Initial check
+    checkPortal();
+    
+    const observer = new MutationObserver(checkPortal);
 
     if (headerPortalRef.current) {
-      observer.observe(headerPortalRef.current, { childList: true });
+      observer.observe(headerPortalRef.current, { 
+        childList: true, 
+        subtree: true,
+        characterData: true 
+      });
     }
 
-    return () => observer.disconnect();
-  }, []);
+    // Also check on a slight delay because Portals can be asynchronous
+    const timer = setTimeout(checkPortal, 100);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer);
+    };
+  }, [pathname, searchParams]);
 
   const handleLogout = async () => {
     await logoutUser();
