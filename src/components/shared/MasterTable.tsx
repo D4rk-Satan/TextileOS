@@ -36,7 +36,6 @@ export function MasterTable({ data, type, userRole = 'User', onEdit, onDelete }:
         {status || 'Unknown'}
       </span>
     );
-    );
   };
 
   return (

@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Users,
   ShoppingBag,
-  Package
+  Package,
+  Search
 } from 'lucide-react';
 import { CustomerForm } from '@/components/master/CustomerForm';
 import { VendorForm } from '@/components/master/VendorForm';
