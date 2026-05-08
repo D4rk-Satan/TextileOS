@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyInwards, getBatches } from '@/app/actions/warehouse'; // Import with updated signature
-import { HeaderPortal } from '@/components/layout/HeaderPortal';
+import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'under-printing' | 'ready-for-dispatch' | 'dispatched';
@@ -190,34 +190,15 @@ function WarehousePageContent() {
 
   return (
     <div className="space-y-8">
-      <HeaderPortal>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3 min-w-[200px]">
-            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-            <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
-              {titles[activeTab]}
-            </h1>
-          </div>
-
-          {!showForm && (
-            <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-                <Search size={16} />
-              </div>
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${titles[activeTab]}...`} 
-                className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
-              />
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 min-w-[200px] justify-end">
-          </div>
-        </div>
-      </HeaderPortal>
+      <ModuleHeader 
+        title={titles[activeTab]}
+        subtitle="Warehouse"
+        icon={Package}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder={`Search through ${titles[activeTab]}...`}
+        showSearch={!showForm}
+      />
 
       <AnimatePresence mode="wait">
         {loading ? (
