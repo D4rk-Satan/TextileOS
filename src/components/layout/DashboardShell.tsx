@@ -159,6 +159,7 @@ export default function DashboardShell({
   const searchParams = useSearchParams();
   const [mounted, setMounted] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
+  const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
@@ -238,7 +239,13 @@ export default function DashboardShell({
               return true;
             })
             .map((item) => (
-            <NavLink key={item.name} item={item} isMinimized={isMinimized} />
+            <NavLink 
+              key={item.name} 
+              item={item} 
+              isMinimized={isMinimized} 
+              isOpen={openDropdown === item.name}
+              onToggle={() => setOpenDropdown(openDropdown === item.name ? null : item.name)}
+            />
           ))}
         </nav>
 
@@ -274,36 +281,38 @@ export default function DashboardShell({
       )}>
         {/* Top Navbar */}
         <header className="sticky top-0 h-16 border-b border-border bg-background/80 backdrop-blur-md z-40 px-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-muted-foreground min-w-[200px]">
-             <Menu size={20} className="lg:hidden" />
-             <div className="flex items-center gap-2 text-xs font-medium">
-                <span>Dashboard</span>
-                <ChevronRight size={14} />
-                <span className="text-foreground font-bold">{pathname.split('/').pop()?.replace(/-/g, ' ')}</span>
-             </div>
-          </div>
-
-          <div className="flex-1 max-w-md mx-auto">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-border">
-               <Search size={16} />
-               <input 
-                 type="text" 
-                 placeholder="Search modules..." 
-                 className="bg-transparent border-none outline-none text-xs font-medium w-full placeholder:text-muted-foreground/50"
-               />
-               <span className="ml-4 text-[10px] opacity-50 font-bold border border-border px-1.5 py-0.5 rounded">⌘K</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6 min-w-[200px] justify-end">
-            <div className="flex items-center gap-3">
-               <button className="relative p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                  <Bell size={20} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background"></span>
-               </button>
-               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-background ring-offset-2 ring-offset-border cursor-pointer">
-                  {userProfile.initials}
+          <div id="page-header-portal" className="flex-1 flex items-center justify-between w-full">
+            <div className="flex items-center gap-4 text-muted-foreground min-w-[200px]">
+               <Menu size={20} className="lg:hidden" />
+               <div className="flex items-center gap-2 text-xs font-medium">
+                  <span>Dashboard</span>
+                  <ChevronRight size={14} />
+                  <span className="text-foreground font-bold">{pathname.split('/').pop()?.replace(/-/g, ' ')}</span>
                </div>
+            </div>
+
+            <div className="flex-1 max-w-md mx-auto">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer border border-border">
+                 <Search size={16} />
+                 <input 
+                   type="text" 
+                   placeholder="Search modules..." 
+                   className="bg-transparent border-none outline-none text-xs font-medium w-full placeholder:text-muted-foreground/50"
+                 />
+                 <span className="ml-4 text-[10px] opacity-50 font-bold border border-border px-1.5 py-0.5 rounded">⌘K</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6 min-w-[200px] justify-end">
+              <div className="flex items-center gap-3">
+                 <button className="relative p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                    <Bell size={20} />
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background"></span>
+                 </button>
+                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-background ring-offset-2 ring-offset-border cursor-pointer">
+                    {userProfile.initials}
+                 </div>
+              </div>
             </div>
           </div>
         </header>
@@ -317,10 +326,19 @@ export default function DashboardShell({
   );
 }
 
-function NavLink({ item, isMinimized }: { item: NavItem, isMinimized: boolean }) {
+function NavLink({ 
+  item, 
+  isMinimized, 
+  isOpen, 
+  onToggle 
+}: { 
+  item: NavItem, 
+  isMinimized: boolean, 
+  isOpen?: boolean, 
+  onToggle?: () => void 
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isOpen, setIsOpen] = React.useState(false);
   
   const fullPath = searchParams.toString() 
     ? `${item.href}?${searchParams.toString()}`
@@ -332,7 +350,7 @@ function NavLink({ item, isMinimized }: { item: NavItem, isMinimized: boolean })
     return (
       <div className="space-y-1">
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={onToggle}
           className={cn(
             "w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group",
             isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
