@@ -17,7 +17,8 @@ import {
   Hash,
   ArrowRight
 } from 'lucide-react';
-import { HeaderPortal } from '@/components/layout/HeaderPortal';
+import { ModuleHeader } from '@/components/layout/ModuleHeader';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DeliveryChallanForm } from '@/components/dispatch/DeliveryChallanForm';
@@ -72,45 +73,40 @@ function DeliveryChallanPageContent() {
 
   return (
     <div className="space-y-8">
-      <HeaderPortal>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3 min-w-[200px]">
-            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-            <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
-              {titles[activeTab]}
-            </h1>
-          </div>
-
-          <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-              <Search size={16} />
+      <ModuleHeader 
+        title={titles[activeTab]}
+        subtitle="Dispatch"
+        icon={Truck}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder={`Search through ${titles[activeTab]}...`}
+        showSearch={!showForm}
+        actionButton={!showForm && data.length > 0 && (
+          <button 
+            onClick={() => setShowForm(true)}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
+               <span className="text-lg leading-none">+</span>
             </div>
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={`Search ${titles[activeTab]}...`} 
-              className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
-            />
-          </div>
-
-          <div className="flex items-center gap-3 min-w-[200px] justify-end">
-            {!showForm && (
-              <button 
-                onClick={() => setShowForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-[12px] whitespace-nowrap"
-              >
-                <Plus className="w-4 h-4" />
-                New Challan
-              </button>
-            )}
-          </div>
-        </div>
-      </HeaderPortal>
+            New Challan
+          </button>
+        )}
+      />
 
       <AnimatePresence mode="wait">
-        {showForm ? (
-          <div className="max-w-7xl mx-auto">
+        {loading ? (
+          <motion.div 
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="h-96 flex items-center justify-center"
+          >
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          </motion.div>
+        ) : showForm ? (
+          <div key="form" className="max-w-7xl mx-auto">
             <div className="mb-6 flex items-center justify-between">
               <button 
                 onClick={() => setShowForm(false)}
@@ -125,6 +121,23 @@ function DeliveryChallanPageContent() {
               </div>
             </GlassCard>
           </div>
+        ) : data.length === 0 ? (
+          <motion.div 
+            key="empty"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-card/50 rounded-[3rem] border border-border/50 shadow-2xl overflow-hidden backdrop-blur-sm"
+          >
+            <div className="p-10">
+              <EmptyState 
+                title="No Delivery Challans"
+                description="You haven't recorded any delivery challans yet. Start by creating your first one."
+                onAdd={() => setShowForm(true)}
+                actionLabel="New Challan"
+              />
+            </div>
+          </motion.div>
         ) : (
           <motion.div 
             key="list"
@@ -133,25 +146,20 @@ function DeliveryChallanPageContent() {
             exit={{ opacity: 0, y: -20 }}
             className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
           >
-            {loading ? (
-              <div className="h-64 flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-separate border-spacing-0">
-                  <thead>
-                    <tr className="bg-muted/50 border-b border-border">
-                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest w-12"></th>
-                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Date</th>
-                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Challan No</th>
-                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
-                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lots</th>
-                      <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest text-right">Total Mtrs</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/50">
-                    {data.map((item: any) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest w-12"></th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Date</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Challan No</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lots</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest text-right">Total Mtrs</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {data.map((item: any) => (
                       <React.Fragment key={item.id}>
                         <tr 
                           className="hover:bg-muted/30 transition-colors cursor-pointer group"
@@ -201,18 +209,9 @@ function DeliveryChallanPageContent() {
                         )}
                       </React.Fragment>
                     ))}
-                    {data.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="px-8 py-20 text-center">
-                          <Package size={32} className="mx-auto text-muted-foreground/20 mb-3" />
-                          <p className="text-muted-foreground font-bold italic text-xs">No delivery challans found.</p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                </tbody>
+              </table>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

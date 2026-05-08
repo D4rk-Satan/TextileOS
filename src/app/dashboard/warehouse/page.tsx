@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getGreyInwards, getBatches } from '@/app/actions/warehouse'; // Import with updated signature
-import { HeaderPortal } from '@/components/layout/HeaderPortal';
+import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'under-printing' | 'ready-for-dispatch' | 'dispatched';
@@ -175,13 +175,6 @@ function WarehousePageContent() {
                 </td>
               </tr>
             ))}
-            {batches.length === 0 && (
-              <tr>
-                <td colSpan={activeTab === 'ready-for-printing' || activeTab === 'under-printing' ? 6 : 5} className="px-8 py-20 text-center text-muted-foreground italic font-medium">
-                  No batches found in this section.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
@@ -190,34 +183,26 @@ function WarehousePageContent() {
 
   return (
     <div className="space-y-8">
-      <HeaderPortal>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3 min-w-[200px]">
-            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-            <h1 className="text-xl font-bold text-foreground capitalize tracking-tight whitespace-nowrap">
-              {titles[activeTab]}
-            </h1>
-          </div>
-
-          {!showForm && (
-            <div className="relative flex-1 max-w-md hidden lg:block mx-auto">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
-                <Search size={16} />
-              </div>
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${titles[activeTab]}...`} 
-                className="w-full h-10 pl-11 pr-4 rounded-xl border border-border bg-background/30 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-[13px] font-medium text-center"
-              />
+      <ModuleHeader 
+        title={titles[activeTab]}
+        subtitle="Warehouse"
+        icon={Package}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder={`Search through ${titles[activeTab]}...`}
+        showSearch={!showForm}
+        actionButton={!showForm && data.length > 0 && activeTab === 'batches' && (
+          <button 
+            onClick={() => setShowForm(true)}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
+               <span className="text-lg leading-none">+</span>
             </div>
-          )}
-
-          <div className="flex items-center gap-3 min-w-[200px] justify-end">
-          </div>
-        </div>
-      </HeaderPortal>
+            Add Inward
+          </button>
+        )}
+      />
 
       <AnimatePresence mode="wait">
         {loading ? (
@@ -261,9 +246,28 @@ function WarehousePageContent() {
             <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
           </motion.div>
         ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing' || activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
-          <div key={`${activeTab}-batchlist`}>
-            <BatchList batches={data} />
-          </div>
+          data.length === 0 ? (
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card/50 rounded-[3rem] border border-border/50 shadow-2xl overflow-hidden backdrop-blur-sm"
+            >
+              <div className="p-10">
+                <EmptyState 
+                  title={`No ${titles[activeTab]} Batches`}
+                  description={`There are currently no batches in the ${titles[activeTab].toLowerCase()} status.`}
+                  onAdd={activeTab === 'batches' ? () => setShowForm(true) : undefined}
+                  actionLabel="Add New Inward"
+                />
+              </div>
+            </motion.div>
+          ) : (
+            <div key={`${activeTab}-batchlist`}>
+              <BatchList batches={data} />
+            </div>
+          )
         ) : (
           <motion.div 
             key={`${activeTab}-list`}
