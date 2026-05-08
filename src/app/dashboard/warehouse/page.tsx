@@ -175,13 +175,6 @@ function WarehousePageContent() {
                 </td>
               </tr>
             ))}
-            {batches.length === 0 && (
-              <tr>
-                <td colSpan={activeTab === 'ready-for-printing' || activeTab === 'under-printing' ? 6 : 5} className="px-8 py-20 text-center text-muted-foreground italic font-medium">
-                  No batches found in this section.
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
@@ -242,9 +235,28 @@ function WarehousePageContent() {
             <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
           </motion.div>
         ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing' || activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
-          <div key={`${activeTab}-batchlist`}>
-            <BatchList batches={data} />
-          </div>
+          data.length === 0 ? (
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card/50 rounded-[3rem] border border-border/50 shadow-2xl overflow-hidden backdrop-blur-sm"
+            >
+              <div className="p-10">
+                <EmptyState 
+                  title={`No ${titles[activeTab]} Batches`}
+                  description={`There are currently no batches in the ${titles[activeTab].toLowerCase()} status.`}
+                  onAdd={activeTab === 'batches' ? () => setShowForm(true) : undefined}
+                  actionLabel="Add New Inward"
+                />
+              </div>
+            </motion.div>
+          ) : (
+            <div key={`${activeTab}-batchlist`}>
+              <BatchList batches={data} />
+            </div>
+          )
         ) : (
           <motion.div 
             key={`${activeTab}-list`}

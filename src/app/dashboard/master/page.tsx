@@ -140,14 +140,22 @@ function MasterPageContent() {
             {/* Table Control Bar removed and moved to header */}
 
             {data.length === 0 ? (
-               <div className="bg-card/50 rounded-[2.5rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm p-10">
-                  <EmptyState 
-                    title={`No ${activeTab} found`}
-                    description={`You haven't added any ${activeTab} yet. Start by creating your first one.`}
-                    onAdd={canAdd ? () => setShowForm(true) : undefined}
-                    onImport={() => alert('Import feature coming soon!')}
-                  />
-               </div>
+               <motion.div 
+                 key="empty"
+                 initial={{ opacity: 0, scale: 0.95 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 exit={{ opacity: 0, scale: 0.95 }}
+                 className="bg-card/50 rounded-[3rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm"
+               >
+                 <div className="p-10">
+                    <EmptyState 
+                      title={`No ${activeTab} found`}
+                      description={`You haven't added any ${activeTab} yet. Start by creating your first one.`}
+                      onAdd={canAdd ? () => setShowForm(true) : undefined}
+                      onImport={() => alert('Import feature coming soon!')}
+                    />
+                 </div>
+               </motion.div>
             ) : (
                <div className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden">
                  <MasterTable 

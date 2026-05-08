@@ -145,6 +145,23 @@ function DyeingHousePageContent() {
                 </div>
              </GlassCard>
           </div>
+        ) : data.length === 0 ? (
+          <motion.div 
+            key="empty"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-card/50 rounded-[3rem] border border-border/50 shadow-2xl overflow-hidden backdrop-blur-sm"
+          >
+            <div className="p-10">
+              <EmptyState 
+                title={`No ${titles[activeTab]} Records`}
+                description={`You haven't recorded any ${titles[activeTab].toLowerCase()} entries yet. Start by creating your first one.`}
+                onAdd={() => setShowForm(true)}
+                actionLabel={`Add ${titles[activeTab]}`}
+              />
+            </div>
+          </motion.div>
         ) : (
           <motion.div 
             key={`${activeTab}-list`}
@@ -290,14 +307,6 @@ function DyeingHousePageContent() {
                       )}
                     </React.Fragment>
                   ))}
-                  {data.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-8 py-20 text-center">
-                        <Package size={32} className="mx-auto text-muted-foreground/20 mb-3" />
-                        <p className="text-muted-foreground font-bold italic text-xs">No records yet.</p>
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
