@@ -77,7 +77,7 @@ function MasterPageContent() {
         icon={activeTab === 'customers' ? Users : activeTab === 'vendors' ? ShoppingBag : Package}
         searchPlaceholder={`Search through ${activeTab}...`}
         showSearch={!showForm}
-        actionButton={!showForm && canAdd && (
+        actionButton={!showForm && canAdd && data.length > 0 && (
           <button 
             onClick={() => setShowForm(true)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"

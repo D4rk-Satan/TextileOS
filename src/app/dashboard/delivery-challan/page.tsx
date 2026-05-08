@@ -81,7 +81,7 @@ function DeliveryChallanPageContent() {
         onSearchChange={setSearchQuery}
         searchPlaceholder={`Search through ${titles[activeTab]}...`}
         showSearch={!showForm}
-        actionButton={!showForm && (
+        actionButton={!showForm && data.length > 0 && (
           <button 
             onClick={() => setShowForm(true)}
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
