@@ -59,6 +59,36 @@ export async function getCustomers() {
   }
 }
 
+export async function updateCustomer(id: string, data: any) {
+  try {
+    const { orgId } = await getSessionContext();
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
+    }
+
+    const customer = await prisma.customer.update({
+      where: { id, organizationId: orgId },
+      data: {
+        customerName: data.customerName,
+        status: data.status,
+        address: data.address,
+        addressLine1: data.addressLine1,
+        city: data.city,
+        state: data.state,
+        postalCode: data.postalCode,
+        country: data.country,
+        phone: data.phone,
+        gstin: data.gstin,
+      },
+    });
+    revalidatePath('/dashboard/master');
+    return { success: true, data: customer };
+  } catch (error: any) {
+    console.error('Error updating customer:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // --- Vendor Actions ---
 
 export async function createVendor(data: any) {
@@ -102,6 +132,37 @@ export async function getVendors() {
     });
     return { success: true, data: vendors };
   } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateVendor(id: string, data: any) {
+  try {
+    const { orgId } = await getSessionContext();
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
+    }
+
+    const vendor = await prisma.vendor.update({
+      where: { id, organizationId: orgId },
+      data: {
+        vendorName: data.vendorName,
+        masterName: data.masterName,
+        vendorNumber: data.vendorNumber,
+        booksId: data.booksId,
+        gstin: data.gstin,
+        status: data.status,
+        addressLine1: data.addressLine1,
+        city: data.city,
+        state: data.state,
+        postalCode: data.postalCode,
+        country: data.country,
+      },
+    });
+    revalidatePath('/dashboard/master');
+    return { success: true, data: vendor };
+  } catch (error: any) {
+    console.error('Error updating vendor:', error);
     return { success: false, error: error.message };
   }
 }
@@ -160,6 +221,28 @@ export async function getItems() {
     });
     return { success: true, data: items };
   } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateItem(id: string, data: any) {
+  try {
+    const { orgId } = await getSessionContext();
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
+    }
+
+    const item = await prisma.item.update({
+      where: { id, organizationId: orgId },
+      data: {
+        itemName: data.itemName,
+        sku: data.sku,
+      },
+    });
+    revalidatePath('/dashboard/master');
+    return { success: true, data: item };
+  } catch (error: any) {
+    console.error('Error updating item:', error);
     return { success: false, error: error.message };
   }
 }

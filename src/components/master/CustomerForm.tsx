@@ -6,23 +6,23 @@ import { FormInput } from '@/components/shared/FormInput';
 import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
 import { PhoneInput } from '@/components/shared/PhoneInput';
-import { createCustomer } from '@/app/actions/master';
+import { createCustomer, updateCustomer } from '@/app/actions/master';
 import { Save, RotateCcw, Users, User, MapPin, Hash, Globe, Phone } from 'lucide-react';
 import { FormHeader } from '@/components/shared/FormHeader';
 
-export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
+export function CustomerForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
   const methods = useForm({
     defaultValues: {
-      status: 'Active',
-      customerName: '',
-      address: '',
-      addressLine1: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: 'India',
-      phone: '',
-      gstin: '',
+      status: initialData?.status || 'Active',
+      customerName: initialData?.customerName || '',
+      address: initialData?.address || '',
+      addressLine1: initialData?.addressLine1 || '',
+      city: initialData?.city || '',
+      state: initialData?.state || '',
+      postalCode: initialData?.postalCode || '',
+      country: initialData?.country || 'India',
+      phone: initialData?.phone || '',
+      gstin: initialData?.gstin || '',
     },
     mode: 'onTouched',
   });
@@ -30,16 +30,32 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    methods.setValue('status', 'Active');
-  }, [methods]);
+    if (initialData) {
+      methods.reset({
+        status: initialData.status,
+        customerName: initialData.customerName,
+        address: initialData.address,
+        addressLine1: initialData.addressLine1,
+        city: initialData.city,
+        state: initialData.state,
+        postalCode: initialData.postalCode,
+        country: initialData.country,
+        phone: initialData.phone,
+        gstin: initialData.gstin,
+      });
+    }
+  }, [initialData, methods]);
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const result = await createCustomer(data);
+      const result = initialData 
+        ? await updateCustomer(initialData.id, data)
+        : await createCustomer(data);
+
       if (result.success) {
-        alert('Customer record created successfully!');
-        methods.reset();
+        alert(`Customer record ${initialData ? 'updated' : 'created'} successfully!`);
+        if (!initialData) methods.reset();
         onSuccess?.();
       } else {
         alert('Error saving customer: ' + result.error);

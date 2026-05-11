@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
@@ -17,6 +17,8 @@ import {
   X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { FormHeader } from '@/components/shared/FormHeader';
+import { cn } from '@/lib/utils';
 import { createGreyOutward, updateGreyOutward, getDyeingHouses, getGreyInwardsForOutward, getNextDCNumber } from '@/app/actions/dyeing';
 
 export function GreyOutwardForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
@@ -106,7 +108,7 @@ export function GreyOutwardForm({ onSuccess, initialData }: { onSuccess?: () => 
       updatedBatches = [...currentBatches, batch];
     }
     
-    const totalMtr = updatedBatches.reduce((acc, curr) => acc + (Number(curr.mtrs) || 0), 0);
+    const totalMtr = updatedBatches.reduce((acc: number, curr: any) => acc + (Number(curr.mtrs) || 0), 0);
     
     methods.setValue('batches', updatedBatches);
     methods.setValue('totalGreyMtr', totalMtr.toFixed(2));

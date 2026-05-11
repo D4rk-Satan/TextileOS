@@ -11,7 +11,6 @@ import {
   Building2,
   Search,
   ChevronRight,
-  Hash
   Hash,
   Trash2
 } from 'lucide-react';

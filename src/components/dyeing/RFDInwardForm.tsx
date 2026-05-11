@@ -15,6 +15,7 @@ import {
   FileText,
   Info
 } from 'lucide-react';
+import { FormHeader } from '@/components/shared/FormHeader';
 import { createRFDInward, updateRFDInward, getDyeingHouses, getGreyOutwardsByHouse } from '@/app/actions/dyeing';
 
 export function RFDInwardForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {

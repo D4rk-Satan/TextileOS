@@ -30,7 +30,7 @@ export default function SuperAdminDashboard() {
   const stats = [
     { label: 'Total Clients', value: organizations.length.toString(), change: '+12%', icon: <Building2 className="text-blue-500" /> },
     { label: 'Active Orgs', value: organizations.filter(o => o.status === 'Active').length.toString(), change: '+5%', icon: <ShieldCheck className="text-green-500" /> },
-    { label: 'Platform Users', value: organizations.reduce((acc, curr) => acc + (curr._count?.users || 0), 0).toString(), change: '+18%', icon: <Users className="text-purple-500" /> },
+    { label: 'Platform Users', value: organizations.reduce((acc: number, curr: any) => acc + (curr._count?.users || 0), 0).toString(), change: '+18%', icon: <Users className="text-purple-500" /> },
     { label: 'MRR', value: '$84,200', change: '+7%', icon: <TrendingUp className="text-yellow-500" /> },
   ];
 
