@@ -20,30 +20,31 @@ import {
 import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormButton } from '@/components/shared/FormButton';
-import { getOutForPrintingLots, createPrintingReceive, getNextReceiveProductionNumber } from '@/app/actions/printing';
+import { getOutForPrintingLots, createPrintingReceive, updatePrintingReceive, getNextReceiveProductionNumber } from '@/app/actions/printing';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 
 interface ReceiveFromPrintingFormProps {
   onSuccess?: () => void;
+  initialData?: any;
 }
 
-export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormProps) {
+export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromPrintingFormProps) {
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const methods = useForm({
     defaultValues: {
-      productionNumber: '',
-      date: new Date().toISOString().split('T')[0],
-      jobCardNumber: '',
-      lotNo: '',
-      customerId: '',
-      customerName: '',
-      processType: '',
-      remark: '',
-      batches: [] as any[]
+      productionNumber: initialData?.productionNumber || '',
+      date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      jobCardNumber: initialData?.jobCardId || '',
+      lotNo: initialData?.lotNo || '',
+      customerId: initialData?.customerId || '',
+      customerName: initialData?.customer?.customerName || '',
+      processType: initialData?.processType || '',
+      remark: initialData?.remark || '',
+      batches: initialData?.batches || []
     }
   });
 
@@ -57,17 +58,18 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
     async function loadData() {
       const [lotRes, prodRes] = await Promise.all([
         getOutForPrintingLots(),
-        getNextReceiveProductionNumber()
+        !initialData ? getNextReceiveProductionNumber() : Promise.resolve(null)
       ]);
       if (lotRes.success) setLots(lotRes.data || []);
-      if (prodRes.success && prodRes.data) setValue('productionNumber', prodRes.data);
+      if (!initialData && prodRes?.success && prodRes.data) setValue('productionNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
-  }, [setValue]);
+  }, [initialData, setValue]);
 
   const selectedJobCardId = watch('jobCardNumber');
   useEffect(() => {
+    if (initialData) return;
     if (selectedJobCardId) {
       const lot = lots.find(l => l.id === selectedJobCardId);
       if (lot) {
@@ -94,7 +96,7 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
       setValue('processType', '');
       replace([]);
     }
-  }, [selectedJobCardId, lots, replace, setValue]);
+  }, [selectedJobCardId, lots, replace, setValue, initialData]);
 
   // Helper to parse TP Detail string (e.g. "90+10+20")
   const calculateTPSum = (detail: string) => {
@@ -103,13 +105,14 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
     return parts.reduce((sum, p) => sum + p, 0);
   };
 
-  // Real-time calculation for print shortage
+  // Real-time calculation for print shortage - ONLY IF NOT EDITING
   const batchesData = useWatch({
     control,
     name: 'batches'
   });
 
   useEffect(() => {
+    if (initialData) return;
     batchesData?.forEach((batch: any, index: number) => {
       // Clear TP details if isTP is unchecked
       if (!batch.isTP && batch.tpDetail !== '') {
@@ -135,20 +138,24 @@ export function ReceiveFromPrintingForm({ onSuccess }: ReceiveFromPrintingFormPr
         }
       }
     });
-  }, [batchesData, setValue, methods]);
+  }, [batchesData, setValue, methods, initialData]);
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
-    const result = await createPrintingReceive(data);
+    const result = initialData
+      ? await updatePrintingReceive(initialData.id, data)
+      : await createPrintingReceive(data);
     setIsSubmitting(false);
 
     if (result.success) {
-      toast.success('Printing receipt recorded successfully');
-      reset();
-      replace([]);
+      toast.success(`Printing receipt ${initialData ? 'updated' : 'recorded'} successfully`);
+      if (!initialData) {
+        reset();
+        replace([]);
+      }
       if (onSuccess) onSuccess();
     } else {
-      toast.error(result.error || 'Failed to record printing receipt');
+      toast.error(result.error || `Failed to ${initialData ? 'update' : 'record'} printing receipt`);
     }
   };
 

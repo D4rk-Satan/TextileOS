@@ -39,8 +39,9 @@ export default function LoginPage() {
       } else if (!result.success) {
         alert('Login failed: ' + result.error);
       }
-    } catch (error) {
-      alert('An unexpected error occurred during login.');
+    } catch (error: any) {
+      console.error('Login Submission Error:', error);
+      alert('An unexpected error occurred during login: ' + (error.message || 'Unknown Error'));
     } finally {
       setIsSubmitting(false);
     }

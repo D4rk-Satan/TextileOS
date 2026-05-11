@@ -4,31 +4,43 @@ import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormButton } from '@/components/shared/FormButton';
-import { createItem } from '@/app/actions/master';
+import { createItem, updateItem } from '@/app/actions/master';
 import { Package, Hash, Save, RotateCcw } from 'lucide-react';
 import { FormHeader } from '@/components/shared/FormHeader';
 
-export function ItemForm({ onSuccess }: { onSuccess?: () => void }) {
+export function ItemForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
   const methods = useForm({
     defaultValues: {
-      itemName: '',
-      sku: '',
+      itemName: initialData?.itemName || '',
+      sku: initialData?.sku || '',
     },
     mode: 'onTouched',
   });
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  React.useEffect(() => {
+    if (initialData) {
+      methods.reset({
+        itemName: initialData.itemName,
+        sku: initialData.sku,
+      });
+    }
+  }, [initialData, methods]);
+
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const result = await createItem(data);
+      const result = initialData 
+        ? await updateItem(initialData.id, data)
+        : await createItem(data);
+
       if (result.success) {
-        alert('Item record created successfully!');
-        methods.reset();
+        alert(`Item record ${initialData ? 'updated' : 'created'} successfully!`);
+        if (!initialData) methods.reset();
         onSuccess?.();
       } else {
-        alert('Error: ' + result.error);
+        alert('Error saving item: ' + result.error);
       }
     } catch (error) {
       alert('An unexpected error occurred.');

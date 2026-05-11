@@ -17,22 +17,20 @@ import {
   X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { createGreyOutward, getDyeingHouses, getGreyInwardsForOutward, getNextDCNumber } from '@/app/actions/dyeing';
-import { useWatch } from 'react-hook-form';
-import { cn } from '@/lib/utils';
-import { FormHeader } from '@/components/shared/FormHeader';
-export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
+import { createGreyOutward, updateGreyOutward, getDyeingHouses, getGreyInwardsForOutward, getNextDCNumber } from '@/app/actions/dyeing';
+
+export function GreyOutwardForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
   const methods = useForm({
     defaultValues: {
-      date: new Date().toISOString().split('T')[0],
-      dcNo: '',
-      lotNo: '',
-      dyeingHouse: '',
-      remark: '',
+      date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      dcNo: initialData?.challanNo || '',
+      lotNo: initialData?.lotNo || '',
+      dyeingHouse: initialData?.dyeingHouseId || '',
+      remark: initialData?.remark || '',
       stage: 'Dyeing House',
-      totalGreyMtr: '0.00',
-      totalGreyBatch: 0,
-      batches: [] as any[],
+      totalGreyMtr: initialData?.batches ? initialData.batches.reduce((acc: number, curr: any) => acc + (Number(curr.mtrs) || 0), 0).toFixed(2) : '0.00',
+      totalGreyBatch: initialData?.batches?.length || 0,
+      batches: initialData?.batches || [],
     },
     mode: 'onTouched',
   });
@@ -47,6 +45,7 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
   });
 
   const refreshDCNumber = async () => {
+    if (initialData) return;
     const dcRes = await getNextDCNumber();
     if (dcRes?.success && dcRes.data) {
       methods.setValue('dcNo', dcRes.data);
@@ -58,7 +57,7 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
       const [housesRes, lotsRes, dcRes] = await Promise.all([
         getDyeingHouses(),
         getGreyInwardsForOutward(),
-        getNextDCNumber()
+        !initialData ? getNextDCNumber() : Promise.resolve(null)
       ]);
       
       if (housesRes?.success) {
@@ -69,20 +68,19 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
         setLotData(lotsRes.data || []);
       }
 
-      if (dcRes?.success && dcRes.data) {
+      if (!initialData && dcRes?.success && dcRes.data) {
         methods.setValue('dcNo', dcRes.data);
       }
     }
     loadData();
-  }, [methods]);
+  }, [methods, initialData]);
 
-  // Update totals and batches when lot is selected
+  // Update totals and batches when lot is selected - ONLY IF NOT EDITING
   useEffect(() => {
+    if (initialData) return;
     if (selectedLotNo) {
       const lot = lotData.find(l => l.lotNo === selectedLotNo);
       if (lot) {
-        // By default, don't select all batches automatically to avoid accidental outwarding
-        // Let the user select them
         methods.setValue('totalGreyMtr', '0.00');
         methods.setValue('totalGreyBatch', 0);
         methods.setValue('batches', []);
@@ -92,9 +90,12 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
       methods.setValue('totalGreyBatch', 0);
       methods.setValue('batches', []);
     }
-  }, [selectedLotNo, lotData, methods]);
+  }, [selectedLotNo, lotData, methods, initialData]);
 
   const toggleBatch = (batch: any) => {
+    // Disable batch toggling in edit mode for now to keep it simple
+    if (initialData) return;
+
     const currentBatches = methods.getValues('batches') || [];
     const isSelected = currentBatches.some((b: any) => b.id === batch.id);
     
@@ -105,7 +106,6 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
       updatedBatches = [...currentBatches, batch];
     }
     
-    // Recalculate totals
     const totalMtr = updatedBatches.reduce((acc, curr) => acc + (Number(curr.mtrs) || 0), 0);
     
     methods.setValue('batches', updatedBatches);
@@ -120,11 +120,16 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
     }
     setIsSubmitting(true);
     try {
-      const result = await createGreyOutward(data);
+      const result = initialData 
+        ? await updateGreyOutward(initialData.id, data)
+        : await createGreyOutward(data);
+        
       if (result.success) {
-        alert('Grey Outward entry saved successfully!');
-        methods.reset();
-        await refreshDCNumber();
+        alert(`Grey Outward entry ${initialData ? 'updated' : 'saved'} successfully!`);
+        if (!initialData) {
+          methods.reset();
+          await refreshDCNumber();
+        }
         onSuccess?.();
       } else {
         alert('Error: ' + result.error);
@@ -138,7 +143,7 @@ export function GreyOutwardForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const onReset = () => {
     methods.reset();
-    refreshDCNumber();
+    if (!initialData) refreshDCNumber();
   };
 
   const currentBatches = useWatch({

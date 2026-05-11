@@ -20,27 +20,28 @@ import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
-import { getReadyForPrintingLots, createPrintingIssue, getNextJobCardNumber } from '@/app/actions/printing';
+import { getReadyForPrintingLots, createPrintingIssue, updatePrintingIssue, getNextJobCardNumber } from '@/app/actions/printing';
 import { toast } from 'sonner';
 
 interface IssueForPrintingFormProps {
   onSuccess?: () => void;
+  initialData?: any;
 }
 
-export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
+export function IssueForPrintingForm({ onSuccess, initialData }: IssueForPrintingFormProps) {
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const methods = useForm({
     defaultValues: {
-      jobCardNumber: '',
-      date: new Date().toISOString().split('T')[0],
-      lotNo: '',
-      remark: '',
-      processType: '',
-      customerName: '',
-      batches: [] as any[]
+      jobCardNumber: initialData?.jobCardNumber || '',
+      date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      lotNo: initialData?.lotNo || '',
+      remark: initialData?.remark || '',
+      processType: initialData?.batches?.[0]?.greyInward?.processType || '',
+      customerName: initialData?.batches?.[0]?.greyInward?.customer?.customerName || '',
+      batches: initialData?.batches || []
     }
   });
 
@@ -54,17 +55,18 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
     async function loadData() {
       const [lotRes, prodRes] = await Promise.all([
         getReadyForPrintingLots(),
-        getNextJobCardNumber()
+        !initialData ? getNextJobCardNumber() : Promise.resolve(null)
       ]);
       if (lotRes.success) setLots(lotRes.data || []);
-      if (prodRes.success && prodRes.data) setValue('jobCardNumber', prodRes.data);
+      if (!initialData && prodRes?.success && prodRes.data) setValue('jobCardNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
-  }, []);
+  }, [initialData, setValue]);
 
   const selectedLotNo = watch('lotNo');
   useEffect(() => {
+    if (initialData) return;
     if (selectedLotNo) {
       const lot = lots.find(l => l.lotNo === selectedLotNo);
       if (lot) {
@@ -83,7 +85,7 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
       setValue('customerName', '');
       replace([]);
     }
-  }, [selectedLotNo, lots, replace, setValue]);
+  }, [selectedLotNo, lots, replace, setValue, initialData]);
 
   const totalGreyMtr = useMemo(() => {
     return fields.reduce((sum, field: any) => sum + (Number(field.mtrs) || 0), 0);
@@ -91,16 +93,20 @@ export function IssueForPrintingForm({ onSuccess }: IssueForPrintingFormProps) {
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
-    const result = await createPrintingIssue(data);
+    const result = initialData 
+      ? await updatePrintingIssue(initialData.id, data)
+      : await createPrintingIssue(data);
     setIsSubmitting(false);
 
     if (result.success) {
-      toast.success('Printing issue recorded successfully');
-      reset();
-      replace([]);
+      toast.success(`Printing issue ${initialData ? 'updated' : 'recorded'} successfully`);
+      if (!initialData) {
+        reset();
+        replace([]);
+      }
       if (onSuccess) onSuccess();
     } else {
-      toast.error(result.error || 'Failed to record printing issue');
+      toast.error(result.error || `Failed to ${initialData ? 'update' : 'record'} printing issue`);
     }
   };
 

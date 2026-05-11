@@ -16,7 +16,8 @@ import {
   User,
   Layers,
   Hash,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { IssueForPrintingForm } from '@/components/printing/IssueForPrintingForm';
 import { ReceiveFromPrintingForm } from '@/components/printing/ReceiveFromPrintingForm';
@@ -24,8 +25,9 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getOutForPrintingLots, getPrintingReceives } from '@/app/actions/printing';
+import { getOutForPrintingLots, getPrintingReceives, deletePrintingIssue, deletePrintingReceive } from '@/app/actions/printing';
 import { useDebounce } from '@/hooks/useDebounce';
+import { toast } from 'sonner';
 
 type TabType = 'issue' | 'receive';
 
@@ -33,6 +35,7 @@ function PrintingProcessPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('issue');
   const [showForm, setShowForm] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
@@ -52,6 +55,7 @@ function PrintingProcessPageContent() {
     if (tabFromUrl && tabFromUrl !== activeTab && ['issue', 'receive'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl);
       setShowForm(false);
+      setEditingRecord(null);
       return;
     }
 
@@ -81,18 +85,37 @@ function PrintingProcessPageContent() {
     };
   }, [searchParams, activeTab, debouncedSearch]);
 
-  const fetchData = () => {
-    setActiveTab(prev => prev); // Simple trigger
+  const handleRecordAddedOrUpdated = () => {
+    setShowForm(false);
+    setEditingRecord(null);
+    setFetchedTab(null); // Force re-fetch
+  };
+
+  const handleEdit = (record: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingRecord(record);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`Are you sure you want to delete this ${activeTab === 'issue' ? 'issue' : 'receipt'}?`)) return;
+    
+    let result;
+    if (activeTab === 'issue') result = await deletePrintingIssue(id);
+    else if (activeTab === 'receive') result = await deletePrintingReceive(id);
+
+    if (result?.success) {
+      toast.success('Record deleted successfully');
+      setFetchedTab(null);
+    } else {
+      toast.error(result?.error || 'Failed to delete record');
+    }
   };
 
   const titles: Record<TabType, string> = {
     'issue': 'Issue For Printing',
     'receive': 'Receive From Printing'
-  };
-
-  const handleSuccess = () => {
-    setShowForm(false);
-    fetchData();
   };
 
   return (
@@ -107,7 +130,10 @@ function PrintingProcessPageContent() {
         showSearch={!showForm}
         actionButton={!showForm && data.length > 0 && (
           <button 
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditingRecord(null);
+              setShowForm(true);
+            }}
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
           >
             <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
@@ -133,16 +159,22 @@ function PrintingProcessPageContent() {
           <div className="max-w-7xl mx-auto">
             <div className="mb-6 flex items-center justify-between">
               <button 
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingRecord(null);
+                }}
                 className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
               >
                 ← Back to List
               </button>
+              <h2 className="text-2xl font-black text-foreground flex items-center gap-3">
+                {editingRecord ? 'Edit' : 'New'} {titles[activeTab]} Entry
+              </h2>
             </div>
             <GlassCard>
               <div className="p-10">
-                {activeTab === 'issue' && <IssueForPrintingForm onSuccess={handleSuccess} />}
-                {activeTab === 'receive' && <ReceiveFromPrintingForm onSuccess={handleSuccess} />}
+                {activeTab === 'issue' && <IssueForPrintingForm onSuccess={handleRecordAddedOrUpdated} initialData={editingRecord} />}
+                {activeTab === 'receive' && <ReceiveFromPrintingForm onSuccess={handleRecordAddedOrUpdated} initialData={editingRecord} />}
               </div>
             </GlassCard>
           </div>
@@ -181,13 +213,14 @@ function PrintingProcessPageContent() {
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Printer</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">DC No</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest w-20"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
                   {data.map((item: any) => (
                     <React.Fragment key={item.id}>
                       <tr 
-                        className="hover:bg-muted/30 transition-colors cursor-pointer"
+                        className="hover:bg-muted/30 transition-colors cursor-pointer group"
                         onClick={() => toggleRow(item.id)}
                       >
                         <td className="px-8 py-5 text-center">
@@ -213,10 +246,26 @@ function PrintingProcessPageContent() {
                             </span>
                           )}
                         </td>
+                        <td className="px-8 py-5 text-right">
+                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button 
+                               onClick={(e) => handleEdit(item, e)}
+                               className="p-2 hover:bg-primary/10 rounded-xl text-primary/60 hover:text-primary transition-all duration-300"
+                             >
+                               <Search size={18} />
+                             </button>
+                             <button 
+                               onClick={(e) => handleDelete(item.id, e)}
+                               className="p-2 hover:bg-red-500/10 rounded-xl text-red-500/40 hover:text-red-500 transition-all duration-300"
+                             >
+                               <Trash2 size={16} />
+                             </button>
+                           </div>
+                        </td>
                       </tr>
                       {expandedRows.includes(item.id) && (
                         <tr>
-                          <td colSpan={6} className="px-8 py-4 bg-muted/5">
+                          <td colSpan={7} className="px-8 py-4 bg-muted/5">
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                               {item.batches?.map((batch: any) => (
                                 <div key={batch.id} className="p-3 rounded-2xl bg-background border border-border/50">

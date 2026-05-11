@@ -5,23 +5,24 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
-import { createVendor } from '@/app/actions/master';
-import { ShoppingBag, Save, RotateCcw, User, Hash, MapPin, Globe } from 'lucide-react';
+import { createVendor, updateVendor } from '@/app/actions/master';
+import { Save, RotateCcw, ShoppingBag, User, MapPin, Hash, Globe, Building2 } from 'lucide-react';
 import { FormHeader } from '@/components/shared/FormHeader';
 
-export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
+export function VendorForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
   const methods = useForm({
     defaultValues: {
-      status: 'Active',
-      vendorName: '',
-      vendorNumber: '',
-      booksId: '',
-      addressLine1: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: 'India',
-      gstin: '',
+      status: initialData?.status || 'Active',
+      vendorName: initialData?.vendorName || '',
+      masterName: initialData?.masterName || '',
+      vendorNumber: initialData?.vendorNumber || '',
+      booksId: initialData?.booksId || '',
+      gstin: initialData?.gstin || '',
+      addressLine1: initialData?.addressLine1 || '',
+      city: initialData?.city || '',
+      state: initialData?.state || '',
+      postalCode: initialData?.postalCode || '',
+      country: initialData?.country || 'India',
     },
     mode: 'onTouched',
   });
@@ -29,19 +30,36 @@ export function VendorForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    methods.setValue('status', 'Active');
-  }, [methods]);
+    if (initialData) {
+      methods.reset({
+        status: initialData.status,
+        vendorName: initialData.vendorName,
+        masterName: initialData.masterName,
+        vendorNumber: initialData.vendorNumber,
+        booksId: initialData.booksId,
+        gstin: initialData.gstin,
+        addressLine1: initialData.addressLine1,
+        city: initialData.city,
+        state: initialData.state,
+        postalCode: initialData.postalCode,
+        country: initialData.country,
+      });
+    }
+  }, [initialData, methods]);
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const result = await createVendor(data);
+      const result = initialData 
+        ? await updateVendor(initialData.id, data)
+        : await createVendor(data);
+
       if (result.success) {
-        alert('Vendor record created successfully!');
-        methods.reset();
+        alert(`Vendor record ${initialData ? 'updated' : 'created'} successfully!`);
+        if (!initialData) methods.reset();
         onSuccess?.();
       } else {
-        alert('Error: ' + result.error);
+        alert('Error saving vendor: ' + result.error);
       }
     } catch (error) {
       alert('An unexpected error occurred.');

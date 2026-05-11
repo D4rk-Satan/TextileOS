@@ -59,7 +59,7 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
     <FormProvider {...methods}>
       <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
         <FormHeader title="Customer Information" icon={Users} color="blue" />
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-8">
           <FormInput
             name="customerName"
@@ -75,11 +75,11 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
             required
             placeholder="e.g. 29ABC..."
             icon={Hash}
-            rules={{ 
-              pattern: { 
-                value: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, 
-                message: 'Invalid GSTIN format' 
-              } 
+            rules={{
+              pattern: {
+                value: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+                message: 'Invalid GSTIN format'
+              }
             }}
           />
           <FormInput
@@ -113,9 +113,9 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
 
         <div className="flex items-center gap-4 mt-10 pt-0">
-          <FormButton 
-            type="submit" 
-            variant="primary" 
+          <FormButton
+            type="submit"
+            variant="primary"
             disabled={isSubmitting}
             className="h-12 px-10 rounded-xl font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 flex gap-2"
           >
@@ -131,10 +131,10 @@ export function CustomerForm({ onSuccess }: { onSuccess?: () => void }) {
               </>
             )}
           </FormButton>
-          <FormButton 
-            type="button" 
-            onClick={onReset} 
-            variant="secondary" 
+          <FormButton
+            type="button"
+            onClick={onReset}
+            variant="secondary"
             disabled={isSubmitting}
             className="h-12 px-10 rounded-xl font-black uppercase tracking-wider flex gap-2"
           >

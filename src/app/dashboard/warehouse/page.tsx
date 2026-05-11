@@ -6,22 +6,25 @@ import {
   Building2,
   Package,
   Factory,
-  Search
+  Search,
+  Trash2
 } from 'lucide-react';
 import { GreyInwardForm } from '@/components/warehouse/GreyInwardForm';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getGreyInwards, getBatches } from '@/app/actions/warehouse'; // Import with updated signature
+import { getGreyInwards, getBatches, updateGreyInward, deleteGreyInward } from '@/app/actions/warehouse';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
+import { toast } from 'sonner';
 
-type TabType = 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'under-printing' | 'ready-for-dispatch' | 'dispatched';
+type TabType = 'inwards' | 'batches' | 'out-for-rfd' | 'ready-for-printing' | 'under-printing' | 'ready-for-dispatch' | 'dispatched';
 
 function WarehousePageContent() {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabType>('batches');
+  const [activeTab, setActiveTab] = useState<TabType>('inwards');
   const [showForm, setShowForm] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
@@ -31,10 +34,11 @@ function WarehousePageContent() {
 
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as TabType;
-    if (tabFromUrl && tabFromUrl !== activeTab && ['batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tabFromUrl)) {
+    if (tabFromUrl && tabFromUrl !== activeTab && ['inwards', 'batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl);
       setShowForm(false);
-      return; // Skip this effect run, wait for the next one with updated activeTab
+      setEditingRecord(null);
+      return;
     }
 
     let isCurrent = true;
@@ -43,7 +47,9 @@ function WarehousePageContent() {
       setData([]); 
       
       let result: any;
-      if (activeTab === 'batches') {
+      if (activeTab === 'inwards') {
+        result = await getGreyInwards(debouncedSearch);
+      } else if (activeTab === 'batches') {
         result = await getBatches('In-Warehouse', debouncedSearch);
       } else if (activeTab === 'out-for-rfd') {
         result = await getBatches('Out For RFD', debouncedSearch);
@@ -75,17 +81,8 @@ function WarehousePageContent() {
     };
   }, [searchParams, activeTab, debouncedSearch]);
 
-  const fetchData = () => {
-    // Legacy support for other parts of the component that call fetchData()
-    // Trigger a state-based re-fetch by toggling a dummy value or just calling the effect logic if needed
-    // But since the effect already tracks activeTab, we can just trigger a manual update if needed
-    setActiveTab(prev => {
-      const current = prev;
-      return current;
-    });
-  };
-
   const titles: Record<TabType, string> = {
+    'inwards': 'Grey Inwards',
     'batches': 'In-Warehouse',
     'out-for-rfd': 'Out For RFD',
     'ready-for-printing': 'Ready For Printing',
@@ -94,10 +91,98 @@ function WarehousePageContent() {
     'dispatched': 'Dispatched'
   };
 
-  const handleRecordAdded = () => {
+  const handleRecordAddedOrUpdated = () => {
     setShowForm(false);
-    fetchData();
+    setEditingRecord(null);
+    // Force re-fetch by triggering effect
+    setFetchedTab(null);
   };
+
+  const handleEdit = (record: any) => {
+    setEditingRecord(record);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this inward? All associated batches will also be deleted.')) return;
+    
+    const result = await deleteGreyInward(id);
+    if (result.success) {
+      toast.success('Inward deleted successfully');
+      setFetchedTab(null); // Force re-fetch
+    } else {
+      toast.error(result.error || 'Failed to delete inward');
+    }
+  };
+
+  const InwardsList = ({ inwards }: { inwards: any[] }) => (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-muted/50 border-b border-border">
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lot No</th>
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Quality</th>
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Challan No</th>
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Total Mtrs</th>
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest w-20"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50">
+            {inwards.map((inward: any) => (
+              <tr key={inward.id} className="hover:bg-muted/30 transition-colors group">
+                <td className="px-8 py-5 font-bold text-foreground">
+                  {inward.lotNo}
+                </td>
+                <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
+                  {inward.customer?.customerName || 'N/A'}
+                </td>
+                <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
+                  {inward.quality}
+                </td>
+                <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
+                  {inward.challanNo}
+                </td>
+                <td className="px-8 py-5 font-black text-blue-600">
+                  {(inward.totalMtr || 0).toFixed(2)}
+                </td>
+                <td className="px-8 py-5">
+                  <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
+                    inward.status === 'In-Warehouse' ? 'bg-muted text-muted-foreground' :
+                    'bg-blue-600/10 text-blue-600'
+                  }`}>
+                    {inward.status}
+                  </span>
+                </td>
+                <td className="px-8 py-5 text-right">
+                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                     <button 
+                       onClick={() => handleEdit(inward)}
+                       className="p-2 hover:bg-primary/10 rounded-xl text-primary/60 hover:text-primary transition-all duration-300"
+                     >
+                       <Search size={18} />
+                     </button>
+                     <button 
+                       onClick={() => handleDelete(inward.id)}
+                       className="p-2 hover:bg-red-500/10 rounded-xl text-red-500/40 hover:text-red-500 transition-all duration-300"
+                     >
+                       <Trash2 size={16} />
+                     </button>
+                   </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
+  );
 
   const BatchList = ({ batches }: { batches: any[] }) => (
     <motion.div 
@@ -111,67 +196,38 @@ function WarehousePageContent() {
             <tr className="bg-muted/50 border-b border-border">
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Batch No</th>
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
-              {activeTab === 'under-printing' && (
-                <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Printer</th>
-              )}
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lot No</th>
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Quality</th>
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Mtrs</th>
-              {activeTab === 'ready-for-printing' && (
-                <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Shortage</th>
-              )}
               <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Status</th>
+              <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest w-20"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
             {batches.map((batch: any) => (
-              <tr key={batch.id} className="hover:bg-muted/30 transition-colors">
-                <td className="px-8 py-5">
-                  <span className="font-bold text-foreground">{batch.batchNo}</span>
+              <tr key={batch.id} className="hover:bg-muted/30 transition-colors group">
+                <td className="px-8 py-5 font-bold text-foreground">
+                  {batch.batchNo}
                 </td>
                 <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
                   {batch.greyInward?.customer?.customerName || 'N/A'}
                 </td>
-                {activeTab === 'under-printing' && (
-                  <td className="px-8 py-5 text-sm font-bold text-foreground">
-                    {batch.printingIssue?.printer?.vendorName || '-'}
-                  </td>
-                )}
                 <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
-                  {batch.greyInward?.lotNo}
+                  {batch.greyInward?.lotNo || 'N/A'}
+                </td>
+                <td className="px-8 py-5 text-sm font-medium text-muted-foreground">
+                  {batch.greyInward?.quality || 'N/A'}
+                </td>
+                <td className="px-8 py-5 font-black text-blue-600">
+                  {(batch.mtrs || 0).toFixed(2)}
                 </td>
                 <td className="px-8 py-5">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-black text-blue-600">{(batch.mtrs || 0).toFixed(2)} Mtr</span>
-                    {activeTab === 'ready-for-printing' && (
-                      <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
-                        RFD: {(batch.rfdMtrs || 0).toFixed(2)}
-                      </span>
-                    )}
-                    {batch.isTP && (
-                      <span className="text-[9px] bg-indigo-500/10 text-indigo-500 px-1.5 py-0.5 rounded font-black uppercase mt-1 w-fit">
-                        TP: {batch.tpDetail}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                {activeTab === 'ready-for-printing' && (
-                  <td className="px-8 py-5">
-                    <div className="flex flex-col">
-                      <span className={`text-xs font-bold ${Number(batch.millShortage) < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                        {batch.millShortage}%
-                      </span>
-                    </div>
-                  </td>
-                )}
-                <td className="px-8 py-5">
-                  <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider ${
-                    batch.status === 'In-Warehouse' ? 'bg-muted text-muted-foreground' :
-                    batch.status === 'Out For RFD' ? 'bg-orange-500/10 text-orange-500' :
-                    batch.status === 'RFD Inward' ? 'bg-green-500/10 text-green-500' :
-                    'bg-blue-600/10 text-blue-600'
-                  }`}>
+                  <span className="text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-wider bg-blue-600/10 text-blue-600">
                     {batch.status}
                   </span>
+                </td>
+                <td className="px-8 py-5 text-right text-muted-foreground/30 italic text-[10px]">
+                  Batch Mode
                 </td>
               </tr>
             ))}
@@ -191,15 +247,18 @@ function WarehousePageContent() {
         onSearchChange={setSearchQuery}
         searchPlaceholder={`Search through ${titles[activeTab]}...`}
         showSearch={!showForm}
-        actionButton={!showForm && data.length > 0 && activeTab === 'batches' && (
+        actionButton={!showForm && data.length > 0 && (activeTab === 'batches' || activeTab === 'inwards') && (
           <button 
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditingRecord(null);
+              setShowForm(true);
+            }}
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
           >
             <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
                <span className="text-lg leading-none">+</span>
             </div>
-            Add Inward
+            Add {activeTab === 'inwards' ? 'Inward' : 'Inward'}
           </button>
         )}
       />
@@ -225,15 +284,23 @@ function WarehousePageContent() {
           >
              <div className="mb-6 flex items-center justify-between">
                 <button 
-                   onClick={() => setShowForm(false)}
+                   onClick={() => {
+                     setShowForm(false);
+                     setEditingRecord(null);
+                   }}
                    className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
                 >
                   ← Back to {titles[activeTab]}
                 </button>
                 <h2 className="text-2xl font-black text-foreground flex items-center gap-3">
-                  New {titles[activeTab]} Entry
+                  {editingRecord ? 'Edit' : 'New'} {titles[activeTab]} Entry
                 </h2>
              </div>
+             <GlassCard>
+                <div className="p-10">
+                   <GreyInwardForm onSuccess={handleRecordAddedOrUpdated} initialData={editingRecord} />
+                </div>
+             </GlassCard>
           </motion.div>
         ) : fetchedTab !== activeTab ? (
           <motion.div 
@@ -245,6 +312,25 @@ function WarehousePageContent() {
           >
             <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
           </motion.div>
+        ) : activeTab === 'inwards' ? (
+          data.length === 0 ? (
+            <motion.div 
+               key="empty-inwards"
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className="bg-card/50 rounded-[3rem] border border-border shadow-xl overflow-hidden backdrop-blur-sm"
+            >
+               <div className="p-10">
+                 <EmptyState 
+                   title="No Inwards Found"
+                   description="Start by adding your first grey inward entry."
+                   onAdd={() => setShowForm(true)}
+                 />
+               </div>
+            </motion.div>
+          ) : (
+            <InwardsList inwards={data} />
+          )
         ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing' || activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
           data.length === 0 ? (
             <motion.div 
@@ -280,12 +366,20 @@ function WarehousePageContent() {
                <h3 className="text-xl font-bold mb-4">Recent {titles[activeTab]}</h3>
                <div className="grid gap-4">
                   {data.map((item: any) => (
-                    <div key={item.id} className="p-4 rounded-xl bg-muted/30 border border-border flex justify-between items-center">
+                    <div key={item.id} className="p-4 rounded-xl bg-muted/30 border border-border flex justify-between items-center group">
                       <div>
                         <span className="font-bold block">{item.lotNo}</span>
                         <span className="text-xs text-muted-foreground">Challan: {item.challanNo} • {item.quality}</span>
                       </div>
-                      <span className="text-[10px] bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full font-black uppercase tracking-wider">{item.status}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full font-black uppercase tracking-wider">{item.status}</span>
+                        <button 
+                          onClick={() => handleEdit(item)}
+                          className="p-2 hover:bg-primary/10 rounded-xl text-primary/60 hover:text-primary transition-all duration-300 opacity-0 group-hover:opacity-100"
+                        >
+                          <Search size={18} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                </div>

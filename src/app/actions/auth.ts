@@ -95,8 +95,8 @@ export async function loginUser(data: any) {
       } 
     };
   } catch (error: any) {
-    console.error('Login Error:', error);
-    return { success: false, error: error.message };
+    console.error('CRITICAL LOGIN ERROR:', error);
+    return { success: false, error: error.message || 'Internal Server Error' };
   }
 }
 

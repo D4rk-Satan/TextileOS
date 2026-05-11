@@ -165,6 +165,49 @@ export async function createGreyOutward(data: DyeingActionData) {
   }
 }
 
+export async function updateGreyOutward(id: string, data: any) {
+  try {
+    const orgId = await getOrgId();
+    const greyOutward = await prisma.greyOutward.update({
+      where: { id, organizationId: orgId },
+      data: {
+        date: new Date(data.date),
+        lotNo: data.lotNo,
+        dyeingHouseId: data.dyeingHouse,
+        remark: data.remark,
+        challanNo: data.dcNo,
+      },
+    });
+    revalidatePath('/dashboard/dyeing-house');
+    return { success: true, data: greyOutward };
+  } catch (error: any) {
+    console.error('Error updating grey outward:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateRFDInward(id: string, data: any) {
+  try {
+    const orgId = await getOrgId();
+    const rfdInward = await prisma.rFDInward.update({
+      where: { id, organizationId: orgId },
+      data: {
+        date: new Date(data.date),
+        lotNo: data.lotNo,
+        dyeingHouseId: data.dyeingHouse,
+        billNo: data.billNo,
+        challanNo: data.challanNo,
+        remark: data.remark,
+      },
+    });
+    revalidatePath('/dashboard/dyeing-house');
+    return { success: true, data: rfdInward };
+  } catch (error: any) {
+    console.error('Error updating RFD inward:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function getGreyOutwards(search?: string) {
   try {
     const orgId = await getOrgId();
@@ -445,6 +488,111 @@ export async function getReadyForPrintingBatches() {
     }));
 
     return { success: true, data: serializedData };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+export async function deleteGreyOutward(id: string) {
+  try {
+    const orgId = await getOrgId();
+    const outward = await prisma.greyOutward.findUnique({
+      where: { id, organizationId: orgId },
+      include: { batches: true }
+    });
+
+    if (!outward) return { success: false, error: 'Record not found' };
+
+    // Dependency check: Are any batches received back from RFD?
+    const isLocked = outward.batches.some(b => b.rfdInwardId);
+    if (isLocked) {
+      return { success: false, error: 'Cannot delete: Some batches from this outward have already been inwarded from RFD.' };
+    }
+
+    // Revert batch status
+    await prisma.batch.updateMany({
+      where: { id: { in: outward.batches.map(b => b.id) } },
+      data: { status: 'In-Warehouse' }
+    });
+
+    // Delete record
+    await prisma.greyOutward.delete({
+      where: { id, organizationId: orgId }
+    });
+
+    // Update parent GreyInward status
+    const inward = await prisma.greyInward.findFirst({
+      where: { lotNo: outward.lotNo, organizationId: orgId },
+      include: { batches: true }
+    });
+
+    if (inward) {
+      const someOut = inward.batches.some(b => b.status === 'Out For RFD' || b.status === 'Ready for Printing');
+      await prisma.greyInward.update({
+        where: { id: inward.id },
+        data: { status: someOut ? 'Started' : 'In-Warehouse' }
+      });
+    }
+
+    revalidatePath('/dashboard/dyeing-house');
+    revalidatePath('/dashboard/warehouse');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteRFDInward(id: string) {
+  try {
+    const orgId = await getOrgId();
+    const outward = await prisma.rFDInward.findUnique({
+      where: { id, organizationId: orgId },
+      include: { batches: true }
+    });
+
+    if (!outward) return { success: false, error: 'Record not found' };
+
+    // Dependency check: Are any batches issued for printing?
+    const isLocked = outward.batches.some(b => b.printingIssueId);
+    if (isLocked) {
+      return { success: false, error: 'Cannot delete: Some batches from this inward have already been issued for printing.' };
+    }
+
+    // Revert batch status and clear RFD fields
+    await prisma.batch.updateMany({
+      where: { id: { in: outward.batches.map(b => b.id) } },
+      data: { 
+        status: 'Out For RFD',
+        rfdMtrs: null,
+        isTP: false,
+        tpDetail: null,
+        millShortage: null,
+        rfdInwardId: null
+      }
+    });
+
+    // Delete record
+    await prisma.rFDInward.delete({
+      where: { id, organizationId: orgId }
+    });
+
+    // Update parent GreyInward status
+    const inward = await prisma.greyInward.findFirst({
+      where: { lotNo: outward.lotNo, organizationId: orgId },
+      include: { batches: true }
+    });
+
+    if (inward) {
+      const allRFD = inward.batches.every(b => b.status === 'Ready for Printing');
+      const someRFD = inward.batches.some(b => b.status === 'Ready for Printing');
+      await prisma.greyInward.update({
+        where: { id: inward.id },
+        data: { status: allRFD ? 'Ready for Printing' : 'Out For RFD' }
+      });
+    }
+
+    revalidatePath('/dashboard/dyeing-house');
+    revalidatePath('/dashboard/warehouse');
+    return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

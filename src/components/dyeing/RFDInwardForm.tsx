@@ -15,19 +15,18 @@ import {
   FileText,
   Info
 } from 'lucide-react';
-import { createRFDInward, getDyeingHouses, getGreyOutwardsByHouse } from '@/app/actions/dyeing';
-import { FormHeader } from '@/components/shared/FormHeader';
+import { createRFDInward, updateRFDInward, getDyeingHouses, getGreyOutwardsByHouse } from '@/app/actions/dyeing';
 
-export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
+export function RFDInwardForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
   const methods = useForm({
     defaultValues: {
-      date: new Date().toISOString().split('T')[0],
-      dyeingHouse: '',
-      billNo: '',
-      challanNo: '',
-      lotNo: '',
-      remark: '',
-      batches: [] as any[],
+      date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      dyeingHouse: initialData?.dyeingHouseId || '',
+      billNo: initialData?.billNo || '',
+      challanNo: initialData?.challanNo || '', // This might need mapping if it's the display name
+      lotNo: initialData?.lotNo || '',
+      remark: initialData?.remark || '',
+      batches: initialData?.batches || [],
     },
     mode: 'onTouched',
   });
@@ -56,15 +55,15 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
     return parts.reduce((sum, p) => sum + p, 0);
   };
 
-  // Real-time Calculation Logic
+  // Real-time Calculation Logic - ONLY IF NOT EDITING
   useEffect(() => {
+    if (initialData) return;
     if (!watchedBatches) return;
 
     watchedBatches.forEach((batch: any, index: number) => {
       const grey = parseFloat(batch.greyMtrs) || 0;
       let rfd = parseFloat(batch.rfdMtrs) || 0;
 
-      // 1. Handle TP Logic: If TP is checked, calculate RFD Mtr from TP Detail
       if (batch.isTP) {
         const calculatedRFD = calculateTPSum(batch.tpDetail);
         if (calculatedRFD !== rfd) {
@@ -73,12 +72,10 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         }
       }
       
-      // 2. Mill Shortage Calculation: ((Grey - RFD) / Grey) * 100
       if (rfd > 0 && grey > 0) {
         const shortage = ((grey - rfd) / grey) * 100;
         const currentShortage = methods.getValues(`batches.${index}.millShortage`);
         
-        // Only update if the value has changed significantly (avoid infinite loops)
         if (shortage.toFixed(2) !== parseFloat(currentShortage || 0).toFixed(2)) {
           methods.setValue(`batches.${index}.millShortage`, parseFloat(shortage.toFixed(2)));
         }
@@ -86,7 +83,7 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         methods.setValue(`batches.${index}.millShortage`, '');
       }
     });
-  }, [watchedBatches, methods]);
+  }, [watchedBatches, methods, initialData]);
 
   // Load Dyeing Houses
   useEffect(() => {
@@ -99,8 +96,9 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
     loadHouses();
   }, []);
 
-  // Load Outwards when Dyeing House changes
+  // Load Outwards when Dyeing House changes - ONLY IF NOT EDITING
   useEffect(() => {
+    if (initialData) return;
     if (selectedDyeingHouse) {
       async function loadOutwards() {
         const res = await getGreyOutwardsByHouse(selectedDyeingHouse);
@@ -115,10 +113,11 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
       setOutwards([]);
       replace([]);
     }
-  }, [selectedDyeingHouse, setValue, replace]);
+  }, [selectedDyeingHouse, setValue, replace, initialData]);
 
-  // Update batches when Challan changes
+  // Update batches when Challan changes - ONLY IF NOT EDITING
   useEffect(() => {
+    if (initialData) return;
     if (selectedChallanId) {
       const selectedOutward = outwards.find(o => o.id === selectedChallanId);
       if (selectedOutward) {
@@ -128,7 +127,7 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
           batchNo: b.batchNo,
           lotNo: selectedOutward.lotNo,
           greyMtrs: b.mtrs,
-          rfdMtrs: '', // Default to blank
+          rfdMtrs: '', 
           isTP: false,
           tpDetail: '',
           millShortage: ''
@@ -139,31 +138,42 @@ export function RFDInwardForm({ onSuccess }: { onSuccess?: () => void }) {
       setValue('lotNo', '');
       replace([]);
     }
-  }, [selectedChallanId, outwards, setValue, replace]);
+  }, [selectedChallanId, outwards, setValue, replace, initialData]);
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      // Find the display name of the challan for storing
-      const selectedOutward = outwards.find(o => o.id === data.challanNo);
-      const challanDisplay = selectedOutward ? `${selectedOutward.challanNo} Lot-${selectedOutward.lotNo}` : data.challanNo;
+      let submissionData;
       
-      const submissionData = {
-        ...data,
-        challanNo: challanDisplay,
-        batches: data.batches.map((b: any) => ({
-          id: b.id,
-          rfdMtrs: Number(b.rfdMtrs),
-          isTP: b.isTP,
-          tpDetail: b.tpDetail,
-          millShortage: Number(b.millShortage)
-        }))
-      };
+      if (initialData) {
+        submissionData = {
+          ...data,
+          // For edit, we don't recalculate batches or challan display
+        };
+      } else {
+        const selectedOutward = outwards.find(o => o.id === data.challanNo);
+        const challanDisplay = selectedOutward ? `${selectedOutward.challanNo} Lot-${selectedOutward.lotNo}` : data.challanNo;
+        
+        submissionData = {
+          ...data,
+          challanNo: challanDisplay,
+          batches: data.batches.map((b: any) => ({
+            id: b.id,
+            rfdMtrs: Number(b.rfdMtrs),
+            isTP: b.isTP,
+            tpDetail: b.tpDetail,
+            millShortage: Number(b.millShortage)
+          }))
+        };
+      }
 
-      const result = await createRFDInward(submissionData);
+      const result = initialData 
+        ? await updateRFDInward(initialData.id, submissionData)
+        : await createRFDInward(submissionData);
+        
       if (result.success) {
-        alert('RFD Inward entry saved successfully!');
-        reset();
+        alert(`RFD Inward entry ${initialData ? 'updated' : 'saved'} successfully!`);
+        if (!initialData) reset();
         onSuccess?.();
       } else {
         alert('Error: ' + result.error);

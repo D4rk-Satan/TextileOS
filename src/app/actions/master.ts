@@ -8,7 +8,7 @@ import { checkPermission } from '@/lib/dal';
 async function getSessionContext() {
   const cookieStore = await cookies();
   const orgId = cookieStore.get('org_id')?.value;
-  
+
   if (!orgId) throw new Error('Unauthorized: Missing session context');
   return { orgId };
 }
@@ -18,7 +18,7 @@ async function getSessionContext() {
 export async function createCustomer(data: any) {
   try {
     const { orgId } = await getSessionContext();
-    
+
     if (!await checkPermission('module:master')) {
       return { success: false, error: 'Permission denied' };
     }
@@ -114,13 +114,13 @@ export async function getDashboardStats() {
       prisma.vendor.count({ where: { organizationId: orgId } }),
       prisma.item.count({ where: { organizationId: orgId } }),
     ]);
-    return { 
-      success: true, 
+    return {
+      success: true,
       stats: {
         customers: customerCount,
         vendors: vendorCount,
         items: itemCount
-      } 
+      }
     };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -161,5 +161,81 @@ export async function getItems() {
     return { success: true, data: items };
   } catch (error: any) {
     return { success: false, error: error.message };
+  }
+}
+
+export async function deleteCustomer(id: string) {
+  try {
+    const { orgId } = await getSessionContext();
+    await checkPermission('module:master');
+
+    const count = await prisma.greyInward.count({
+      where: { customerId: id, organizationId: orgId }
+    });
+
+    if (count > 0) {
+      return { success: false, error: 'Cannot delete customer with existing inward records.' };
+    }
+
+    await prisma.customer.delete({
+      where: { id, organizationId: orgId }
+    });
+
+    revalidatePath('/dashboard/master');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to delete customer' };
+  }
+}
+
+export async function deleteVendor(id: string) {
+  try {
+    const { orgId } = await getSessionContext();
+    await checkPermission('module:master');
+
+    const [outwardCount, rfdCount, printingCount] = await Promise.all([
+      prisma.greyOutward.count({ where: { dyeingHouseId: id, organizationId: orgId } }),
+      prisma.rFDInward.count({ where: { dyeingHouseId: id, organizationId: orgId } }),
+      prisma.printingIssue.count({ where: { printerId: id, organizationId: orgId } })
+    ]);
+
+    if (outwardCount > 0 || rfdCount > 0 || printingCount > 0) {
+      return { success: false, error: 'Cannot delete vendor with existing transactions.' };
+    }
+
+    await prisma.vendor.delete({
+      where: { id, organizationId: orgId }
+    });
+
+    revalidatePath('/dashboard/master');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to delete vendor' };
+  }
+}
+
+export async function deleteItem(id: string) {
+  try {
+    const { orgId } = await getSessionContext();
+    await checkPermission('module:master');
+
+    const item = await prisma.item.findUnique({ where: { id } });
+    if (item) {
+      const inwardCount = await prisma.greyInward.count({
+        where: { quality: item.itemName, organizationId: orgId }
+      });
+      if (inwardCount > 0) {
+        return { success: false, error: 'Cannot delete item currently used in inwards.' };
+      }
+    }
+
+    await prisma.item.delete({
+      where: { id, organizationId: orgId }
+    });
+
+    revalidatePath('/dashboard/master');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to delete item' };
   }
 }

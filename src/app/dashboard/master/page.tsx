@@ -16,9 +16,10 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { MasterTable } from '@/components/shared/MasterTable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCustomers, getVendors, getItems } from '@/app/actions/master';
+import { getCustomers, getVendors, getItems, deleteCustomer, deleteVendor, deleteItem } from '@/app/actions/master';
 import { getUserRole } from '@/app/actions/auth';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
+import { toast } from 'sonner';
 
 type TabType = 'customers' | 'vendors' | 'items' | 'batches' | 'reports';
 
@@ -26,6 +27,7 @@ function MasterPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('customers');
   const [showForm, setShowForm] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
@@ -54,15 +56,41 @@ function MasterPageContent() {
     if (tab && ['customers', 'vendors', 'items', 'batches', 'reports'].includes(tab)) {
       setActiveTab(tab);
       setShowForm(false);
+      setEditingRecord(null);
       fetchData(tab);
     } else {
       fetchData(activeTab);
     }
   }, [searchParams, activeTab]);
 
-  const handleRecordAdded = () => {
+  const handleRecordAddedOrUpdated = () => {
     setShowForm(false);
+    setEditingRecord(null);
     fetchData(activeTab);
+  };
+
+  const handleEdit = (record: any) => {
+    setEditingRecord(record);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    let result;
+    if (activeTab === 'customers') result = await deleteCustomer(id);
+    else if (activeTab === 'vendors') result = await deleteVendor(id);
+    else if (activeTab === 'items') result = await deleteItem(id);
+
+    if (result?.success) {
+      toast.success('Record deleted successfully');
+      fetchData(activeTab);
+    } else {
+      toast.error(result?.error || 'Failed to delete record');
+    }
+  };
+
+  const handleBack = () => {
+    setShowForm(false);
+    setEditingRecord(null);
   };
 
   // RBAC: Only Admin can add Customers/Vendors. All can add Items.
@@ -79,7 +107,10 @@ function MasterPageContent() {
         showSearch={!showForm}
         actionButton={!showForm && canAdd && data.length > 0 && (
           <button 
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditingRecord(null);
+              setShowForm(true);
+            }}
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
           >
             <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
@@ -112,20 +143,20 @@ function MasterPageContent() {
           >
              <div className="mb-6 flex items-center justify-between">
                 <button 
-                  onClick={() => setShowForm(false)}
+                  onClick={handleBack}
                   className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
                 >
                   ← Back to {activeTab}
                 </button>
                 <h2 className="text-2xl font-black text-foreground flex items-center gap-3">
-                  New {activeTab.slice(0, -1)} Entry
+                  {editingRecord ? 'Edit' : 'New'} {activeTab.slice(0, -1)} Entry
                 </h2>
              </div>
              <GlassCard>
                 <div className="p-10">
-                  {activeTab === 'customers' && <CustomerForm onSuccess={handleRecordAdded} />}
-                  {activeTab === 'vendors' && <VendorForm onSuccess={handleRecordAdded} />}
-                  {activeTab === 'items' && <ItemForm onSuccess={handleRecordAdded} />}
+                  {activeTab === 'customers' && <CustomerForm onSuccess={handleRecordAddedOrUpdated} initialData={editingRecord} />}
+                  {activeTab === 'vendors' && <VendorForm onSuccess={handleRecordAddedOrUpdated} initialData={editingRecord} />}
+                  {activeTab === 'items' && <ItemForm onSuccess={handleRecordAddedOrUpdated} initialData={editingRecord} />}
                 </div>
              </GlassCard>
           </motion.div>
@@ -151,7 +182,10 @@ function MasterPageContent() {
                     <EmptyState 
                       title={`No ${activeTab} found`}
                       description={`You haven't added any ${activeTab} yet. Start by creating your first one.`}
-                      onAdd={canAdd ? () => setShowForm(true) : undefined}
+                      onAdd={canAdd ? () => {
+                        setEditingRecord(null);
+                        setShowForm(true);
+                      } : undefined}
                       onImport={() => alert('Import feature coming soon!')}
                     />
                  </div>
@@ -162,6 +196,8 @@ function MasterPageContent() {
                     data={data} 
                     userRole={userRole}
                     type={activeTab === 'customers' ? 'customers' : activeTab === 'vendors' ? 'vendors' : 'items'} 
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
                   />
                </div>
             )}

@@ -115,6 +115,52 @@ export async function createPrintingIssue(data: any) {
   }
 }
 
+export async function updatePrintingIssue(id: string, data: any) {
+  try {
+    const orgId = await getOrgId();
+    const issue = await prisma.printingIssue.update({
+      where: { id, organizationId: orgId },
+      data: {
+        jobCardNumber: data.jobCardNumber,
+        date: new Date(data.date),
+        lotNo: data.lotNo,
+        remark: data.remark,
+        printerId: data.printerId,
+      },
+    });
+    revalidatePath('/dashboard/printing-process');
+    return { success: true, data: issue };
+  } catch (error: any) {
+    console.error('Error updating printing issue:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updatePrintingReceive(id: string, data: any) {
+  try {
+    const orgId = await getOrgId();
+    const receive = await prisma.printingReceive.update({
+      where: { id, organizationId: orgId },
+      data: {
+        productionNumber: data.productionNumber,
+        date: new Date(data.date),
+        lotNo: data.lotNo,
+        printerId: data.printerId,
+        processType: data.processType,
+        customerId: data.customerId,
+        billNo: data.billNo,
+        challanNo: data.challanNo,
+        remark: data.remark,
+      },
+    });
+    revalidatePath('/dashboard/printing-process');
+    return { success: true, data: receive };
+  } catch (error: any) {
+    console.error('Error updating printing receive:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function getOutForPrintingLots(search?: string) {
   try {
     const orgId = await getOrgId();
@@ -328,6 +374,79 @@ export async function createPrintingReceive(data: any) {
     return { success: true, data: receive };
   } catch (error: any) {
     console.error('Error creating printing receive:', error);
+    return { success: false, error: error.message };
+  }
+}
+export async function deletePrintingIssue(id: string) {
+  try {
+    const orgId = await getOrgId();
+    const issue = await prisma.printingIssue.findUnique({
+      where: { id, organizationId: orgId },
+      include: { batches: true }
+    });
+
+    if (!issue) return { success: false, error: 'Record not found' };
+
+    // Dependency check: Are any batches received back from Printing?
+    const isLocked = issue.batches.some(b => b.printingReceiveId);
+    if (isLocked) {
+      return { success: false, error: 'Cannot delete: Some batches from this issue have already been received.' };
+    }
+
+    // Revert batch status
+    await prisma.batch.updateMany({
+      where: { id: { in: issue.batches.map(b => b.id) } },
+      data: { status: 'Ready for Printing' }
+    });
+
+    // Delete record
+    await prisma.printingIssue.delete({
+      where: { id, organizationId: orgId }
+    });
+
+    revalidatePath('/dashboard/printing-process');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deletePrintingReceive(id: string) {
+  try {
+    const orgId = await getOrgId();
+    const receive = await prisma.printingReceive.findUnique({
+      where: { id, organizationId: orgId },
+      include: { batches: true }
+    });
+
+    if (!receive) return { success: false, error: 'Record not found' };
+
+    // Dependency check: Are any batches in a delivery challan?
+    const isLocked = receive.batches.some(b => b.deliveryChallanId);
+    if (isLocked) {
+      return { success: false, error: 'Cannot delete: Some batches from this receipt have already been dispatched.' };
+    }
+
+    // Revert batch status and clear Print fields
+    await prisma.batch.updateMany({
+      where: { id: { in: receive.batches.map(b => b.id) } },
+      data: { 
+        status: 'Under Printing',
+        printMtrs: null,
+        printShortage: null,
+        printingReceiveId: null
+      }
+    });
+
+    // Delete record
+    await prisma.printingReceive.delete({
+      where: { id, organizationId: orgId }
+    });
+
+    revalidatePath('/dashboard/printing-process');
+    revalidatePath('/dashboard/warehouse');
+    return { success: true };
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }

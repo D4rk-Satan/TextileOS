@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MoreHorizontal, Mail, Phone, MapPin, Tag, Hash } from 'lucide-react';
+import { MoreHorizontal, Mail, Phone, MapPin, Tag, Hash, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MasterTableProps {
@@ -122,9 +122,26 @@ export function MasterTable({ data, type, userRole = 'User', onEdit, onDelete }:
                 </td>
                 {!isReadOnly && (
                   <td className="px-6 py-5">
-                    <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                      <MoreHorizontal size={18} />
-                    </button>
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <button 
+                        onClick={() => onEdit?.(item)}
+                        className="p-2 hover:bg-primary/10 rounded-xl text-primary/60 hover:text-primary transition-all duration-300 group/edit"
+                        title="Edit Record"
+                      >
+                        <MoreHorizontal size={18} className="group-hover/edit:rotate-90 transition-transform duration-300" />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this record? This action cannot be undone.')) {
+                            onDelete?.(item.id);
+                          }
+                        }}
+                        className="p-2 hover:bg-red-500/10 rounded-xl text-red-500/40 hover:text-red-500 transition-all duration-300"
+                        title="Delete Record"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 )}
               </tr>

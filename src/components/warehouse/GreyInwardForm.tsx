@@ -23,25 +23,25 @@ import {
 import { FormTextArea } from '@/components/shared/FormTextArea';
 import { BatchInfoForm } from './BatchInfoForm';
 import { motion } from 'framer-motion';
-import { createGreyInward, getNextLotNumber } from '@/app/actions/warehouse';
+import { createGreyInward, updateGreyInward, getNextLotNumber } from '@/app/actions/warehouse';
 import { getCustomers, getItems } from '@/app/actions/master';
 
-export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
+export function GreyInwardForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
   const methods = useForm({
     defaultValues: {
-      lotNo: '',
-      quality: '',
+      lotNo: initialData?.lotNo || '',
+      quality: initialData?.quality || '',
       lotNoDisplay: '',
-      date: new Date().toISOString().split('T')[0],
-      processType: '',
-      status: 'In-Warehouse',
-      customer: '',
-      batchDetail: '',
-      image: '',
-      challanNo: '',
-      totalBatch: 0,
-      totalMtr: '0.00',
-      batches: [] as { batchNo: string; pcs: string; mtrs: string; weight: string }[],
+      date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      processType: initialData?.processType || '',
+      status: initialData?.status || 'In-Warehouse',
+      customer: initialData?.customerId || '',
+      batchDetail: initialData?.batchDetail || '',
+      image: initialData?.image || '',
+      challanNo: initialData?.challanNo || '',
+      totalBatch: initialData?.totalBatch || 0,
+      totalMtr: initialData?.totalMtr?.toString() || '0.00',
+      batches: initialData?.batches || [],
     },
     mode: 'onTouched',
   });
@@ -66,8 +66,9 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
     methods.setValue('totalMtr', totals.totalMtr.toFixed(2));
   }, [totals, methods]);
 
-  // Auto-populate batches from batchDetail
+  // Auto-populate batches from batchDetail - ONLY IF NOT EDITING
   useEffect(() => {
+    if (initialData) return; // Skip auto-generation when editing existing record
     if (!batchDetail || typeof batchDetail !== 'string') return;
     
     const values = batchDetail.split(/[,\n\s]+/)
@@ -77,7 +78,6 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
     if (values.length > 0) {
       const currentBatches = methods.getValues('batches');
       
-      // Only update if the values are different to prevent infinite loops or losing manual edits on other fields
       const currentMtrs = currentBatches?.map((b: any) => b.mtrs).join(',');
       const newMtrs = values.join(',');
 
@@ -91,7 +91,7 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         methods.setValue('batches', newBatches);
       }
     }
-  }, [batchDetail, lotNo, methods]);
+  }, [batchDetail, lotNo, methods, initialData]);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [customers, setCustomers] = React.useState<any[]>([]);
@@ -102,7 +102,7 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
       const [customerRes, itemRes, lotRes] = await Promise.all([
         getCustomers(),
         getItems(),
-        getNextLotNumber()
+        !initialData ? getNextLotNumber() : Promise.resolve(null)
       ]);
       
       if (customerRes?.success) {
@@ -113,14 +113,15 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
         setQualities((itemRes.data || []).map((i: any) => ({ label: i.itemName, value: i.itemName })));
       }
 
-      if (lotRes?.success && lotRes.data !== undefined) {
+      if (!initialData && lotRes?.success && lotRes.data !== undefined) {
         methods.setValue('lotNo', lotRes.data.toString());
       }
     }
     loadData();
-  }, [methods]);
+  }, [methods, initialData]);
 
   const refreshLotNumber = async () => {
+    if (initialData) return;
     const lotRes = await getNextLotNumber();
     if (lotRes?.success && lotRes.data !== undefined) {
       methods.setValue('lotNo', lotRes.data.toString());
@@ -130,11 +131,16 @@ export function GreyInwardForm({ onSuccess }: { onSuccess?: () => void }) {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const result = await createGreyInward(data);
+      const result = initialData
+        ? await updateGreyInward(initialData.id, data)
+        : await createGreyInward(data);
+        
       if (result.success) {
-        alert('Grey Inward entry saved successfully!');
-        methods.reset();
-        await refreshLotNumber();
+        alert(`Grey Inward entry ${initialData ? 'updated' : 'saved'} successfully!`);
+        if (!initialData) {
+          methods.reset();
+          await refreshLotNumber();
+        }
         onSuccess?.();
       } else {
         alert('Error: ' + result.error);
