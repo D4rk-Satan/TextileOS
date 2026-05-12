@@ -7,7 +7,8 @@ import {
   Users,
   ShoppingBag,
   Package,
-  Search
+  Search,
+  Upload
 } from 'lucide-react';
 import { CustomerForm } from '@/components/master/CustomerForm';
 import { VendorForm } from '@/components/master/VendorForm';
@@ -15,8 +16,12 @@ import { ItemForm } from '@/components/master/ItemForm';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { MasterTable } from '@/components/shared/MasterTable';
+import { ImportModal } from '@/components/shared/ImportModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCustomers, getVendors, getItems, deleteCustomer, deleteVendor, deleteItem } from '@/app/actions/master';
+import { 
+  getCustomers, getVendors, getItems, deleteCustomer, deleteVendor, deleteItem,
+  bulkCreateCustomers, bulkCreateVendors, bulkCreateItems
+} from '@/app/actions/master';
 import { getUserRole } from '@/app/actions/auth';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { toast } from 'sonner';
@@ -32,6 +37,7 @@ function MasterPageContent() {
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [userRole, setUserRole] = useState<string>('User');
+  const [showImport, setShowImport] = useState(false);
 
   const fetchData = async (tab: TabType) => {
     setLoading(true);
@@ -106,18 +112,27 @@ function MasterPageContent() {
         searchPlaceholder={`Search through ${activeTab}...`}
         showSearch={!showForm}
         actionButton={!showForm && canAdd && data.length > 0 && (
-          <button 
-            onClick={() => {
-              setEditingRecord(null);
-              setShowForm(true);
-            }}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
-               <span className="text-lg leading-none">+</span>
-            </div>
-            Add {activeTab.slice(0, -1)}
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowImport(true)}
+              className="bg-muted hover:bg-muted/80 text-muted-foreground px-6 h-12 rounded-2xl font-black transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Upload size={16} />
+              Import
+            </button>
+            <button 
+              onClick={() => {
+                setEditingRecord(null);
+                setShowForm(true);
+              }}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
+                 <span className="text-lg leading-none">+</span>
+              </div>
+              Add {activeTab.slice(0, -1)}
+            </button>
+          </div>
         )}
       />
 
@@ -186,7 +201,7 @@ function MasterPageContent() {
                         setEditingRecord(null);
                         setShowForm(true);
                       } : undefined}
-                      onImport={() => alert('Import feature coming soon!')}
+                      onImport={canAdd ? () => setShowImport(true) : undefined}
                     />
                  </div>
                </motion.div>
@@ -215,6 +230,29 @@ function MasterPageContent() {
            />
         </div>
       )}
+
+      {/* Import Modal */}
+      <ImportModal 
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        title={activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+        templateColumns={
+          activeTab === 'customers' ? ['Customer Name', 'Address', 'City', 'State', 'Pincode', 'Phone', 'GSTIN'] :
+          activeTab === 'vendors' ? ['Vendor Name', 'Contact Person', 'City', 'State', 'GSTIN'] :
+          ['Item Name', 'SKU']
+        }
+        onImport={async (data) => {
+          let res;
+          if (activeTab === 'customers') res = await bulkCreateCustomers(data);
+          else if (activeTab === 'vendors') res = await bulkCreateVendors(data);
+          else if (activeTab === 'items') res = await bulkCreateItems(data);
+          
+          if (res?.success) {
+            fetchData(activeTab);
+          }
+          return res || { success: false, error: 'Unknown error' };
+        }}
+      />
     </div>
   );
 }

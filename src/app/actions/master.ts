@@ -322,3 +322,87 @@ export async function deleteItem(id: string) {
     return { success: false, error: 'Failed to delete item' };
   }
 }
+
+// --- Bulk Import Actions ---
+
+export async function bulkCreateCustomers(data: any[]) {
+  try {
+    const { orgId } = await getSessionContext();
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
+    }
+
+    const customers = await prisma.customer.createMany({
+      data: data.map(item => ({
+        customerName: item.customerName || item['Customer Name'] || '',
+        status: item.status || 'Active',
+        addressLine1: item.addressLine1 || item['Address'] || '',
+        city: item.city || item['City'] || '',
+        state: item.state || item['State'] || '',
+        postalCode: String(item.postalCode || item['Pincode'] || ''),
+        phone: String(item.phone || item['Phone'] || ''),
+        gstin: item.gstin || item['GSTIN'] || '',
+        organizationId: orgId,
+      })),
+      skipDuplicates: true
+    });
+
+    revalidatePath('/dashboard/master');
+    return { success: true, count: customers.count };
+  } catch (error: any) {
+    console.error('Bulk Customer Error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function bulkCreateVendors(data: any[]) {
+  try {
+    const { orgId } = await getSessionContext();
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
+    }
+
+    const vendors = await prisma.vendor.createMany({
+      data: data.map(item => ({
+        vendorName: item.vendorName || item['Vendor Name'] || '',
+        masterName: item.masterName || item['Contact Person'] || '',
+        status: item.status || 'Active',
+        gstin: item.gstin || item['GSTIN'] || '',
+        city: item.city || item['City'] || '',
+        state: item.state || item['State'] || '',
+        organizationId: orgId,
+      })),
+      skipDuplicates: true
+    });
+
+    revalidatePath('/dashboard/master');
+    return { success: true, count: vendors.count };
+  } catch (error: any) {
+    console.error('Bulk Vendor Error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function bulkCreateItems(data: any[]) {
+  try {
+    const { orgId } = await getSessionContext();
+    if (!await checkPermission('module:master')) {
+      return { success: false, error: 'Permission denied' };
+    }
+
+    const items = await prisma.item.createMany({
+      data: data.map(item => ({
+        itemName: item.itemName || item['Item Name'] || '',
+        sku: item.sku || item['SKU'] || '',
+        organizationId: orgId,
+      })),
+      skipDuplicates: true
+    });
+
+    revalidatePath('/dashboard/master');
+    return { success: true, count: items.count };
+  } catch (error: any) {
+    console.error('Bulk Item Error:', error);
+    return { success: false, error: error.message };
+  }
+}
