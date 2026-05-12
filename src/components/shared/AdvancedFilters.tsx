@@ -22,6 +22,81 @@ interface AdvancedFiltersProps {
   };
 }
 
+function CustomSelect({ 
+  value, 
+  onChange, 
+  options, 
+  placeholder, 
+  icon: Icon 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  options: FilterOption[]; 
+  placeholder: string;
+  icon: any;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all flex items-center justify-between hover:bg-muted/50 group"
+      >
+        <span className={value ? 'text-foreground' : 'text-muted-foreground/60'}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <svg 
+          className={`text-muted-foreground/40 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+        >
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute z-50 w-full mt-2 bg-card/95 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden py-2"
+          >
+            <button
+              onClick={() => { onChange(''); setIsOpen(false); }}
+              className="w-full px-4 py-2 text-left text-xs font-bold hover:bg-primary/10 transition-colors text-muted-foreground/60"
+            >
+              {placeholder}
+            </button>
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                className={`w-full px-4 py-2 text-left text-xs font-bold hover:bg-primary/10 transition-colors ${value === opt.value ? 'text-primary bg-primary/5' : 'text-foreground'}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function AdvancedFilters({
   isOpen,
   onClose,
@@ -96,21 +171,13 @@ export function AdvancedFilters({
                     <User size={12} />
                     {options.customers ? 'Customer' : 'Vendor'}
                   </label>
-                  <div className="relative group">
-                    <select
-                      value={filters.entityId || ''}
-                      onChange={(e) => updateFilter('entityId', e.target.value)}
-                      className="w-full bg-muted/30 border border-border/50 rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer pr-10"
-                    >
-                      <option value="">All {options.customers ? 'Customers' : 'Vendors'}</option>
-                      {(options.customers || options.vendors || []).map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                    </div>
-                  </div>
+                  <CustomSelect 
+                    value={filters.entityId || ''}
+                    onChange={(val) => updateFilter('entityId', val)}
+                    options={options.customers || options.vendors || []}
+                    placeholder={`All ${options.customers ? 'Customers' : 'Vendors'}`}
+                    icon={User}
+                  />
                 </div>
               )}
 
@@ -121,21 +188,13 @@ export function AdvancedFilters({
                     <Tag size={12} />
                     Status
                   </label>
-                  <div className="relative group">
-                    <select
-                      value={filters.status || ''}
-                      onChange={(e) => updateFilter('status', e.target.value)}
-                      className="w-full bg-muted/30 border border-border/50 rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer pr-10"
-                    >
-                      <option value="">All Statuses</option>
-                      {options.statuses.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                    </div>
-                  </div>
+                  <CustomSelect 
+                    value={filters.status || ''}
+                    onChange={(val) => updateFilter('status', val)}
+                    options={options.statuses}
+                    placeholder="All Statuses"
+                    icon={Tag}
+                  />
                 </div>
               )}
 
@@ -146,21 +205,13 @@ export function AdvancedFilters({
                     <Tag size={12} />
                     Quality
                   </label>
-                  <div className="relative group">
-                    <select
-                      value={filters.quality || ''}
-                      onChange={(e) => updateFilter('quality', e.target.value)}
-                      className="w-full bg-muted/30 border border-border/50 rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer pr-10"
-                    >
-                      <option value="">All Qualities</option>
-                      {options.qualities.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                    </div>
-                  </div>
+                  <CustomSelect 
+                    value={filters.quality || ''}
+                    onChange={(val) => updateFilter('quality', val)}
+                    options={options.qualities}
+                    placeholder="All Qualities"
+                    icon={Tag}
+                  />
                 </div>
               )}
             </div>
