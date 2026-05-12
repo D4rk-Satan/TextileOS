@@ -61,26 +61,31 @@ export function AdvancedFilters({
               <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Advanced Filters</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-10 gap-y-8">
               {/* Date Range */}
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <Calendar size={12} />
                   Date Range
                 </label>
-                <div className="flex gap-2">
-                  <input 
-                    type="date"
-                    value={filters.startDate || ''}
-                    onChange={(e) => updateFilter('startDate', e.target.value)}
-                    className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  />
-                  <input 
-                    type="date"
-                    value={filters.endDate || ''}
-                    onChange={(e) => updateFilter('endDate', e.target.value)}
-                    className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <input 
+                      type="date"
+                      value={filters.startDate || ''}
+                      onChange={(e) => updateFilter('startDate', e.target.value)}
+                      className="w-full bg-muted/30 border border-border/50 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    />
+                  </div>
+                  <span className="text-muted-foreground/30 font-bold">-</span>
+                  <div className="flex-1 min-w-0">
+                    <input 
+                      type="date"
+                      value={filters.endDate || ''}
+                      onChange={(e) => updateFilter('endDate', e.target.value)}
+                      className="w-full bg-muted/30 border border-border/50 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -91,16 +96,21 @@ export function AdvancedFilters({
                     <User size={12} />
                     {options.customers ? 'Customer' : 'Vendor'}
                   </label>
-                  <select
-                    value={filters.entityId || ''}
-                    onChange={(e) => updateFilter('entityId', e.target.value)}
-                    className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="">All {options.customers ? 'Customers' : 'Vendors'}</option>
-                    {(options.customers || options.vendors || []).map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                  <div className="relative group">
+                    <select
+                      value={filters.entityId || ''}
+                      onChange={(e) => updateFilter('entityId', e.target.value)}
+                      className="w-full bg-muted/30 border border-border/50 rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer pr-10"
+                    >
+                      <option value="">All {options.customers ? 'Customers' : 'Vendors'}</option>
+                      {(options.customers || options.vendors || []).map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -111,16 +121,21 @@ export function AdvancedFilters({
                     <Tag size={12} />
                     Status
                   </label>
-                  <select
-                    value={filters.status || ''}
-                    onChange={(e) => updateFilter('status', e.target.value)}
-                    className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="">All Statuses</option>
-                    {options.statuses.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                  <div className="relative group">
+                    <select
+                      value={filters.status || ''}
+                      onChange={(e) => updateFilter('status', e.target.value)}
+                      className="w-full bg-muted/30 border border-border/50 rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer pr-10"
+                    >
+                      <option value="">All Statuses</option>
+                      {options.statuses.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -131,16 +146,21 @@ export function AdvancedFilters({
                     <Tag size={12} />
                     Quality
                   </label>
-                  <select
-                    value={filters.quality || ''}
-                    onChange={(e) => updateFilter('quality', e.target.value)}
-                    className="w-full bg-muted/30 border border-border/50 rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="">All Qualities</option>
-                    {options.qualities.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                  <div className="relative group">
+                    <select
+                      value={filters.quality || ''}
+                      onChange={(e) => updateFilter('quality', e.target.value)}
+                      className="w-full bg-muted/30 border border-border/50 rounded-xl px-3 py-2.5 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer pr-10"
+                    >
+                      <option value="">All Qualities</option>
+                      {options.qualities.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
