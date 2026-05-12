@@ -106,7 +106,7 @@ export async function updateGreyInward(id: string, data: any) {
   }
 }
 
-export async function getGreyInwards(search?: string) {
+export async function getGreyInwards(search?: string, filters: any = {}) {
   try {
     const orgId = await getOrgId();
     const greyInwards = await prisma.greyInward.findMany({
@@ -119,7 +119,16 @@ export async function getGreyInwards(search?: string) {
             { customer: { customerName: { contains: search, mode: 'insensitive' } } },
             { quality: { contains: search, mode: 'insensitive' } }
           ]
-        } : {})
+        } : {}),
+        ...(filters.status ? { status: filters.status } : {}),
+        ...(filters.entityId ? { customerId: filters.entityId } : {}),
+        ...(filters.quality ? { quality: filters.quality } : {}),
+        ...(filters.startDate && filters.endDate ? {
+          date: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          }
+        } : {}),
       },
       include: {
         customer: true,
@@ -143,7 +152,7 @@ export async function getGreyInwards(search?: string) {
 }
 
 /** Fetches batches filtered by status and search */
-export async function getBatches(status?: string, search?: string) {
+export async function getBatches(status?: string, search?: string, filters: any = {}) {
   try {
     const orgId = await getOrgId();
     const batches = await prisma.batch.findMany({
@@ -156,9 +165,17 @@ export async function getBatches(status?: string, search?: string) {
               { customer: { customerName: { contains: search, mode: 'insensitive' } } },
               { quality: { contains: search, mode: 'insensitive' } }
             ]
-          } : {})
+          } : {}),
+          ...(filters.entityId ? { customerId: filters.entityId } : {}),
+          ...(filters.quality ? { quality: filters.quality } : {}),
+          ...(filters.startDate && filters.endDate ? {
+            date: {
+              gte: new Date(filters.startDate),
+              lte: new Date(filters.endDate),
+            }
+          } : {}),
         },
-        ...(status ? { status } : {}),
+        ...(status ? { status } : (filters.status ? { status: filters.status } : {})),
         ...(search ? {
           OR: [
             { batchNo: { contains: search, mode: 'insensitive' } }

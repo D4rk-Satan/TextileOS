@@ -30,6 +30,8 @@ import {
   getDeliveryChallans, deleteDeliveryChallan,
   bulkCreateDeliveryChallans 
 } from '@/app/actions/dispatch';
+import { getCustomers } from '@/app/actions/master';
+import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
 
@@ -48,6 +50,20 @@ function DeliveryChallanPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
 
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<any>({});
+  const [filterOptions, setFilterOptions] = useState<any>({});
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      const res = await getCustomers();
+      setFilterOptions({
+        customers: res.success ? (res.data || []).map((c: any) => ({ label: c.customerName, value: c.id })) : []
+      });
+    };
+    loadOptions();
+  }, []);
+
   const toggleRow = (id: string) => {
     setExpandedRows(prev => 
       prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
@@ -56,7 +72,7 @@ function DeliveryChallanPageContent() {
 
   const fetchChallans = async () => {
     setLoading(true);
-    const result = await getDeliveryChallans(debouncedSearch);
+    const result = await getDeliveryChallans(debouncedSearch, filters);
     if (result.success) {
       setData(result.data || []);
     }
@@ -87,7 +103,7 @@ function DeliveryChallanPageContent() {
       setShowForm(false);
     }
     fetchChallans();
-  }, [searchParams, debouncedSearch]);
+  }, [searchParams, debouncedSearch, filters]);
 
   const handleSuccess = () => {
     setShowForm(false);
@@ -109,7 +125,9 @@ function DeliveryChallanPageContent() {
         onSearchChange={setSearchQuery}
         searchPlaceholder={`Search through ${titles[activeTab]}...`}
         showSearch={!showForm}
-        actionButton={!showForm && data.length > 0 && (
+        onFilterToggle={() => setShowFilters(!showFilters)}
+        isFilterActive={Object.keys(filters).length > 0}
+        actionButton={!showForm && (
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setShowImport(true)}
@@ -129,6 +147,14 @@ function DeliveryChallanPageContent() {
             </button>
           </div>
         )}
+      />
+
+      <AdvancedFilters 
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onFilterChange={setFilters}
+        options={filterOptions}
       />
 
       <AnimatePresence mode="wait">

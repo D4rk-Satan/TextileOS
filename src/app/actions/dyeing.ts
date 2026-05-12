@@ -208,7 +208,7 @@ export async function updateRFDInward(id: string, data: any) {
   }
 }
 
-export async function getGreyOutwards(search?: string) {
+export async function getGreyOutwards(search?: string, filters: any = {}) {
   try {
     const orgId = await getOrgId();
     const outwards = await prisma.greyOutward.findMany({
@@ -220,7 +220,14 @@ export async function getGreyOutwards(search?: string) {
             { challanNo: { contains: search, mode: 'insensitive' } },
             { dyeingHouse: { vendorName: { contains: search, mode: 'insensitive' } } }
           ]
-        } : {})
+        } : {}),
+        ...(filters.entityId ? { dyeingHouseId: filters.entityId } : {}),
+        ...(filters.startDate && filters.endDate ? {
+          date: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          }
+        } : {}),
       },
       include: {
         dyeingHouse: true,
@@ -406,7 +413,7 @@ export async function getGreyOutwardsByHouse(dyeingHouseId: string) {
   }
 }
 
-export async function getRFDInwards(search?: string) {
+export async function getRFDInwards(search?: string, filters: any = {}) {
     try {
       const orgId = await getOrgId();
     const outwards = await prisma.rFDInward.findMany({
@@ -419,7 +426,14 @@ export async function getRFDInwards(search?: string) {
             { challanNo: { contains: search, mode: 'insensitive' } },
             { dyeingHouse: { vendorName: { contains: search, mode: 'insensitive' } } }
           ]
-        } : {})
+        } : {}),
+        ...(filters.entityId ? { dyeingHouseId: filters.entityId } : {}),
+        ...(filters.startDate && filters.endDate ? {
+          date: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          }
+        } : {}),
       },
       include: {
         dyeingHouse: true,

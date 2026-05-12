@@ -23,8 +23,9 @@ import { ImportModal } from '@/components/shared/ImportModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getGreyOutwards, getRFDInwards, deleteGreyOutward, deleteRFDInward,
-  bulkCreateGreyOutwards
+  bulkCreateGreyOutwards, getDyeingHouses
 } from '@/app/actions/dyeing';
+import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
@@ -44,6 +45,20 @@ function DyeingHousePageContent() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<any>({});
+  const [filterOptions, setFilterOptions] = useState<any>({});
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      const res = await getDyeingHouses();
+      setFilterOptions({
+        vendors: res.success ? (res.data || []).map((v: any) => ({ label: v.vendorName, value: v.id })) : []
+      });
+    };
+    loadOptions();
+  }, []);
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => 
@@ -67,9 +82,9 @@ function DyeingHousePageContent() {
       
       let result: any;
       if (activeTab === 'grey-outward') {
-        result = await getGreyOutwards(debouncedSearch);
+        result = await getGreyOutwards(debouncedSearch, filters);
       } else if (activeTab === 'rfd-inward') {
-        result = await getRFDInwards(debouncedSearch);
+        result = await getRFDInwards(debouncedSearch, filters);
       }
 
       if (isCurrent && result?.success) {
@@ -84,7 +99,7 @@ function DyeingHousePageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab, debouncedSearch]);
+  }, [searchParams, activeTab, debouncedSearch, filters]);
 
   const handleRecordAddedOrUpdated = () => {
     setShowForm(false);
@@ -129,7 +144,9 @@ function DyeingHousePageContent() {
         onSearchChange={setSearchQuery}
         searchPlaceholder={`Search through ${titles[activeTab]}...`}
         showSearch={!showForm}
-        actionButton={!showForm && data.length > 0 && activeTab === 'grey-outward' && (
+        onFilterToggle={() => setShowFilters(!showFilters)}
+        isFilterActive={Object.keys(filters).length > 0}
+        actionButton={!showForm && activeTab === 'grey-outward' && (
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setShowImport(true)}
@@ -148,10 +165,18 @@ function DyeingHousePageContent() {
               <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
                  <span className="text-lg leading-none">+</span>
               </div>
-              Add {titles[activeTab]}
+              Issue RFD
             </button>
           </div>
         )}
+      />
+
+      <AdvancedFilters 
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onFilterChange={setFilters}
+        options={filterOptions}
       />
       
       <AnimatePresence mode="wait">

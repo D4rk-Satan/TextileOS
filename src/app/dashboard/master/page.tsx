@@ -24,6 +24,8 @@ import {
 } from '@/app/actions/master';
 import { getUserRole } from '@/app/actions/auth';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
+import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
+import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
 
 type TabType = 'customers' | 'vendors' | 'items' | 'batches' | 'reports';
@@ -39,16 +41,21 @@ function MasterPageContent() {
   const [userRole, setUserRole] = useState<string>('User');
   const [showImport, setShowImport] = useState(false);
 
-  const fetchData = async (tab: TabType) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 500);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<any>({});
+
+  const fetchData = async (tab: TabType, search?: string, fltrs?: any) => {
     setLoading(true);
     const role = await getUserRole();
     setUserRole(role);
 
     setData([]);
     let result;
-    if (tab === 'customers') result = await getCustomers();
-    else if (tab === 'vendors') result = await getVendors();
-    else if (tab === 'items') result = await getItems();
+    if (tab === 'customers') result = await getCustomers(search, fltrs);
+    else if (tab === 'vendors') result = await getVendors(search, fltrs);
+    else if (tab === 'items') result = await getItems(search, fltrs);
 
     if (result?.success) {
       setData(result.data || []);
@@ -63,11 +70,11 @@ function MasterPageContent() {
       setActiveTab(tab);
       setShowForm(false);
       setEditingRecord(null);
-      fetchData(tab);
+      fetchData(tab, debouncedSearch, filters);
     } else {
-      fetchData(activeTab);
+      fetchData(activeTab, debouncedSearch, filters);
     }
-  }, [searchParams, activeTab]);
+  }, [searchParams, activeTab, debouncedSearch, filters]);
 
   const handleRecordAddedOrUpdated = () => {
     setShowForm(false);
@@ -109,9 +116,13 @@ function MasterPageContent() {
         title={activeTab}
         subtitle="Master"
         icon={activeTab === 'customers' ? Users : activeTab === 'vendors' ? ShoppingBag : Package}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
         searchPlaceholder={`Search through ${activeTab}...`}
         showSearch={!showForm}
-        actionButton={!showForm && canAdd && data.length > 0 && (
+        onFilterToggle={() => setShowFilters(!showFilters)}
+        isFilterActive={Object.keys(filters).length > 0}
+        actionButton={!showForm && canAdd && (
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setShowImport(true)}
@@ -134,6 +145,19 @@ function MasterPageContent() {
             </button>
           </div>
         )}
+      />
+
+      <AdvancedFilters 
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onFilterChange={setFilters}
+        options={{
+          statuses: [
+            { label: 'Active', value: 'Active' },
+            { label: 'Inactive', value: 'Inactive' }
+          ]
+        }}
       />
 
       {/* Main Content Area */}

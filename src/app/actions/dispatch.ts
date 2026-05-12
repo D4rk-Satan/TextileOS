@@ -154,7 +154,7 @@ export async function deleteDeliveryChallan(id: string) {
   }
 }
 
-export async function getDeliveryChallans(search?: string) {
+export async function getDeliveryChallans(search?: string, filters: any = {}) {
   try {
     const orgId = await getOrgId();
     const challans = await prisma.deliveryChallan.findMany({
@@ -165,7 +165,14 @@ export async function getDeliveryChallans(search?: string) {
             { challanNo: { contains: search, mode: 'insensitive' } },
             { customer: { customerName: { contains: search, mode: 'insensitive' } } }
           ]
-        } : {})
+        } : {}),
+        ...(filters.entityId ? { customerId: filters.entityId } : {}),
+        ...(filters.startDate && filters.endDate ? {
+          date: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          }
+        } : {}),
       },
       include: {
         customer: true,

@@ -46,11 +46,15 @@ export async function createCustomer(data: any) {
   }
 }
 
-export async function getCustomers() {
+export async function getCustomers(search?: string, filters: any = {}) {
   try {
     const { orgId } = await getSessionContext();
     const customers = await prisma.customer.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? { customerName: { contains: search, mode: 'insensitive' } } : {}),
+        ...(filters.status ? { status: filters.status } : {}),
+      },
       orderBy: { customerName: 'asc' },
     });
     return { success: true, data: customers };
@@ -123,11 +127,15 @@ export async function createVendor(data: any) {
   }
 }
 
-export async function getVendors() {
+export async function getVendors(search?: string, filters: any = {}) {
   try {
     const { orgId } = await getSessionContext();
     const vendors = await prisma.vendor.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? { vendorName: { contains: search, mode: 'insensitive' } } : {}),
+        ...(filters.status ? { status: filters.status } : {}),
+      },
       orderBy: { vendorName: 'asc' },
     });
     return { success: true, data: vendors };
@@ -212,11 +220,15 @@ export async function createItem(data: any) {
   }
 }
 
-export async function getItems() {
+export async function getItems(search?: string, filters: any = {}) {
   try {
     const { orgId } = await getSessionContext();
     const items = await prisma.item.findMany({
-      where: { organizationId: orgId },
+      where: { 
+        organizationId: orgId,
+        ...(search ? { itemName: { contains: search, mode: 'insensitive' } } : {}),
+        ...(filters.status ? { status: filters.status } : {}),
+      },
       orderBy: { itemName: 'asc' },
     });
     return { success: true, data: items };

@@ -25,7 +25,9 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getOutForPrintingLots, getPrintingReceives, deletePrintingIssue, deletePrintingReceive } from '@/app/actions/printing';
+import { getOutForPrintingLots, getPrintingReceives, deletePrintingIssue, deletePrintingReceive, getPrinters } from '@/app/actions/printing';
+import { getCustomers } from '@/app/actions/master';
+import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
 
@@ -43,6 +45,21 @@ function PrintingProcessPageContent() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<any>({});
+  const [filterOptions, setFilterOptions] = useState<any>({});
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      const [printerRes, custRes] = await Promise.all([getPrinters(), getCustomers()]);
+      setFilterOptions({
+        vendors: printerRes.success ? (printerRes.data || []).map((v: any) => ({ label: v.vendorName, value: v.id })) : [],
+        customers: custRes.success ? (custRes.data || []).map((c: any) => ({ label: c.customerName, value: c.id })) : []
+      });
+    };
+    loadOptions();
+  }, []);
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => 
@@ -66,9 +83,9 @@ function PrintingProcessPageContent() {
       
       let result: any;
       if (activeTab === 'issue') {
-        result = await getOutForPrintingLots(debouncedSearch);
+        result = await getOutForPrintingLots(debouncedSearch, filters);
       } else if (activeTab === 'receive') {
-        result = await getPrintingReceives(debouncedSearch);
+        result = await getPrintingReceives(debouncedSearch, filters);
       }
 
       if (isCurrent && result?.success) {
@@ -83,7 +100,7 @@ function PrintingProcessPageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab, debouncedSearch]);
+  }, [searchParams, activeTab, debouncedSearch, filters]);
 
   const handleRecordAddedOrUpdated = () => {
     setShowForm(false);
@@ -128,7 +145,9 @@ function PrintingProcessPageContent() {
         onSearchChange={setSearchQuery}
         searchPlaceholder={`Search through ${titles[activeTab]}...`}
         showSearch={!showForm}
-        actionButton={!showForm && data.length > 0 && (
+        onFilterToggle={() => setShowFilters(!showFilters)}
+        isFilterActive={Object.keys(filters).length > 0}
+        actionButton={!showForm && (
           <button 
             onClick={() => {
               setEditingRecord(null);
@@ -142,6 +161,14 @@ function PrintingProcessPageContent() {
             New {activeTab === 'issue' ? 'Issue' : 'Receive'}
           </button>
         )}
+      />
+
+      <AdvancedFilters 
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onFilterChange={setFilters}
+        options={filterOptions}
       />
 
       <AnimatePresence mode="wait">

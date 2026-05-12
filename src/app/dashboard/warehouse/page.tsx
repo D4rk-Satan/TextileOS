@@ -8,17 +8,20 @@ import {
   Factory,
   Search,
   Trash2,
-  Upload
+  Upload,
+  Filter
 } from 'lucide-react';
 import { GreyInwardForm } from '@/components/warehouse/GreyInwardForm';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { ImportModal } from '@/components/shared/ImportModal';
+import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getGreyInwards, getBatches, updateGreyInward, deleteGreyInward,
   bulkCreateGreyInwards 
 } from '@/app/actions/warehouse';
+import { getCustomers, getItems } from '@/app/actions/master';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
@@ -38,6 +41,21 @@ function WarehousePageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
 
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<any>({});
+  const [filterOptions, setFilterOptions] = useState<any>({});
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      const [custRes, itemRes] = await Promise.all([getCustomers(), getItems()]);
+      setFilterOptions({
+        customers: custRes.success ? (custRes.data || []).map((c: any) => ({ label: c.customerName, value: c.id })) : [],
+        qualities: itemRes.success ? (itemRes.data || []).map((i: any) => ({ label: i.itemName, value: i.itemName })) : []
+      });
+    };
+    loadOptions();
+  }, []);
+
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as TabType;
     if (tabFromUrl && tabFromUrl !== activeTab && ['inwards', 'batches', 'out-for-rfd', 'ready-for-printing', 'under-printing', 'ready-for-dispatch', 'dispatched'].includes(tabFromUrl)) {
@@ -54,19 +72,19 @@ function WarehousePageContent() {
       
       let result: any;
       if (activeTab === 'inwards') {
-        result = await getGreyInwards(debouncedSearch);
+        result = await getGreyInwards(debouncedSearch, filters);
       } else if (activeTab === 'batches') {
-        result = await getBatches('In-Warehouse', debouncedSearch);
+        result = await getBatches('In-Warehouse', debouncedSearch, filters);
       } else if (activeTab === 'out-for-rfd') {
-        result = await getBatches('Out For RFD', debouncedSearch);
+        result = await getBatches('Out For RFD', debouncedSearch, filters);
       } else if (activeTab === 'ready-for-printing') {
-        result = await getBatches('Ready for Printing', debouncedSearch);
+        result = await getBatches('Ready for Printing', debouncedSearch, filters);
       } else if (activeTab === 'under-printing') {
-        result = await getBatches('Under Printing', debouncedSearch);
+        result = await getBatches('Under Printing', debouncedSearch, filters);
       } else if (activeTab === 'ready-for-dispatch') {
-        result = await getBatches('Ready For Dispatch', debouncedSearch);
+        result = await getBatches('Ready For Dispatch', debouncedSearch, filters);
       } else if (activeTab === 'dispatched') {
-        result = await getBatches('Dispatched', debouncedSearch);
+        result = await getBatches('Dispatched', debouncedSearch, filters);
       }
 
       if (isCurrent) {
@@ -85,7 +103,7 @@ function WarehousePageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab, debouncedSearch]);
+  }, [searchParams, activeTab, debouncedSearch, filters]);
 
   const titles: Record<TabType, string> = {
     'inwards': 'Grey Inwards',
@@ -251,17 +269,21 @@ function WarehousePageContent() {
         icon={Package}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder={`Search through ${titles[activeTab]}...`}
+        searchPlaceholder={`Search ${titles[activeTab]}...`}
         showSearch={!showForm}
-        actionButton={!showForm && data.length > 0 && (activeTab === 'batches' || activeTab === 'inwards') && (
+        onFilterToggle={() => setShowFilters(!showFilters)}
+        isFilterActive={Object.keys(filters).length > 0}
+        actionButton={!showForm && (
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowImport(true)}
-              className="bg-muted hover:bg-muted/80 text-muted-foreground px-6 h-12 rounded-2xl font-black transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Upload size={16} />
-              Import
-            </button>
+            {(activeTab === 'batches' || activeTab === 'inwards') && (
+              <button 
+                onClick={() => setShowImport(true)}
+                className="bg-muted hover:bg-muted/80 text-muted-foreground px-6 h-12 rounded-2xl font-black transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Upload size={16} />
+                Import
+              </button>
+            )}
             <button 
               onClick={() => {
                 setEditingRecord(null);
@@ -276,6 +298,14 @@ function WarehousePageContent() {
             </button>
           </div>
         )}
+      />
+
+      <AdvancedFilters 
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onFilterChange={setFilters}
+        options={filterOptions}
       />
 
       <AnimatePresence mode="wait">

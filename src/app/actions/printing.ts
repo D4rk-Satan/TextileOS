@@ -161,7 +161,7 @@ export async function updatePrintingReceive(id: string, data: any) {
   }
 }
 
-export async function getOutForPrintingLots(search?: string) {
+export async function getOutForPrintingLots(search?: string, filters: any = {}) {
   try {
     const orgId = await getOrgId();
     const issues = await prisma.printingIssue.findMany({
@@ -174,7 +174,14 @@ export async function getOutForPrintingLots(search?: string) {
             { printer: { vendorName: { contains: search, mode: 'insensitive' } } },
             { batches: { some: { greyInward: { customer: { customerName: { contains: search, mode: 'insensitive' } } } } } }
           ]
-        } : {})
+        } : {}),
+        ...(filters.entityId ? { printerId: filters.entityId } : {}),
+        ...(filters.startDate && filters.endDate ? {
+          date: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          }
+        } : {}),
       },
       include: {
         printer: true,
@@ -226,7 +233,7 @@ export async function getOutForPrintingLots(search?: string) {
   }
 }
 
-export async function getPrintingReceives(search?: string) {
+export async function getPrintingReceives(search?: string, filters: any = {}) {
   try {
     const orgId = await getOrgId();
     const receives = await prisma.printingReceive.findMany({
@@ -239,7 +246,15 @@ export async function getPrintingReceives(search?: string) {
             { printer: { vendorName: { contains: search, mode: 'insensitive' } } },
             { customer: { customerName: { contains: search, mode: 'insensitive' } } }
           ]
-        } : {})
+        } : {}),
+        ...(filters.entityId ? { printerId: filters.entityId } : {}),
+        ...(filters.customerId ? { customerId: filters.customerId } : {}),
+        ...(filters.startDate && filters.endDate ? {
+          date: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          }
+        } : {}),
       },
       include: {
         printer: true,
