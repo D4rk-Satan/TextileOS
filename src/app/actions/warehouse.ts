@@ -258,12 +258,15 @@ export async function bulkCreateGreyInwards(data: any[]) {
         const customerName = row.customer || row['Customer'] || '';
         const customer = customers.find(c => c.customerName.toLowerCase() === customerName.toLowerCase());
         
+        if (!customer) return; // Skip if customer not found
+
         lotGroups[lotNo] = {
           lotNo,
           date: new Date(row.date || row['Date'] || new Date()),
           challanNo: String(row.challanNo || row['Challan No'] || ''),
           quality: row.quality || row['Quality'] || '',
-          customerId: customer?.id || null,
+          processType: row.processType || row['Process Type'] || 'Job Work',
+          customerId: customer.id,
           organizationId: orgId,
           totalBatch: 0,
           totalMtr: 0,
@@ -296,6 +299,7 @@ export async function bulkCreateGreyInwards(data: any[]) {
             date: lot.date,
             challanNo: lot.challanNo,
             quality: lot.quality,
+            processType: lot.processType,
             totalBatch: lot.totalBatch,
             totalMtr: lot.totalMtr,
             customerId: lot.customerId,
