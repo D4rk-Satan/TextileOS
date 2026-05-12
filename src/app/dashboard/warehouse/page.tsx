@@ -7,13 +7,18 @@ import {
   Package,
   Factory,
   Search,
-  Trash2
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { GreyInwardForm } from '@/components/warehouse/GreyInwardForm';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
+import { ImportModal } from '@/components/shared/ImportModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getGreyInwards, getBatches, updateGreyInward, deleteGreyInward } from '@/app/actions/warehouse';
+import { 
+  getGreyInwards, getBatches, updateGreyInward, deleteGreyInward,
+  bulkCreateGreyInwards 
+} from '@/app/actions/warehouse';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
@@ -28,6 +33,7 @@ function WarehousePageContent() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
+  const [showImport, setShowImport] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -248,18 +254,27 @@ function WarehousePageContent() {
         searchPlaceholder={`Search through ${titles[activeTab]}...`}
         showSearch={!showForm}
         actionButton={!showForm && data.length > 0 && (activeTab === 'batches' || activeTab === 'inwards') && (
-          <button 
-            onClick={() => {
-              setEditingRecord(null);
-              setShowForm(true);
-            }}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
-               <span className="text-lg leading-none">+</span>
-            </div>
-            Add {activeTab === 'inwards' ? 'Inward' : 'Inward'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowImport(true)}
+              className="bg-muted hover:bg-muted/80 text-muted-foreground px-6 h-12 rounded-2xl font-black transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Upload size={16} />
+              Import
+            </button>
+            <button 
+              onClick={() => {
+                setEditingRecord(null);
+                setShowForm(true);
+              }}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
+                 <span className="text-lg leading-none">+</span>
+              </div>
+              Add Inward
+            </button>
+          </div>
         )}
       />
 
@@ -345,6 +360,7 @@ function WarehousePageContent() {
                   title={`No ${titles[activeTab]} Batches`}
                   description={`There are currently no batches in the ${titles[activeTab].toLowerCase()} status.`}
                   onAdd={activeTab === 'batches' ? () => setShowForm(true) : undefined}
+                  onImport={activeTab === 'batches' ? () => setShowImport(true) : undefined}
                   actionLabel="Add New Inward"
                 />
               </div>
@@ -387,6 +403,19 @@ function WarehousePageContent() {
           </motion.div>
         )}
       </AnimatePresence>
+      <ImportModal 
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        title="Grey Inwards"
+        templateColumns={['Date', 'Lot No', 'Challan No', 'Customer', 'Quality', 'Pcs', 'Mtrs', 'Weight']}
+        onImport={async (data) => {
+          const res = await bulkCreateGreyInwards(data);
+          if (res.success) {
+            setFetchedTab(null); // Force re-fetch
+          }
+          return res;
+        }}
+      />
     </div>
   );
 }

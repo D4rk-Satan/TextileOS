@@ -17,14 +17,19 @@ import {
   Hash,
   ArrowRight,
   Edit,
-  Trash2
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
+import { ImportModal } from '@/components/shared/ImportModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DeliveryChallanForm } from '@/components/dispatch/DeliveryChallanForm';
-import { getDeliveryChallans, deleteDeliveryChallan } from '@/app/actions/dispatch';
+import { 
+  getDeliveryChallans, deleteDeliveryChallan,
+  bulkCreateDeliveryChallans 
+} from '@/app/actions/dispatch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
 
@@ -38,6 +43,7 @@ function DeliveryChallanPageContent() {
   const [data, setData] = useState<any[]>([]);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [editData, setEditData] = useState<any>(null);
+  const [showImport, setShowImport] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -104,15 +110,24 @@ function DeliveryChallanPageContent() {
         searchPlaceholder={`Search through ${titles[activeTab]}...`}
         showSearch={!showForm}
         actionButton={!showForm && data.length > 0 && (
-          <button 
-            onClick={() => { setEditData(null); setShowForm(true); }}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
-               <span className="text-lg leading-none">+</span>
-            </div>
-            New Challan
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowImport(true)}
+              className="bg-muted hover:bg-muted/80 text-muted-foreground px-6 h-12 rounded-2xl font-black transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Upload size={16} />
+              Import
+            </button>
+            <button 
+              onClick={() => { setEditData(null); setShowForm(true); }}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
+                 <span className="text-lg leading-none">+</span>
+              </div>
+              New Challan
+            </button>
+          </div>
         )}
       />
 
@@ -156,6 +171,7 @@ function DeliveryChallanPageContent() {
                 title="No Delivery Challans"
                 description="You haven't recorded any delivery challans yet. Start by creating your first one."
                 onAdd={() => setShowForm(true)}
+                onImport={() => setShowImport(true)}
                 actionLabel="New Challan"
               />
             </div>
@@ -256,6 +272,19 @@ function DeliveryChallanPageContent() {
           </motion.div>
         )}
       </AnimatePresence>
+      <ImportModal 
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        title="Delivery Challans"
+        templateColumns={['Date', 'Challan No', 'Lot No', 'Customer', 'Remark']}
+        onImport={async (data) => {
+          const res = await bulkCreateDeliveryChallans(data);
+          if (res.success) {
+            fetchChallans();
+          }
+          return res;
+        }}
+      />
     </div>
   );
 }

@@ -12,14 +12,19 @@ import {
   Search,
   ChevronRight,
   Hash,
-  Trash2
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { GreyOutwardForm } from '@/components/dyeing/GreyOutwardForm';
 import { RFDInwardForm } from '@/components/dyeing/RFDInwardForm';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
+import { ImportModal } from '@/components/shared/ImportModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getGreyOutwards, getRFDInwards, deleteGreyOutward, deleteRFDInward } from '@/app/actions/dyeing';
+import { 
+  getGreyOutwards, getRFDInwards, deleteGreyOutward, deleteRFDInward,
+  bulkCreateGreyOutwards
+} from '@/app/actions/dyeing';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
@@ -35,6 +40,7 @@ function DyeingHousePageContent() {
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [showImport, setShowImport] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -123,19 +129,28 @@ function DyeingHousePageContent() {
         onSearchChange={setSearchQuery}
         searchPlaceholder={`Search through ${titles[activeTab]}...`}
         showSearch={!showForm}
-        actionButton={!showForm && data.length > 0 && (
-          <button 
-            onClick={() => {
-              setEditingRecord(null);
-              setShowForm(true);
-            }}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
-               <span className="text-lg leading-none">+</span>
-            </div>
-            Add {titles[activeTab]}
-          </button>
+        actionButton={!showForm && data.length > 0 && activeTab === 'grey-outward' && (
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowImport(true)}
+              className="bg-muted hover:bg-muted/80 text-muted-foreground px-6 h-12 rounded-2xl font-black transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Upload size={16} />
+              Import
+            </button>
+            <button 
+              onClick={() => {
+                setEditingRecord(null);
+                setShowForm(true);
+              }}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
+                 <span className="text-lg leading-none">+</span>
+              </div>
+              Add {titles[activeTab]}
+            </button>
+          </div>
         )}
       />
       
@@ -186,6 +201,7 @@ function DyeingHousePageContent() {
                 title={`No ${titles[activeTab]} Records`}
                 description={`You haven't recorded any ${titles[activeTab].toLowerCase()} entries yet. Start by creating your first one.`}
                 onAdd={() => setShowForm(true)}
+                onImport={activeTab === 'grey-outward' ? () => setShowImport(true) : undefined}
                 actionLabel={`Add ${titles[activeTab]}`}
               />
             </div>
@@ -358,6 +374,19 @@ function DyeingHousePageContent() {
           </motion.div>
         )}
       </AnimatePresence>
+      <ImportModal 
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        title="Grey Outwards"
+        templateColumns={['Date', 'Lot No', 'Dyeing House', 'DC No', 'Remark']}
+        onImport={async (data) => {
+          const res = await bulkCreateGreyOutwards(data);
+          if (res.success) {
+            setFetchedTab(null); // Force re-fetch
+          }
+          return res;
+        }}
+      />
     </div>
   );
 }

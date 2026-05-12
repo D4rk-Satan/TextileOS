@@ -192,3 +192,61 @@ export async function getDeliveryChallans(search?: string) {
     return { success: false, error: error.message };
   }
 }
+
+// --- Bulk Import Action ---
+
+export async function bulkCreateDeliveryChallans(data: any[]) {
+  try {
+    const orgId = await getOrgId();
+    
+    // 1. Fetch customers and inwards for mapping
+    const [customers, inwards] = await Promise.all([
+      prisma.customer.findMany({ where: { organizationId: orgId } }),
+      prisma.greyInward.findMany({ 
+        where: { organizationId: orgId },
+        include: { batches: true }
+      })
+    ]);
+
+    const results = await prisma.$transaction(
+      data.map(row => {
+        const lotNo = String(row.lotNo || row['Lot No'] || '');
+        const customerName = row.customer || row['Customer'] || '';
+        
+        const customer = customers.find(c => c.customerName.toLowerCase() === customerName.toLowerCase());
+        const inward = inwards.find(i => i.lotNo === lotNo);
+
+        if (!inward || !customer) return null;
+
+        return prisma.deliveryChallan.create({
+          data: {
+            date: new Date(row.date || row['Date'] || new Date()),
+            challanNo: String(row.challanNo || row['Challan No'] || ''),
+            customerId: customer.id,
+            remark: row.remark || row['Remark'] || '',
+            organizationId: orgId,
+            batches: {
+              connect: inward.batches.map(b => ({ id: b.id }))
+            }
+          }
+        });
+      }).filter(p => p !== null) as any
+    );
+
+    // Update batch statuses
+    const lotNos = data.map(row => String(row.lotNo || row['Lot No'] || ''));
+    await prisma.batch.updateMany({
+      where: { 
+        greyInward: { lotNo: { in: lotNos }, organizationId: orgId }
+      },
+      data: { status: 'Dispatched' }
+    });
+
+    revalidatePath('/dashboard/delivery-challan');
+    revalidatePath('/dashboard/warehouse');
+    return { success: true, count: results.length };
+  } catch (error: any) {
+    console.error('Bulk Dispatch Error:', error);
+    return { success: false, error: error.message };
+  }
+}

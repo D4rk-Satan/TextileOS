@@ -597,3 +597,69 @@ export async function deleteRFDInward(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+// --- Bulk Import Action ---
+
+export async function bulkCreateGreyOutwards(data: any[]) {
+  try {
+    const orgId = await getOrgId();
+    
+    // 1. Fetch vendors and inwards for mapping
+    const [vendors, inwards] = await Promise.all([
+      prisma.vendor.findMany({ where: { organizationId: orgId } }),
+      prisma.greyInward.findMany({ 
+        where: { organizationId: orgId },
+        include: { batches: true }
+      })
+    ]);
+
+    const results = await prisma.$transaction(
+      data.map(row => {
+        const lotNo = String(row.lotNo || row['Lot No'] || '');
+        const dyeingHouseName = row.dyeingHouse || row['Dyeing House'] || '';
+        
+        const vendor = vendors.find(v => v.vendorName.toLowerCase() === dyeingHouseName.toLowerCase());
+        const inward = inwards.find(i => i.lotNo === lotNo);
+
+        if (!inward || !vendor) return null;
+
+        return prisma.greyOutward.create({
+          data: {
+            date: new Date(row.date || row['Date'] || new Date()),
+            lotNo,
+            dyeingHouseId: vendor.id,
+            remark: row.remark || row['Remark'] || '',
+            challanNo: String(row.dcNo || row['DC No'] || ''),
+            organizationId: orgId,
+            batches: {
+              connect: inward.batches.map(b => ({ id: b.id }))
+            }
+          }
+        });
+      }).filter(p => p !== null) as any
+    );
+
+    // Update batch statuses
+    const lotNos = data.map(row => String(row.lotNo || row['Lot No'] || ''));
+    await prisma.batch.updateMany({
+      where: { 
+        greyInward: { lotNo: { in: lotNos }, organizationId: orgId },
+        status: 'In-Warehouse'
+      },
+      data: { status: 'Out For RFD' }
+    });
+
+    // Update inward statuses
+    await prisma.greyInward.updateMany({
+      where: { lotNo: { in: lotNos }, organizationId: orgId },
+      data: { status: 'Out For RFD' }
+    });
+
+    revalidatePath('/dashboard/dyeing-house');
+    revalidatePath('/dashboard/warehouse');
+    return { success: true, count: results.length };
+  } catch (error: any) {
+    console.error('Bulk Dyeing Error:', error);
+    return { success: false, error: error.message };
+  }
+}

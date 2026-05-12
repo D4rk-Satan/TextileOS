@@ -234,3 +234,84 @@ export async function deleteGreyInward(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+// --- Bulk Import Action ---
+
+export async function bulkCreateGreyInwards(data: any[]) {
+  try {
+    const orgId = await getOrgId();
+    
+    // 1. Fetch all customers for mapping
+    const customers = await prisma.customer.findMany({
+      where: { organizationId: orgId },
+      select: { id: true, customerName: true }
+    });
+
+    // 2. Group by Lot No to handle multiple batches per lot
+    const lotGroups: Record<string, any> = {};
+    
+    data.forEach(row => {
+      const lotNo = String(row.lotNo || row['Lot No'] || '');
+      if (!lotNo) return;
+
+      if (!lotGroups[lotNo]) {
+        const customerName = row.customer || row['Customer'] || '';
+        const customer = customers.find(c => c.customerName.toLowerCase() === customerName.toLowerCase());
+        
+        lotGroups[lotNo] = {
+          lotNo,
+          date: new Date(row.date || row['Date'] || new Date()),
+          challanNo: String(row.challanNo || row['Challan No'] || ''),
+          quality: row.quality || row['Quality'] || '',
+          customerId: customer?.id || null,
+          organizationId: orgId,
+          totalBatch: 0,
+          totalMtr: 0,
+          batches: []
+        };
+      }
+
+      const mtrs = parseFloat(row.mtrs || row['Mtrs'] || 0);
+      const pcs = parseInt(row.pcs || row['Pcs'] || 0);
+      const weight = parseFloat(row.weight || row['Weight'] || 0);
+
+      lotGroups[lotNo].batches.push({
+        batchNo: String(lotGroups[lotNo].batches.length + 1),
+        pcs,
+        mtrs,
+        weight,
+        status: 'Ready For Processing'
+      });
+      
+      lotGroups[lotNo].totalBatch += 1;
+      lotGroups[lotNo].totalMtr += mtrs;
+    });
+
+    // 3. Create using a transaction
+    const results = await prisma.$transaction(
+      Object.values(lotGroups).map(lot => 
+        prisma.greyInward.create({
+          data: {
+            lotNo: lot.lotNo,
+            date: lot.date,
+            challanNo: lot.challanNo,
+            quality: lot.quality,
+            totalBatch: lot.totalBatch,
+            totalMtr: lot.totalMtr,
+            customerId: lot.customerId,
+            organizationId: lot.organizationId,
+            batches: {
+              create: lot.batches
+            }
+          }
+        })
+      )
+    );
+
+    revalidatePath('/dashboard/warehouse');
+    return { success: true, count: results.length };
+  } catch (error: any) {
+    console.error('Bulk Warehouse Error:', error);
+    return { success: false, error: error.message };
+  }
+}
