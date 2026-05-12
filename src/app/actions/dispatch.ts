@@ -102,6 +102,58 @@ export async function createDeliveryChallan(data: any) {
   }
 }
 
+export async function updateDeliveryChallan(id: string, data: any) {
+  try {
+    const orgId = await getOrgId();
+    
+    const challan = await prisma.deliveryChallan.update({
+      where: { id, organizationId: orgId },
+      data: {
+        date: new Date(data.date),
+        customerId: data.customerId,
+        remark: data.remark,
+      }
+    });
+
+    revalidatePath('/dashboard/delivery-challan');
+    return { success: true, data: challan };
+  } catch (error: any) {
+    console.error('Error updating delivery challan:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteDeliveryChallan(id: string) {
+  try {
+    const orgId = await getOrgId();
+    
+    const challan = await prisma.deliveryChallan.findUnique({
+      where: { id, organizationId: orgId },
+      include: { batches: true }
+    });
+
+    if (!challan) return { success: false, error: 'Challan not found' };
+
+    // Revert batch status
+    await prisma.batch.updateMany({
+      where: { id: { in: challan.batches.map(b => b.id) } },
+      data: { status: 'Ready For Dispatch' }
+    });
+
+    // Delete record
+    await prisma.deliveryChallan.delete({
+      where: { id, organizationId: orgId }
+    });
+
+    revalidatePath('/dashboard/delivery-challan');
+    revalidatePath('/dashboard/warehouse');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting delivery challan:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function getDeliveryChallans(search?: string) {
   try {
     const orgId = await getOrgId();

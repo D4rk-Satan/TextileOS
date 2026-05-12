@@ -15,15 +15,18 @@ import {
   Calendar,
   User,
   Hash,
-  ArrowRight
+  ArrowRight,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DeliveryChallanForm } from '@/components/dispatch/DeliveryChallanForm';
-import { getDeliveryChallans } from '@/app/actions/dispatch';
+import { getDeliveryChallans, deleteDeliveryChallan } from '@/app/actions/dispatch';
 import { useDebounce } from '@/hooks/useDebounce';
+import { toast } from 'sonner';
 
 type TabType = 'delivery-challan';
 
@@ -34,6 +37,7 @@ function DeliveryChallanPageContent() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [editData, setEditData] = useState<any>(null);
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -53,6 +57,23 @@ function DeliveryChallanPageContent() {
     setLoading(false);
   };
 
+  const handleEdit = (item: any) => {
+    setEditData(item);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this delivery challan? Associated batches will be reverted to "Ready For Dispatch" status.')) return;
+    
+    const res = await deleteDeliveryChallan(id);
+    if (res.success) {
+      toast.success('Challan deleted successfully');
+      fetchChallans();
+    } else {
+      toast.error(res.error || 'Failed to delete challan');
+    }
+  };
+
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as TabType;
     if (tabFromUrl && ['delivery-challan'].includes(tabFromUrl)) {
@@ -64,6 +85,7 @@ function DeliveryChallanPageContent() {
 
   const handleSuccess = () => {
     setShowForm(false);
+    setEditData(null);
     fetchChallans();
   };
 
@@ -83,7 +105,7 @@ function DeliveryChallanPageContent() {
         showSearch={!showForm}
         actionButton={!showForm && data.length > 0 && (
           <button 
-            onClick={() => setShowForm(true)}
+            onClick={() => { setEditData(null); setShowForm(true); }}
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-12 rounded-2xl font-black transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98]"
           >
             <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center">
@@ -109,7 +131,7 @@ function DeliveryChallanPageContent() {
           <div key="form" className="max-w-7xl mx-auto">
             <div className="mb-6 flex items-center justify-between">
               <button 
-                onClick={() => setShowForm(false)}
+                onClick={() => { setShowForm(false); setEditData(null); }}
                 className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
               >
                 ← Back to List
@@ -117,7 +139,7 @@ function DeliveryChallanPageContent() {
             </div>
             <GlassCard>
               <div className="p-10">
-                <DeliveryChallanForm onSuccess={handleSuccess} />
+                <DeliveryChallanForm onSuccess={handleSuccess} initialData={editData} />
               </div>
             </GlassCard>
           </div>
@@ -156,6 +178,7 @@ function DeliveryChallanPageContent() {
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Customer</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest">Lots</th>
                     <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest text-right">Total Mtrs</th>
+                    <th className="px-8 py-5 text-xs font-black text-muted-foreground uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -185,6 +208,24 @@ function DeliveryChallanPageContent() {
                           </td>
                           <td className="px-8 py-5 text-right font-black text-blue-600">
                             {Number(item.totalMtrs).toFixed(2)}
+                          </td>
+                          <td className="px-8 py-5 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
+                                className="p-2 rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                title="Edit Challan"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
+                                className="p-2 rounded-xl bg-red-500/10 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                title="Delete Challan"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                         {expandedRows.includes(item.id) && (

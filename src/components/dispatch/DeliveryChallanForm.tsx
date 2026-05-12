@@ -19,27 +19,28 @@ import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormButton } from '@/components/shared/FormButton';
 import { getCustomers } from '@/app/actions/master';
-import { getNextDeliveryChallanNumber, getReadyForDispatchLots, createDeliveryChallan } from '@/app/actions/dispatch';
+import { getNextDeliveryChallanNumber, getReadyForDispatchLots, createDeliveryChallan, updateDeliveryChallan } from '@/app/actions/dispatch';
 import { toast } from 'sonner';
 
 interface DeliveryChallanFormProps {
   onSuccess?: () => void;
+  initialData?: any;
 }
 
-export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
+export function DeliveryChallanForm({ onSuccess, initialData }: DeliveryChallanFormProps) {
   const [customers, setCustomers] = useState<any[]>([]);
   const [readyLots, setReadyLots] = useState<any[]>([]);
-  const [selectedBatches, setSelectedBatches] = useState<any[]>([]);
+  const [selectedBatches, setSelectedBatches] = useState<any[]>(initialData?.batches || []);
   const [expandedLots, setExpandedLots] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const methods = useForm({
     defaultValues: {
-      challanNo: '',
-      date: new Date().toISOString().split('T')[0],
-      customerId: '',
-      remark: ''
+      challanNo: initialData?.challanNo || '',
+      date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      customerId: initialData?.customerId || '',
+      remark: initialData?.remark || ''
     }
   });
 
@@ -50,14 +51,14 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
     async function loadInitialData() {
       const [customerRes, challanRes] = await Promise.all([
         getCustomers(),
-        getNextDeliveryChallanNumber()
+        !initialData ? getNextDeliveryChallanNumber() : Promise.resolve(null)
       ]);
       if (customerRes.success) setCustomers(customerRes.data || []);
-      if (challanRes.success && challanRes.data) setValue('challanNo', challanRes.data);
+      if (!initialData && challanRes?.success && challanRes.data) setValue('challanNo', challanRes.data);
       setLoading(false);
     }
     loadInitialData();
-  }, [setValue]);
+  }, [setValue, initialData]);
 
   useEffect(() => {
     async function loadLots() {
@@ -117,16 +118,20 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
 
     setIsSubmitting(true);
     const batchIds = selectedBatches.map(b => b.id);
-    const result = await createDeliveryChallan({ ...data, batchIds });
+    const result = initialData 
+      ? await updateDeliveryChallan(initialData.id, { ...data, batchIds })
+      : await createDeliveryChallan({ ...data, batchIds });
     setIsSubmitting(false);
 
     if (result.success) {
-      toast.success('Delivery challan created successfully');
-      reset();
-      setSelectedBatches([]);
+      toast.success(`Delivery challan ${initialData ? 'updated' : 'created'} successfully`);
+      if (!initialData) {
+        reset();
+        setSelectedBatches([]);
+      }
       if (onSuccess) onSuccess();
     } else {
-      toast.error(result.error || 'Failed to create delivery challan');
+      toast.error(result.error || `Failed to ${initialData ? 'update' : 'create'} delivery challan`);
     }
   };
 
@@ -135,7 +140,7 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <FormHeader title="Create Delivery Challan" icon={Truck} color="blue" />
+        <FormHeader title={initialData ? "Edit Delivery Challan" : "Create Delivery Challan"} icon={Truck} color="blue" />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <FormInput
@@ -307,7 +312,7 @@ export function DeliveryChallanForm({ onSuccess }: DeliveryChallanFormProps) {
               className="h-12 px-10 rounded-xl font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 flex gap-2"
           >
             <Save size={18} />
-            {isSubmitting ? 'Creating...' : 'Create Challan'}
+            {isSubmitting ? (initialData ? 'Updating...' : 'Creating...') : (initialData ? 'Update Challan' : 'Create Challan')}
           </FormButton>
           <FormButton 
               type="button" 
