@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/set-state-in-effect */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -20,13 +19,28 @@ import {
 import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormButton } from '@/components/shared/FormButton';
-import { getOutForPrintingLots, createPrintingReceive, updatePrintingReceive, getNextReceiveProductionNumber } from '@/app/actions/printing';
+import { getOutForPrintingLots, createPrintingReceive, updatePrintingReceive, getNextReceiveProductionNumber, PrintingReceiveData, PrintingBatchInput } from '@/app/actions/printing';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 
 interface ReceiveFromPrintingFormProps {
   onSuccess?: () => void;
-  initialData?: any;
+  initialData?: any; // Keeping any for now as it maps to Prisma include types
+}
+
+interface FormValues {
+  productionNumber: string;
+  date: string;
+  jobCardNumber: string;
+  lotNo: string;
+  customerId: string;
+  customerName: string;
+  processType: string;
+  printer: string;
+  billNo: string;
+  challanNo: string;
+  remark: string;
+  batches: PrintingBatchInput[];
 }
 
 export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromPrintingFormProps) {
@@ -34,7 +48,7 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const methods = useForm({
+  const methods = useForm<FormValues>({
     defaultValues: {
       productionNumber: initialData?.productionNumber || '',
       date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -43,8 +57,11 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
       customerId: initialData?.customerId || '',
       customerName: initialData?.customer?.customerName || '',
       processType: initialData?.processType || '',
+      printer: initialData?.printerId || '',
+      billNo: initialData?.billNo || '',
+      challanNo: initialData?.challanNo || '',
       remark: initialData?.remark || '',
-      batches: initialData?.batches || []
+      batches: (initialData?.batches || []) as PrintingBatchInput[]
     }
   });
 
@@ -77,13 +94,14 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
         setValue('customerId', lot.customer?.id || '');
         setValue('customerName', lot.customer?.customerName || '');
         setValue('processType', lot.processType || '');
+        setValue('printer', lot.printerId || '');
         replace(lot.batches.map((b: any) => ({
           id: b.id,
           ids: b.ids, // All linked IDs for this grouped row
           batchNo: b.batchNo,
           mtrs: b.mtrs,
           rfdMtrs: b.rfdMtrs,
-          printMtrs: '', // Default to blank
+          printMtrs: 0,
           printShortage: 0,
           isTP: b.isTP || false,
           tpDetail: b.tpDetail || ''
@@ -132,9 +150,9 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
 
       if (batch.rfdMtrs !== undefined && currentPrintMtrs !== undefined && batch.rfdMtrs > 0) {
         const shortage = ((batch.rfdMtrs - currentPrintMtrs) / batch.rfdMtrs) * 100;
-        const currentShortage = methods.getValues(`batches.${index}.printShortage`);
+        const currentShortage = methods.getValues(`batches.${index}.printShortage` as any);
         if (currentShortage !== Number(shortage.toFixed(2))) {
-          setValue(`batches.${index}.printShortage`, Number(shortage.toFixed(2)));
+          setValue(`batches.${index}.printShortage` as any, Number(shortage.toFixed(2)));
         }
       }
     });
@@ -142,8 +160,18 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
+    const formattedData: PrintingReceiveData = {
+      date: data.date,
+      lotNo: data.lotNo,
+      printer: data.printer,
+      billNo: data.billNo,
+      challanNo: data.challanNo,
+      remark: data.remark,
+      batches: data.batches
+    };
+
     const result = initialData
-      ? await updatePrintingReceive(initialData.id, data)
+      ? await updatePrintingReceive(initialData.id, formattedData)
       : await createPrintingReceive(data);
     setIsSubmitting(false);
 
@@ -189,7 +217,7 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Select Job Card</label>
               <div className="relative">
                 <select
-                  {...methods.register('jobCardNumber', { required: true })}
+                  {...methods.register('jobCardNumber' as any, { required: true })}
                   className="w-full h-12 bg-card border border-border/50 rounded-xl px-4 pl-11 text-sm font-bold appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
                 >
                   <option value="">Choose a job card...</option>
@@ -212,7 +240,7 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
                 placeholder="Select Job Card first..."
                 className="bg-muted/50 cursor-default font-bold"
               />
-              <input type="hidden" {...methods.register('customerId')} />
+              <input type="hidden" {...methods.register('customerId' as any)} />
             </div>
           </div>
 
@@ -270,13 +298,13 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
                       {index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm font-bold text-foreground">
-                      {methods.watch(`batches.${index}.batchNo`)}
+                      {watch(`batches.${index}.batchNo`)}
                     </td>
                     <td className="px-4 py-3 text-right text-sm font-bold text-muted-foreground/60">
-                      {methods.watch(`batches.${index}.mtrs`)}
+                      {watch(`batches.${index}.mtrs`)}
                     </td>
                     <td className="px-4 py-3 text-right text-sm font-bold text-muted-foreground">
-                      {methods.watch(`batches.${index}.rfdMtrs`)}
+                      {watch(`batches.${index}.rfdMtrs`)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center">
@@ -284,9 +312,9 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
                           {...methods.register(`batches.${index}.printMtrs`, { required: true, valueAsNumber: true })}
                           type="number"
                           step="0.01"
-                          readOnly={methods.watch(`batches.${index}.isTP`)}
+                          readOnly={watch(`batches.${index}.isTP`)}
                           className={`w-24 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-center outline-none transition-all ${
-                            methods.watch(`batches.${index}.isTP`) 
+                            watch(`batches.${index}.isTP`) 
                               ? "bg-muted/50 cursor-default" 
                               : "bg-card focus:border-indigo-500"
                           }`}
@@ -305,9 +333,9 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
                     <td className="px-4 py-3">
                       <input
                         {...methods.register(`batches.${index}.tpDetail`)}
-                        readOnly={!methods.watch(`batches.${index}.isTP`)}
+                        readOnly={!watch(`batches.${index}.isTP`)}
                         className={`w-full border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold outline-none transition-all ${
-                          !methods.watch(`batches.${index}.isTP`) 
+                          !watch(`batches.${index}.isTP`) 
                             ? "bg-muted/50 cursor-default" 
                             : "bg-card focus:border-indigo-500"
                         }`}
@@ -316,9 +344,9 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {methods.watch(`batches.${index}.printShortage`) < 0 ? <TrendingUp size={12} className="text-green-500" /> : <TrendingDown size={12} className="text-red-500" />}
-                        <span className={`text-sm font-black ${methods.watch(`batches.${index}.printShortage`) < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {methods.watch(`batches.${index}.printShortage`)}%
+                        {(watch(`batches.${index}.printShortage`) || 0) < 0 ? <TrendingUp size={12} className="text-green-500" /> : <TrendingDown size={12} className="text-red-500" />}
+                        <span className={`text-sm font-black ${(watch(`batches.${index}.printShortage`) || 0) < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {(watch(`batches.${index}.printShortage`) || 0)}%
                         </span>
                       </div>
                     </td>

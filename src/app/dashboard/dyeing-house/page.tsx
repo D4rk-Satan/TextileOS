@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -34,13 +33,22 @@ import { toast } from 'sonner';
 
 type TabType = 'grey-outward' | 'rfd-inward';
 
+interface DyeingRecord {
+  id: string;
+  lotNo: string;
+  date: string | Date;
+  dyeingHouse: { vendorName: string };
+  batches: any[];
+  [key: string]: any;
+}
+
 function DyeingHousePageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('grey-outward');
   const [showForm, setShowForm] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editingRecord, setEditingRecord] = useState<DyeingRecord | null>(null);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<DyeingRecord[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [showImport, setShowImport] = useState(false);
@@ -51,8 +59,8 @@ function DyeingHousePageContent() {
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<any>({});
-  const [filterOptions, setFilterOptions] = useState<any>({});
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filterOptions, setFilterOptions] = useState<Record<string, { label: string; value: string }[]>>({});
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -84,7 +92,7 @@ function DyeingHousePageContent() {
       setLoading(true);
       setData([]);
       
-      let result: any;
+      let result: { success: boolean; data?: any[]; totalCount?: number; totalPages?: number; error?: string } | undefined;
       if (activeTab === 'grey-outward') {
         result = await getGreyOutwards(debouncedSearch, filters, currentPage);
       } else if (activeTab === 'rfd-inward') {
@@ -92,7 +100,7 @@ function DyeingHousePageContent() {
       }
 
       if (isCurrent && result?.success) {
-        setData(result.data || []);
+        setData(result.data as DyeingRecord[] || []);
         setPagination({
           totalCount: result.totalCount || 0,
           totalPages: result.totalPages || 1
@@ -120,7 +128,7 @@ function DyeingHousePageContent() {
     setFetchedTab(null); // Force re-fetch
   };
 
-  const handleEdit = (record: any, e: React.MouseEvent) => {
+  const handleEdit = (record: DyeingRecord, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row toggle
     setEditingRecord(record);
     setShowForm(true);
@@ -130,7 +138,7 @@ function DyeingHousePageContent() {
     e.stopPropagation();
     if (!confirm(`Are you sure you want to delete this ${activeTab === 'grey-outward' ? 'outward' : 'inward'}?`)) return;
     
-    let result;
+    let result: { success: boolean; error?: string } | undefined;
     if (activeTab === 'grey-outward') result = await deleteGreyOutward(id);
     else if (activeTab === 'rfd-inward') result = await deleteRFDInward(id);
 

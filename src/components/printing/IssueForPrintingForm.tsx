@@ -20,7 +20,7 @@ import { FormHeader } from '@/components/shared/FormHeader';
 import { FormInput } from '@/components/shared/FormInput';
 import { FormSelect } from '@/components/shared/FormSelect';
 import { FormButton } from '@/components/shared/FormButton';
-import { getReadyForPrintingLots, createPrintingIssue, updatePrintingIssue, getNextJobCardNumber } from '@/app/actions/printing';
+import { getReadyForPrintingLots, createPrintingIssue, updatePrintingIssue, getNextJobCardNumber, PrintingIssueData, PrintingBatchInput } from '@/app/actions/printing';
 import { toast } from 'sonner';
 
 interface IssueForPrintingFormProps {
@@ -28,20 +28,31 @@ interface IssueForPrintingFormProps {
   initialData?: any;
 }
 
+interface FormValues {
+  date: string;
+  lotNo: string;
+  remark: string;
+  processType: string;
+  customerName: string;
+  printer: string;
+  jobCardNumber?: string;
+  batches: PrintingBatchInput[];
+}
+
 export function IssueForPrintingForm({ onSuccess, initialData }: IssueForPrintingFormProps) {
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const methods = useForm({
+  const methods = useForm<FormValues>({
     defaultValues: {
-      jobCardNumber: initialData?.jobCardNumber || '',
       date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       lotNo: initialData?.lotNo || '',
       remark: initialData?.remark || '',
       processType: initialData?.batches?.[0]?.greyInward?.processType || '',
       customerName: initialData?.batches?.[0]?.greyInward?.customer?.customerName || '',
-      batches: initialData?.batches || []
+      printer: initialData?.printerId || '',
+      batches: (initialData?.batches || []) as PrintingBatchInput[]
     }
   });
 
@@ -53,12 +64,10 @@ export function IssueForPrintingForm({ onSuccess, initialData }: IssueForPrintin
 
   useEffect(() => {
     async function loadData() {
-      const [lotRes, prodRes] = await Promise.all([
+      const [lotRes] = await Promise.all([
         getReadyForPrintingLots(),
-        !initialData ? getNextJobCardNumber() : Promise.resolve(null)
       ]);
       if (lotRes.success) setLots(lotRes.data || []);
-      if (!initialData && prodRes?.success && prodRes.data) setValue('jobCardNumber', prodRes.data);
       setLoading(false);
     }
     loadData();
@@ -93,9 +102,17 @@ export function IssueForPrintingForm({ onSuccess, initialData }: IssueForPrintin
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
+    const formattedData: PrintingIssueData = {
+      date: data.date,
+      lotNo: data.lotNo,
+      printer: data.printer,
+      remark: data.remark,
+      batches: data.batches
+    };
+
     const result = initialData 
-      ? await updatePrintingIssue(initialData.id, data)
-      : await createPrintingIssue(data);
+      ? await updatePrintingIssue(initialData.id, formattedData)
+      : await createPrintingIssue(formattedData);
     setIsSubmitting(false);
 
     if (result.success) {
@@ -197,10 +214,10 @@ export function IssueForPrintingForm({ onSuccess, initialData }: IssueForPrintin
                       {watch(`batches.${index}.batchNo`)}
                     </td>
                     <td className="px-8 py-5 text-right text-sm font-bold text-muted-foreground">
-                      {watch(`batches.${index}.mtrs`).toFixed(2)}
+                      {(watch(`batches.${index}.mtrs`) || 0).toFixed(2)}
                     </td>
                     <td className="px-8 py-5 text-right text-sm font-black text-blue-600">
-                      {watch(`batches.${index}.rfdMtrs`).toFixed(2)}
+                      {(watch(`batches.${index}.rfdMtrs`) || 0).toFixed(2)}
                     </td>
                   </tr>
                 ))}

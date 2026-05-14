@@ -9,8 +9,22 @@ import { createVendor, updateVendor } from '@/app/actions/master';
 import { Save, RotateCcw, ShoppingBag, User, MapPin, Hash, Globe, Building2 } from 'lucide-react';
 import { FormHeader } from '@/components/shared/FormHeader';
 
+interface VendorData {
+  status: string;
+  vendorName: string;
+  masterName?: string;
+  vendorNumber?: string;
+  booksId?: string;
+  gstin: string;
+  addressLine1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country: string;
+}
+
 export function VendorForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
-  const methods = useForm({
+  const methods = useForm<VendorData>({
     defaultValues: {
       status: initialData?.status || 'Active',
       vendorName: initialData?.vendorName || '',

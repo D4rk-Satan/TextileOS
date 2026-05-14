@@ -8,8 +8,13 @@ import { createItem, updateItem } from '@/app/actions/master';
 import { Package, Hash, Save, RotateCcw } from 'lucide-react';
 import { FormHeader } from '@/components/shared/FormHeader';
 
+interface ItemData {
+  itemName: string;
+  sku: string;
+}
+
 export function ItemForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
-  const methods = useForm({
+  const methods = useForm<ItemData>({
     defaultValues: {
       itemName: initialData?.itemName || '',
       sku: initialData?.sku || '',

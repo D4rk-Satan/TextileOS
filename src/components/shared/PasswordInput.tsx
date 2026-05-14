@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useFormContext, RegisterOptions } from 'react-hook-form';
+import { useFormContext, RegisterOptions, FieldValues } from 'react-hook-form';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +11,7 @@ interface PasswordInputProps {
   label: string;
   placeholder?: string;
   required?: boolean;
-  rules?: RegisterOptions;
+  rules?: RegisterOptions<FieldValues, string>;
   className?: string;
 }
 

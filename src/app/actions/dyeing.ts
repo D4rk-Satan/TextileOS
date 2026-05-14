@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import prisma from '@/lib/prisma';
-import { Batch } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { withCache, invalidateCache } from '@/lib/redis';
@@ -60,7 +58,7 @@ export async function getDyeingHouses() {
     });
     return { success: true, data: vendors };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to fetch dyeing houses' };
   }
 }
 
@@ -72,7 +70,7 @@ export async function getNextDCNumber() {
     });
     return { success: true, data: `DC-${count + 1}` };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to fetch DC number' };
   }
 }
 
@@ -105,7 +103,7 @@ export async function getGreyInwardsForOutward(search?: string, page: number = 1
       return inwards.map(inward => ({
         ...inward,
         totalMtr: Number(inward.totalMtr),
-        batches: (inward.batches as any[]).map((batch: any) => ({
+        batches: inward.batches.map(batch => ({
           ...batch,
           mtrs: Number(batch.mtrs),
           weight: Number(batch.weight)
@@ -166,7 +164,7 @@ export async function createGreyOutward(data: DyeingActionData) {
     });
 
     if (inward) {
-      const allBatches = inward.batches as Batch[];
+      const allBatches = inward.batches;
       const allOut = allBatches.every(b => b.status === 'Out For RFD' || b.status === 'Ready for Printing');
       const someOut = allBatches.some(b => b.status === 'Out For RFD' || b.status === 'Ready for Printing');
       
@@ -188,7 +186,7 @@ export async function createGreyOutward(data: DyeingActionData) {
   }
 }
 
-export async function updateGreyOutward(id: string, data: any) {
+export async function updateGreyOutward(id: string, data: DyeingActionData) {
   try {
     const orgId = await getOrgId();
     const greyOutward = await prisma.greyOutward.update({
@@ -210,7 +208,7 @@ export async function updateGreyOutward(id: string, data: any) {
   }
 }
 
-export async function updateRFDInward(id: string, data: any) {
+export async function updateRFDInward(id: string, data: RFDInwardActionData) {
   try {
     const orgId = await getOrgId();
     const rfdInward = await prisma.rFDInward.update({
@@ -399,7 +397,7 @@ export async function createRFDInward(data: RFDInwardActionData) {
       });
 
       if (inward) {
-        const allBatches = inward.batches as Batch[];
+        const allBatches = inward.batches;
         const allRFD = allBatches.every(b => b.status === 'Ready for Printing');
         await prisma.greyInward.update({
           where: { id: inward.id },
@@ -458,7 +456,7 @@ export async function getGreyOutwardsByHouse(dyeingHouseId: string) {
   }
 }
 
-export async function getRFDInwards(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
+export async function getRFDInwards(search?: string, filters: { entityId?: string; startDate?: string; endDate?: string } = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
     const cacheKey = `dyeing:rfd-inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
@@ -515,7 +513,7 @@ export async function getRFDInwards(search?: string, filters: any = {}, page: nu
       currentPage: page
     };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to fetch RFD inwards' };
   }
 }
 

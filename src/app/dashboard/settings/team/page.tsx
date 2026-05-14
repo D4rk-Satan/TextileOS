@@ -21,9 +21,17 @@ import { getRoles } from '@/app/actions/roles';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  createdAt: string | Date;
+  dynamicRole?: { name: string };
+}
+
 export default function TeamPage() {
   const router = useRouter();
-  const [users, setUsers] = React.useState<any[]>([]);
+  const [users, setUsers] = React.useState<User[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAddingUser, setIsAddingUser] = React.useState(false);
   const [roles, setRoles] = React.useState<any[]>([]);

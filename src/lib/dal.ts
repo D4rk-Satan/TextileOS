@@ -65,7 +65,7 @@ export async function getUserPermissions(): Promise<string[]> {
   
   return await withCache(cacheKey, async () => {
     try {
-      const role = await (prisma as any).appRole.findUnique({
+      const role = await prisma.appRole.findUnique({
         where: { id: roleId },
         select: { permissions: true }
       });

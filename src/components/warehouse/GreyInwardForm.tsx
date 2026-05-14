@@ -28,7 +28,7 @@ import { getCustomers, getItems } from '@/app/actions/master';
 
 interface GreyInwardFormProps {
   onSuccess?: () => void;
-  initialData?: any; // Keeping any for now but could be GreyInwardData
+  initialData?: any; // Maps to complex Prisma object
 }
 
 interface FormBatch {

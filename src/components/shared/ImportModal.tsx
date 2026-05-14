@@ -17,7 +17,7 @@ interface ImportModalProps {
 export function ImportModal({ isOpen, onClose, onImport, title, templateColumns }: ImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState<any[]>([]);
+  const [preview, setPreview] = useState<Record<string, string>[]>([]);
 
   if (!isOpen) return null;
 

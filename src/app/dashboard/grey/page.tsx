@@ -16,12 +16,20 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'grey-inward';
 
+interface GreyInward {
+  id: string;
+  lotNo: string;
+  challanNo: string;
+  quality: string;
+  status: string;
+}
+
 function GreyPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('grey-inward');
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<GreyInward[]>([]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -30,7 +38,7 @@ function GreyPageContent() {
     setLoading(true);
     const result = await getGreyInwards(debouncedSearch);
     if (result?.success) {
-      setData(result.data || []);
+      setData((result.data as GreyInward[]) || []);
     } else {
       setData([]);
     }

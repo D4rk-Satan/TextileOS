@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -38,14 +37,23 @@ import { toast } from 'sonner';
 
 type TabType = 'delivery-challan';
 
+interface DispatchRecord {
+  id: string;
+  challanNo: string;
+  date: string | Date;
+  customer: { customerName: string };
+  batches: any[];
+  [key: string]: any;
+}
+
 function DeliveryChallanPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('delivery-challan');
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<DispatchRecord[]>([]);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
-  const [editData, setEditData] = useState<any>(null);
+  const [editData, setEditData] = useState<DispatchRecord | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ totalCount: 0, totalPages: 1 });
@@ -54,8 +62,8 @@ function DeliveryChallanPageContent() {
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<any>({});
-  const [filterOptions, setFilterOptions] = useState<any>({});
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filterOptions, setFilterOptions] = useState<Record<string, { label: string; value: string }[]>>({});
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -77,7 +85,7 @@ function DeliveryChallanPageContent() {
     setLoading(true);
     const result = await getDeliveryChallans(debouncedSearch, filters, currentPage);
     if (result.success) {
-      setData(result.data || []);
+      setData(result.data as DispatchRecord[] || []);
       setPagination({
         totalCount: result.totalCount || 0,
         totalPages: result.totalPages || 1
@@ -86,7 +94,7 @@ function DeliveryChallanPageContent() {
     setLoading(false);
   };
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: DispatchRecord) => {
     setEditData(item);
     setShowForm(true);
   };

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -34,13 +33,23 @@ import { toast } from 'sonner';
 
 type TabType = 'issue' | 'receive';
 
+interface PrintingRecord {
+  id: string;
+  lotNo: string;
+  date: string;
+  remark?: string;
+  printer: { vendorName: string };
+  batches: any[];
+  [key: string]: any;
+}
+
 function PrintingProcessPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('issue');
   const [showForm, setShowForm] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editingRecord, setEditingRecord] = useState<PrintingRecord | null>(null);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<PrintingRecord[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,8 +59,8 @@ function PrintingProcessPageContent() {
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<any>({});
-  const [filterOptions, setFilterOptions] = useState<any>({});
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filterOptions, setFilterOptions] = useState<Record<string, { label: string; value: string }[]>>({});
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -84,7 +93,7 @@ function PrintingProcessPageContent() {
       setLoading(true);
       setData([]);
       
-      let result: any;
+      let result: { success: boolean; data?: any[]; totalCount?: number; totalPages?: number; error?: string } | undefined;
       if (activeTab === 'issue') {
         result = await getOutForPrintingLots(debouncedSearch, filters, currentPage);
       } else if (activeTab === 'receive') {
@@ -92,7 +101,7 @@ function PrintingProcessPageContent() {
       }
 
       if (isCurrent && result?.success) {
-        setData(result.data || []);
+        setData(result.data as PrintingRecord[] || []);
         setPagination({
           totalCount: result.totalCount || 0,
           totalPages: result.totalPages || 1
@@ -120,7 +129,7 @@ function PrintingProcessPageContent() {
     setFetchedTab(null); // Force re-fetch
   };
 
-  const handleEdit = (record: any, e: React.MouseEvent) => {
+  const handleEdit = (record: PrintingRecord, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingRecord(record);
     setShowForm(true);
@@ -130,7 +139,7 @@ function PrintingProcessPageContent() {
     e.stopPropagation();
     if (!confirm(`Are you sure you want to delete this ${activeTab === 'issue' ? 'issue' : 'receipt'}?`)) return;
     
-    let result;
+    let result: { success: boolean; error?: string } | undefined;
     if (activeTab === 'issue') result = await deletePrintingIssue(id);
     else if (activeTab === 'receive') result = await deletePrintingReceive(id);
 

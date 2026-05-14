@@ -22,8 +22,15 @@ import { ALL_PERMISSIONS, PERMISSION_LABELS } from '@/lib/permissions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+interface Role {
+  id: string;
+  name: string;
+  permissions: string[];
+  _count?: { users: number };
+}
+
 export default function RolesPage() {
-  const [roles, setRoles] = useState<any[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
@@ -77,7 +84,7 @@ export default function RolesPage() {
     }
   };
 
-  const handleEdit = (role: any) => {
+  const handleEdit = (role: Role) => {
     setIsEditing(role.id);
     setFormData({
       name: role.name,

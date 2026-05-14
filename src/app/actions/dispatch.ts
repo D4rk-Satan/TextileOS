@@ -1,10 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { withCache, invalidateCache } from '@/lib/redis';
+
+export interface DispatchChallanData {
+  challanNo: string;
+  date: string | Date;
+  customerId: string;
+  remark?: string;
+  batches: { id: string }[];
+}
 
 async function getOrgId() {
   const cookieStore = await cookies();
@@ -21,7 +28,7 @@ export async function getNextDeliveryChallanNumber() {
     });
     return { success: true, data: `DC-${count + 1201}` }; // Delivery Challan series
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to fetch next DC number' };
   }
 }
 
@@ -60,7 +67,7 @@ export async function getReadyForDispatchLots(customerId: string, page: number =
             lotNo: lotNo,
             quality: batch.greyInward.quality,
             processType: batch.greyInward.processType,
-            batches: []
+            batches: [] as any[]
           };
         }
         groupedLots[lotNo].batches.push({
@@ -84,11 +91,11 @@ export async function getReadyForDispatchLots(customerId: string, page: number =
       currentPage: page
     };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to fetch ready lots' };
   }
 }
 
-export async function createDeliveryChallan(data: any) {
+export async function createDeliveryChallan(data: DispatchChallanData) {
   try {
     const orgId = await getOrgId();
     

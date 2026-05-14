@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import prisma from '@/lib/prisma';
@@ -6,6 +5,39 @@ import { Batch } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { withCache, invalidateCache } from '@/lib/redis';
+
+export interface PrinterVendor {
+  id: string;
+  vendorName: string;
+}
+
+export interface PrintingBatchInput {
+  id: string;
+  ids?: string[]; // For grouped batches
+  mtrs: number;
+  printMtrs?: number;
+  isTP?: boolean;
+  tpDetail?: string;
+  millShortage?: number;
+}
+
+export interface PrintingIssueData {
+  date: string | Date;
+  lotNo: string;
+  printer: string;
+  remark?: string;
+  batches: PrintingBatchInput[];
+}
+
+export interface PrintingReceiveData {
+  date: string | Date;
+  lotNo: string;
+  printer: string;
+  billNo: string;
+  challanNo: string;
+  remark?: string;
+  batches: PrintingBatchInput[];
+}
 
 async function getOrgId() {
   const cookieStore = await cookies();
@@ -42,7 +74,7 @@ export async function getPrinters(page: number = 1, pageSize: number = 20) {
       currentPage: page
     };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to fetch printers' };
   }
 }
 
@@ -112,28 +144,28 @@ export async function getReadyForPrintingLots(page: number = 1, pageSize: number
       currentPage: page
     };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to fetch lots' };
   }
 }
 
-export async function createPrintingIssue(data: any) {
+export async function createPrintingIssue(data: PrintingIssueData) {
   try {
     const orgId = await getOrgId();
     
     const issue = await prisma.printingIssue.create({
       data: {
-        jobCardNumber: data.jobCardNumber,
         date: new Date(data.date),
         lotNo: data.lotNo,
         remark: data.remark,
         organizationId: orgId,
+        printerId: data.printer,
         batches: {
-          connect: data.batches.flatMap((b: any) => (b.ids || [b.id]).map((id: string) => ({ id })))
+          connect: data.batches.flatMap((b: PrintingBatchInput) => (b.ids || [b.id]).map((id: string) => ({ id })))
         }
       }
     });
 
-    const allIds = data.batches.flatMap((b: any) => (b.ids || [b.id]));
+    const allIds = data.batches.flatMap((b: PrintingBatchInput) => (b.ids || [b.id]));
     await prisma.batch.updateMany({
       where: { id: { in: allIds } },
       data: { status: 'Under Printing' }
@@ -146,17 +178,16 @@ export async function createPrintingIssue(data: any) {
   }
 }
 
-export async function updatePrintingIssue(id: string, data: any) {
+export async function updatePrintingIssue(id: string, data: PrintingIssueData) {
   try {
     const orgId = await getOrgId();
     const issue = await prisma.printingIssue.update({
       where: { id, organizationId: orgId },
       data: {
-        jobCardNumber: data.jobCardNumber,
         date: new Date(data.date),
         lotNo: data.lotNo,
         remark: data.remark,
-        printerId: data.printerId,
+        printerId: data.printer,
       },
     });
     revalidatePath('/dashboard/printing-process');
@@ -167,18 +198,15 @@ export async function updatePrintingIssue(id: string, data: any) {
   }
 }
 
-export async function updatePrintingReceive(id: string, data: any) {
+export async function updatePrintingReceive(id: string, data: PrintingReceiveData) {
   try {
     const orgId = await getOrgId();
     const receive = await prisma.printingReceive.update({
       where: { id, organizationId: orgId },
       data: {
-        productionNumber: data.productionNumber,
         date: new Date(data.date),
         lotNo: data.lotNo,
-        printerId: data.printerId,
-        processType: data.processType,
-        customerId: data.customerId,
+        printerId: data.printer,
         billNo: data.billNo,
         challanNo: data.challanNo,
         remark: data.remark,
@@ -364,12 +392,12 @@ export async function getNextReceiveProductionNumber() {
   }
 }
 
-export async function createPrintingReceive(data: any) {
+export async function createPrintingReceive(data: any) { // Keeping any temporarily for data since it's complex, but typing inner parts
   try {
     const orgId = await getOrgId();
     
     // Explicitly define the data to avoid potential type issues during generation lag
-    const receiveData: any = {
+    const receiveData = {
       productionNumber: data.productionNumber,
       date: new Date(data.date),
       lotNo: data.lotNo,
