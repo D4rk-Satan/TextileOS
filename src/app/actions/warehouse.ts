@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { withCache, invalidateCache } from '@/lib/redis';
 
 async function getOrgId() {
   const cookieStore = await cookies();
@@ -61,6 +62,7 @@ export async function createGreyInward(data: any) {
       },
     });
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`inwards:${orgId}`, `batches:${orgId}`]);
     return { 
       success: true, 
       data: {
@@ -99,6 +101,7 @@ export async function updateGreyInward(id: string, data: any) {
       },
     });
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`inwards:${orgId}`, `batches:${orgId}`]);
     return { success: true, data: greyInward };
   } catch (error: any) {
     console.error('Error updating grey inward:', error);
@@ -109,63 +112,21 @@ export async function updateGreyInward(id: string, data: any) {
 export async function getGreyInwards(search?: string, filters: any = {}) {
   try {
     const orgId = await getOrgId();
-    const greyInwards = await prisma.greyInward.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? {
-          OR: [
-            { lotNo: { contains: search, mode: 'insensitive' } },
-            { challanNo: { contains: search, mode: 'insensitive' } },
-            { customer: { customerName: { contains: search, mode: 'insensitive' } } },
-            { quality: { contains: search, mode: 'insensitive' } }
-          ]
-        } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
-        ...(filters.entityId ? { customerId: filters.entityId } : {}),
-        ...(filters.quality ? { quality: filters.quality } : {}),
-        ...(filters.startDate && filters.endDate ? {
-          date: {
-            gte: new Date(filters.startDate),
-            lte: new Date(filters.endDate),
-          }
-        } : {}),
-      },
-      include: {
-        customer: true,
-        batches: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    const serializedData = greyInwards.map(inward => ({
-      ...inward,
-      totalMtr: Number(inward.totalMtr),
-      batches: inward.batches.map(batch => ({
-        ...batch,
-        mtrs: batch.mtrs ? Number(batch.mtrs) : 0,
-        weight: batch.weight ? Number(batch.weight) : 0,
-      }))
-    }));
-    return { success: true, data: serializedData };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
+    const cacheKey = `inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}`;
 
-/** Fetches batches filtered by status and search */
-export async function getBatches(status?: string, search?: string, filters: any = {}) {
-  try {
-    const orgId = await getOrgId();
-    const batches = await prisma.batch.findMany({
-      where: { 
-        greyInward: {
+    return await withCache(cacheKey, async () => {
+      const greyInwards = await prisma.greyInward.findMany({
+        where: { 
           organizationId: orgId,
           ...(search ? {
             OR: [
               { lotNo: { contains: search, mode: 'insensitive' } },
+              { challanNo: { contains: search, mode: 'insensitive' } },
               { customer: { customerName: { contains: search, mode: 'insensitive' } } },
               { quality: { contains: search, mode: 'insensitive' } }
             ]
           } : {}),
+          ...(filters.status ? { status: filters.status } : {}),
           ...(filters.entityId ? { customerId: filters.entityId } : {}),
           ...(filters.quality ? { quality: filters.quality } : {}),
           ...(filters.startDate && filters.endDate ? {
@@ -175,43 +136,90 @@ export async function getBatches(status?: string, search?: string, filters: any 
             }
           } : {}),
         },
-        ...(status ? { status } : (filters.status ? { status: filters.status } : {})),
-        ...(search ? {
-          OR: [
-            { batchNo: { contains: search, mode: 'insensitive' } }
-          ]
-        } : {})
-      },
-      include: {
-        greyInward: {
-          include: {
-            customer: true
+        include: {
+          customer: true,
+          batches: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return greyInwards.map(inward => ({
+        ...inward,
+        totalMtr: Number(inward.totalMtr),
+        batches: inward.batches.map(batch => ({
+          ...batch,
+          mtrs: batch.mtrs ? Number(batch.mtrs) : 0,
+          weight: batch.weight ? Number(batch.weight) : 0,
+        }))
+      }));
+    });
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/** Fetches batches filtered by status and search */
+export async function getBatches(status?: string, search?: string, filters: any = {}) {
+  try {
+    const orgId = await getOrgId();
+    const cacheKey = `batches:${orgId}:${status || ''}:${search || ''}:${JSON.stringify(filters)}`;
+
+    return await withCache(cacheKey, async () => {
+      const batches = await prisma.batch.findMany({
+        where: { 
+          greyInward: {
+            organizationId: orgId,
+            ...(search ? {
+              OR: [
+                { lotNo: { contains: search, mode: 'insensitive' } },
+                { customer: { customerName: { contains: search, mode: 'insensitive' } } },
+                { quality: { contains: search, mode: 'insensitive' } }
+              ]
+            } : {}),
+            ...(filters.entityId ? { customerId: filters.entityId } : {}),
+            ...(filters.quality ? { quality: filters.quality } : {}),
+            ...(filters.startDate && filters.endDate ? {
+              date: {
+                gte: new Date(filters.startDate),
+                lte: new Date(filters.endDate),
+              }
+            } : {}),
+          },
+          ...(status ? { status } : (filters.status ? { status: filters.status } : {})),
+          ...(search ? {
+            OR: [
+              { batchNo: { contains: search, mode: 'insensitive' } }
+            ]
+          } : {})
+        },
+        include: {
+          greyInward: {
+            include: {
+              customer: true
+            }
+          },
+          printingIssue: {
+            include: {
+              printer: true
+            }
           }
         },
-        printingIssue: {
-          include: {
-            printer: true
-          }
+        orderBy: { id: 'desc' },
+      });
+
+      return batches.map(batch => ({
+        ...batch,
+        mtrs: batch.mtrs ? Number(batch.mtrs) : 0,
+        weight: batch.weight ? Number(batch.weight) : 0,
+        rfdMtrs: batch.rfdMtrs ? Number(batch.rfdMtrs) : 0,
+        millShortage: batch.millShortage ? Number(batch.millShortage) : 0,
+        printMtrs: batch.printMtrs ? Number(batch.printMtrs) : 0,
+        printShortage: batch.printShortage ? Number(batch.printShortage) : 0,
+        greyInward: {
+          ...batch.greyInward,
+          totalMtr: Number(batch.greyInward.totalMtr)
         }
-      },
-      orderBy: { id: 'desc' },
+      }));
     });
-
-    const serializedBatches = batches.map(batch => ({
-      ...batch,
-      mtrs: batch.mtrs ? Number(batch.mtrs) : 0,
-      weight: batch.weight ? Number(batch.weight) : 0,
-      rfdMtrs: batch.rfdMtrs ? Number(batch.rfdMtrs) : 0,
-      millShortage: batch.millShortage ? Number(batch.millShortage) : 0,
-      printMtrs: batch.printMtrs ? Number(batch.printMtrs) : 0,
-      printShortage: batch.printShortage ? Number(batch.printShortage) : 0,
-      greyInward: {
-        ...batch.greyInward,
-        totalMtr: Number(batch.greyInward.totalMtr)
-      }
-    }));
-
-    return { success: true, data: serializedBatches };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -245,6 +253,7 @@ export async function deleteGreyInward(id: string) {
     });
 
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`inwards:${orgId}`, `batches:${orgId}`]);
     return { success: true };
   } catch (error: any) {
     console.error('Error deleting grey inward:', error);
@@ -330,6 +339,7 @@ export async function bulkCreateGreyInwards(data: any[]) {
     );
 
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`inwards:${orgId}`, `batches:${orgId}`]);
     return { success: true, count: results.length };
   } catch (error: any) {
     console.error('Bulk Warehouse Error:', error);

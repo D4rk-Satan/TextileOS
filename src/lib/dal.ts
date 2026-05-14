@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import prisma from './prisma';
 import { Permission, ALL_PERMISSIONS } from './permissions';
+import { withCache } from './redis';
 
 export async function verifySession() {
   const cookieStore = await cookies();
@@ -60,16 +61,20 @@ export async function getUserPermissions(): Promise<string[]> {
   const roleId = (session as any).roleId;
   if (!roleId) return [];
 
-  try {
-    const role = await (prisma as any).appRole.findUnique({
-      where: { id: roleId },
-      select: { permissions: true }
-    });
-    return role?.permissions || [];
-  } catch (error) {
-    console.error('DAL Permissions Error:', error);
-    return [];
-  }
+  const cacheKey = `permissions:${roleId}`;
+  
+  return await withCache(cacheKey, async () => {
+    try {
+      const role = await (prisma as any).appRole.findUnique({
+        where: { id: roleId },
+        select: { permissions: true }
+      });
+      return role?.permissions || [];
+    } catch (error) {
+      console.error('DAL Permissions Error:', error);
+      return [];
+    }
+  }, 3600); // Cache permissions for 1 hour
 }
 
 export async function checkPermission(permission: string): Promise<boolean> {
