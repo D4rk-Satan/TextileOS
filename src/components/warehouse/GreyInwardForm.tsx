@@ -26,8 +26,36 @@ import { motion } from 'framer-motion';
 import { createGreyInward, updateGreyInward, getNextLotNumber } from '@/app/actions/warehouse';
 import { getCustomers, getItems } from '@/app/actions/master';
 
-export function GreyInwardForm({ onSuccess, initialData }: { onSuccess?: () => void; initialData?: any }) {
-  const methods = useForm({
+interface GreyInwardFormProps {
+  onSuccess?: () => void;
+  initialData?: any; // Keeping any for now but could be GreyInwardData
+}
+
+interface FormBatch {
+  batchNo: string;
+  pcs: string | number;
+  mtrs: string | number;
+  weight: string | number;
+}
+
+interface FormValues {
+  lotNo: string;
+  quality: string;
+  lotNoDisplay: string;
+  date: string;
+  processType: string;
+  status: string;
+  customer: string;
+  batchDetail: string;
+  image: string;
+  challanNo: string;
+  totalBatch: number;
+  totalMtr: string;
+  batches: FormBatch[];
+}
+
+export function GreyInwardForm({ onSuccess, initialData }: GreyInwardFormProps) {
+  const methods = useForm<FormValues>({
     defaultValues: {
       lotNo: initialData?.lotNo || '',
       quality: initialData?.quality || '',
@@ -53,8 +81,8 @@ export function GreyInwardForm({ onSuccess, initialData }: { onSuccess?: () => v
 
   const totals = useMemo(() => {
     const totalBatch = batches?.length || 0;
-    const totalMtr = (batches || []).reduce((acc: number, curr: any) => {
-      const val = parseFloat(curr.mtrs);
+    const totalMtr = (batches || []).reduce((acc: number, curr: FormBatch) => {
+      const val = typeof curr.mtrs === 'string' ? parseFloat(curr.mtrs) : curr.mtrs;
       return acc + (isNaN(val) ? 0 : val);
     }, 0);
     return { totalBatch, totalMtr };
@@ -78,7 +106,7 @@ export function GreyInwardForm({ onSuccess, initialData }: { onSuccess?: () => v
     if (values.length > 0) {
       const currentBatches = methods.getValues('batches');
       
-      const currentMtrs = currentBatches?.map((b: any) => b.mtrs).join(',');
+      const currentMtrs = currentBatches?.map((b: FormBatch) => b.mtrs).join(',');
       const newMtrs = values.join(',');
 
       if (currentMtrs !== newMtrs) {
@@ -94,8 +122,8 @@ export function GreyInwardForm({ onSuccess, initialData }: { onSuccess?: () => v
   }, [batchDetail, lotNo, methods, initialData]);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [customers, setCustomers] = React.useState<any[]>([]);
-  const [qualities, setQualities] = React.useState<any[]>([]);
+  const [customers, setCustomers] = React.useState<{ label: string; value: string }[]>([]);
+  const [qualities, setQualities] = React.useState<{ label: string; value: string }[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -128,12 +156,23 @@ export function GreyInwardForm({ onSuccess, initialData }: { onSuccess?: () => v
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
+      // Transform data to match GreyInwardData interface
+      const submissionData = {
+        ...data,
+        batches: data.batches.map(batch => ({
+          ...batch,
+          pcs: typeof batch.pcs === 'string' ? parseInt(batch.pcs) || 0 : batch.pcs,
+          mtrs: typeof batch.mtrs === 'string' ? parseFloat(batch.mtrs) || 0 : batch.mtrs,
+          weight: typeof batch.weight === 'string' ? parseFloat(batch.weight) || 0 : batch.weight,
+        }))
+      };
+
       const result = initialData
-        ? await updateGreyInward(initialData.id, data)
-        : await createGreyInward(data);
+        ? await updateGreyInward(initialData.id, submissionData)
+        : await createGreyInward(submissionData);
         
       if (result.success) {
         alert(`Grey Inward entry ${initialData ? 'updated' : 'saved'} successfully!`);

@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import prisma from '@/lib/prisma';
 import { Batch } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { withCache, invalidateCache } from '@/lib/redis';
 
 interface BatchInput {
   id: string;
@@ -46,12 +48,15 @@ async function getOrgId() {
 export async function getDyeingHouses() {
   try {
     const orgId = await getOrgId();
-    const vendors = await prisma.vendor.findMany({
-      where: { 
-        organizationId: orgId,
-        status: 'Active'
-      },
-      orderBy: { vendorName: 'asc' },
+    const cacheKey = `dyeing:houses:${orgId}`;
+    const vendors = await withCache(cacheKey, async () => {
+      return await prisma.vendor.findMany({
+        where: { 
+          organizationId: orgId,
+          status: 'Active'
+        },
+        orderBy: { vendorName: 'asc' },
+      });
     });
     return { success: true, data: vendors };
   } catch (error: any) {
@@ -71,35 +76,52 @@ export async function getNextDCNumber() {
   }
 }
 
-export async function getGreyInwardsForOutward() {
+export async function getGreyInwardsForOutward(search?: string, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    const inwards = await prisma.greyInward.findMany({
-      where: { 
-        organizationId: orgId,
-        batches: {
-          some: {
-            status: 'In-Warehouse'
+    const cacheKey = `dyeing:outward-batches:${orgId}:${search || ''}:p${page}`;
+    const where = { 
+      organizationId: orgId,
+      batches: {
+        some: {
+          status: 'In-Warehouse'
+        }
+      },
+      ...(search ? { lotNo: { contains: search, mode: 'insensitive' as const } } : {})
+    };
+
+    const data = await withCache(cacheKey, async () => {
+      const inwards = await prisma.greyInward.findMany({
+        where,
+        include: {
+          batches: {
+            where: { status: 'In-Warehouse' }
           }
-        }
-      },
-      include: {
-        batches: {
-          where: { status: 'In-Warehouse' }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+      return inwards.map(inward => ({
+        ...inward,
+        totalMtr: Number(inward.totalMtr),
+        batches: (inward.batches as any[]).map((batch: any) => ({
+          ...batch,
+          mtrs: Number(batch.mtrs),
+          weight: Number(batch.weight)
+        }))
+      }));
     });
-    const serializedData = inwards.map(inward => ({
-      ...inward,
-      totalMtr: Number(inward.totalMtr),
-      batches: (inward.batches as any[]).map((batch: any) => ({
-        ...batch,
-        mtrs: Number(batch.mtrs),
-        weight: Number(batch.weight)
-      }))
-    }));
-    return { success: true, data: serializedData };
+
+    const totalCount = await prisma.greyInward.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -158,6 +180,7 @@ export async function createGreyOutward(data: DyeingActionData) {
 
     revalidatePath('/dashboard/dyeing-house');
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`dyeing:outward-batches:${orgId}`, `dyeing:outwards:${orgId}`, `batches:${orgId}`]);
     return { success: true, data: greyOutward };
   } catch (error: any) {
     console.error('Error creating grey outward:', error);
@@ -178,7 +201,8 @@ export async function updateGreyOutward(id: string, data: any) {
         challanNo: data.dcNo,
       },
     });
-    revalidatePath('/dashboard/dyeing-house');
+    revalidatePath('/dashboard/dyeing');
+    await invalidateCache([`dyeing:outward-batches:${orgId}`, `dyeing:outwards:${orgId}`, `batches:${orgId}`]);
     return { success: true, data: greyOutward };
   } catch (error: any) {
     console.error('Error updating grey outward:', error);
@@ -201,6 +225,7 @@ export async function updateRFDInward(id: string, data: any) {
       },
     });
     revalidatePath('/dashboard/dyeing-house');
+    await invalidateCache([`dyeing:rfd-inwards:${orgId}`, `batches:${orgId}`]);
     return { success: true, data: rfdInward };
   } catch (error: any) {
     console.error('Error updating RFD inward:', error);
@@ -208,61 +233,77 @@ export async function updateRFDInward(id: string, data: any) {
   }
 }
 
-export async function getGreyOutwards(search?: string, filters: any = {}) {
+export async function getGreyOutwards(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    const outwards = await prisma.greyOutward.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? {
-          OR: [
-            { lotNo: { contains: search, mode: 'insensitive' } },
-            { challanNo: { contains: search, mode: 'insensitive' } },
-            { dyeingHouse: { vendorName: { contains: search, mode: 'insensitive' } } }
-          ]
-        } : {}),
-        ...(filters.entityId ? { dyeingHouseId: filters.entityId } : {}),
-        ...(filters.startDate && filters.endDate ? {
-          date: {
-            gte: new Date(filters.startDate),
-            lte: new Date(filters.endDate),
-          }
-        } : {}),
-      },
-      include: {
-        dyeingHouse: true,
-        batches: true
-      },
-      orderBy: { createdAt: 'desc' },
+    const cacheKey = `dyeing:outwards:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
+    const where = { 
+      organizationId: orgId,
+      ...(search ? {
+        OR: [
+          { lotNo: { contains: search, mode: 'insensitive' as const } },
+          { challanNo: { contains: search, mode: 'insensitive' as const } },
+          { dyeingHouse: { vendorName: { contains: search, mode: 'insensitive' as const } } }
+        ]
+      } : {}),
+      ...(filters.entityId ? { dyeingHouseId: filters.entityId } : {}),
+      ...(filters.startDate && filters.endDate ? {
+        date: {
+          gte: new Date(filters.startDate),
+          lte: new Date(filters.endDate),
+        }
+      } : {}),
+    };
+    
+    const data = await withCache(cacheKey, async () => {
+      const outwards = await prisma.greyOutward.findMany({
+        where,
+        include: {
+          dyeingHouse: true,
+          batches: true
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+
+      // Fetch all batches for these lots to handle status tracking
+      const lotNos = Array.from(new Set(outwards.map(o => o.lotNo)));
+      const inwards = await prisma.greyInward.findMany({
+        where: {
+          lotNo: { in: lotNos },
+          organizationId: orgId
+        },
+        include: { batches: true }
+      });
+
+      return outwards.map(outward => {
+        const lotInward = inwards.find(i => i.lotNo === outward.lotNo);
+        return {
+          ...outward,
+          allLotBatches: (lotInward?.batches || []).map(batch => ({
+            ...batch,
+            mtrs: Number(batch.mtrs),
+            weight: Number(batch.weight)
+          })),
+          batches: outward.batches.map(batch => ({
+            ...batch,
+            mtrs: Number(batch.mtrs),
+            weight: Number(batch.weight)
+          }))
+        };
+      });
     });
 
-    // Fetch all batches for these lots to show remaining ones
-    const lotNos = Array.from(new Set(outwards.map(o => o.lotNo)));
-    const inwards = await prisma.greyInward.findMany({
-      where: {
-        lotNo: { in: lotNos },
-        organizationId: orgId
-      },
-      include: { batches: true }
-    });
+    const totalCount = await prisma.greyOutward.count({ where });
 
-    const serializedData = outwards.map(outward => {
-      const lotInward = inwards.find(i => i.lotNo === outward.lotNo);
-      return {
-        ...outward,
-        allLotBatches: (lotInward?.batches || []).map(batch => ({
-          ...batch,
-          mtrs: Number(batch.mtrs),
-          weight: Number(batch.weight)
-        })),
-        batches: outward.batches.map(batch => ({
-          ...batch,
-          mtrs: Number(batch.mtrs),
-          weight: Number(batch.weight)
-        }))
-      };
-    });
-    return { success: true, data: serializedData };
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -370,6 +411,7 @@ export async function createRFDInward(data: RFDInwardActionData) {
   
       revalidatePath('/dashboard/dyeing-house');
       revalidatePath('/dashboard/warehouse');
+      await invalidateCache([`dyeing:rfd-inwards:${orgId}`, `dyeing:outwards:${orgId}`, `batches:${orgId}`]);
       return { success: true, data: rfdInward };
     } catch (error: any) {
       console.error('Error creating RFD inward:', error);
@@ -380,99 +422,102 @@ export async function createRFDInward(data: RFDInwardActionData) {
 export async function getGreyOutwardsByHouse(dyeingHouseId: string) {
   try {
     const orgId = await getOrgId();
-    const outwards = await prisma.greyOutward.findMany({
-      where: { 
-        organizationId: orgId,
-        dyeingHouseId: dyeingHouseId,
-        batches: {
-          some: {
-            status: 'Out For RFD'
+    const cacheKey = `dyeing:outwards-by-house:${orgId}:${dyeingHouseId}`;
+    const data = await withCache(cacheKey, async () => {
+      const outwards = await prisma.greyOutward.findMany({
+        where: { 
+          organizationId: orgId,
+          dyeingHouseId: dyeingHouseId,
+          batches: {
+            some: {
+              status: 'Out For RFD'
+            }
           }
-        }
-      },
-      include: {
-        batches: {
-          where: { status: 'Out For RFD' }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    
-    const serializedData = outwards.map(outward => ({
-      ...outward,
-      batches: outward.batches.map(batch => ({
-        ...batch,
-        mtrs: Number(batch.mtrs),
-        weight: Number(batch.weight)
-      }))
-    }));
-    
-    return { success: true, data: serializedData };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-export async function getRFDInwards(search?: string, filters: any = {}) {
-    try {
-      const orgId = await getOrgId();
-    const outwards = await prisma.rFDInward.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? {
-          OR: [
-            { lotNo: { contains: search, mode: 'insensitive' } },
-            { billNo: { contains: search, mode: 'insensitive' } },
-            { challanNo: { contains: search, mode: 'insensitive' } },
-            { dyeingHouse: { vendorName: { contains: search, mode: 'insensitive' } } }
-          ]
-        } : {}),
-        ...(filters.entityId ? { dyeingHouseId: filters.entityId } : {}),
-        ...(filters.startDate && filters.endDate ? {
-          date: {
-            gte: new Date(filters.startDate),
-            lte: new Date(filters.endDate),
+        },
+        include: {
+          batches: {
+            where: { status: 'Out For RFD' }
           }
-        } : {}),
-      },
-      include: {
-        dyeingHouse: true,
-        batches: true
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // Fetch all batches for these lots
-    const lotNos = Array.from(new Set(outwards.map(o => o.lotNo)));
-    const inwards = await prisma.greyInward.findMany({
-      where: {
-        lotNo: { in: lotNos },
-        organizationId: orgId
-      },
-      include: { batches: true }
-    });
-
-    const serializedData = outwards.map(outward => {
-      const lotInward = inwards.find(i => i.lotNo === outward.lotNo);
-      return {
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      
+      return outwards.map(outward => ({
         ...outward,
-        allLotBatches: (lotInward?.batches || []).map(batch => ({
-          ...batch,
-          mtrs: Number(batch.mtrs),
-          weight: Number(batch.weight)
-        })),
         batches: outward.batches.map(batch => ({
           ...batch,
           mtrs: Number(batch.mtrs),
           weight: Number(batch.weight)
         }))
-      };
+      }));
     });
-    return { success: true, data: serializedData };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+    
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
+}
+
+export async function getRFDInwards(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
+  try {
+    const orgId = await getOrgId();
+    const cacheKey = `dyeing:rfd-inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
+    const where = { 
+      organizationId: orgId,
+      ...(search ? {
+        OR: [
+          { lotNo: { contains: search, mode: 'insensitive' as const } },
+          { billNo: { contains: search, mode: 'insensitive' as const } },
+          { challanNo: { contains: search, mode: 'insensitive' as const } },
+          { dyeingHouse: { vendorName: { contains: search, mode: 'insensitive' as const } } }
+        ]
+      } : {}),
+      ...(filters.entityId ? { dyeingHouseId: filters.entityId } : {}),
+      ...(filters.startDate && filters.endDate ? {
+        date: {
+          gte: new Date(filters.startDate),
+          lte: new Date(filters.endDate),
+        }
+      } : {}),
+    };
+
+    const data = await withCache(cacheKey, async () => {
+      const outwards = await prisma.rFDInward.findMany({
+        where,
+        include: {
+          dyeingHouse: true,
+          batches: true
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+
+      return outwards.map(inward => ({
+        ...inward,
+        batches: inward.batches.map(batch => ({
+          ...batch,
+          mtrs: Number(batch.mtrs),
+          weight: Number(batch.weight),
+          rfdMtrs: Number(batch.rfdMtrs),
+          millShortage: Number(batch.millShortage)
+        }))
+      }));
+    });
+
+    const totalCount = await prisma.rFDInward.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
 
 export async function getReadyForPrintingBatches() {
   try {
@@ -516,7 +561,7 @@ export async function deleteGreyOutward(id: string) {
 
     if (!outward) return { success: false, error: 'Record not found' };
 
-    // Dependency check: Are any batches received back from RFD?
+    // Dependency check
     const isLocked = outward.batches.some(b => b.rfdInwardId);
     if (isLocked) {
       return { success: false, error: 'Cannot delete: Some batches from this outward have already been inwarded from RFD.' };
@@ -549,6 +594,7 @@ export async function deleteGreyOutward(id: string) {
 
     revalidatePath('/dashboard/dyeing-house');
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`dyeing:outwards:${orgId}`, `dyeing:outwards-by-house:${orgId}`, `batches:${orgId}`]);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -565,13 +611,13 @@ export async function deleteRFDInward(id: string) {
 
     if (!outward) return { success: false, error: 'Record not found' };
 
-    // Dependency check: Are any batches issued for printing?
+    // Dependency check
     const isLocked = outward.batches.some(b => b.printingIssueId);
     if (isLocked) {
       return { success: false, error: 'Cannot delete: Some batches from this inward have already been issued for printing.' };
     }
 
-    // Revert batch status and clear RFD fields
+    // Revert batch status
     await prisma.batch.updateMany({
       where: { id: { in: outward.batches.map(b => b.id) } },
       data: { 
@@ -597,7 +643,6 @@ export async function deleteRFDInward(id: string) {
 
     if (inward) {
       const allRFD = inward.batches.every(b => b.status === 'Ready for Printing');
-      const someRFD = inward.batches.some(b => b.status === 'Ready for Printing');
       await prisma.greyInward.update({
         where: { id: inward.id },
         data: { status: allRFD ? 'Ready for Printing' : 'Out For RFD' }
@@ -606,6 +651,7 @@ export async function deleteRFDInward(id: string) {
 
     revalidatePath('/dashboard/dyeing-house');
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`dyeing:rfd-inwards:${orgId}`, `batches:${orgId}`]);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -671,6 +717,7 @@ export async function bulkCreateGreyOutwards(data: any[]) {
 
     revalidatePath('/dashboard/dyeing-house');
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`dyeing:outwards:${orgId}`, `batches:${orgId}`]);
     return { success: true, count: results.length };
   } catch (error: any) {
     console.error('Bulk Dyeing Error:', error);

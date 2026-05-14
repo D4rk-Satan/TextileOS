@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React from 'react';
@@ -26,14 +27,12 @@ function CustomSelect({
   value, 
   onChange, 
   options, 
-  placeholder, 
-  icon: Icon 
+  placeholder
 }: { 
   value: string; 
   onChange: (val: string) => void; 
   options: FilterOption[]; 
   placeholder: string;
-  icon: any;
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -81,13 +80,13 @@ function CustomSelect({
             >
               {placeholder}
             </button>
-            {options.map((opt) => (
+            {options.map(({ label, value: optValue }) => (
               <button
-                key={opt.value}
-                onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                className={`w-full px-4 py-2 text-left text-xs font-bold hover:bg-primary/10 transition-colors ${value === opt.value ? 'text-primary bg-primary/5' : 'text-foreground'}`}
+                key={optValue}
+                onClick={() => { onChange(optValue); setIsOpen(false); }}
+                className={`w-full px-4 py-2 text-left text-xs font-bold hover:bg-primary/10 transition-colors ${value === optValue ? 'text-primary bg-primary/5' : 'text-foreground'}`}
               >
-                {opt.label}
+                {label}
               </button>
             ))}
           </motion.div>
@@ -176,7 +175,6 @@ export function AdvancedFilters({
                     onChange={(val) => updateFilter('entityId', val)}
                     options={options.customers || options.vendors || []}
                     placeholder={`All ${options.customers ? 'Customers' : 'Vendors'}`}
-                    icon={User}
                   />
                 </div>
               )}
@@ -193,7 +191,6 @@ export function AdvancedFilters({
                     onChange={(val) => updateFilter('status', val)}
                     options={options.statuses}
                     placeholder="All Statuses"
-                    icon={Tag}
                   />
                 </div>
               )}
@@ -210,7 +207,6 @@ export function AdvancedFilters({
                     onChange={(val) => updateFilter('quality', val)}
                     options={options.qualities}
                     placeholder="All Qualities"
-                    icon={Tag}
                   />
                 </div>
               )}

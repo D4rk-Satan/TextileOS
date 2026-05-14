@@ -2,7 +2,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import prisma from './prisma';
-import { Permission, ALL_PERMISSIONS } from './permissions';
+import { ALL_PERMISSIONS } from './permissions';
 import { withCache } from './redis';
 
 export async function verifySession() {
@@ -54,11 +54,11 @@ export async function getUserPermissions(): Promise<string[]> {
   }
 
   // Admin (Legacy) also gets everything by default if no roleId is set
-  if (session.role === 'Admin' && !(session as any).roleId) {
+  if (session.role === 'Admin' && !session.roleId) {
     return [...ALL_PERMISSIONS];
   }
 
-  const roleId = (session as any).roleId;
+  const roleId = session.roleId;
   if (!roleId) return [];
 
   const cacheKey = `permissions:${roleId}`;
@@ -82,7 +82,7 @@ export async function checkPermission(permission: string): Promise<boolean> {
   const session = await verifySession();
   
   // SuperAdmin/Admin bypass
-  if (session?.role === 'SuperAdmin' || (session?.role === 'Admin' && !(session as any).roleId)) {
+  if (session?.role === 'SuperAdmin' || (session?.role === 'Admin' && !session?.roleId)) {
     return true;
   }
 

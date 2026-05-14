@@ -34,7 +34,7 @@ function MasterPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('customers');
   const [showForm, setShowForm] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
@@ -46,15 +46,15 @@ function MasterPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<any>({});
+  const [filters, setFilters] = useState<{ status?: string }>({});
 
-  const fetchData = async (tab: TabType, search?: string, fltrs?: any, page: number = 1) => {
+  const fetchData = async (tab: TabType, search?: string, fltrs?: { status?: string }, page: number = 1) => {
     setLoading(true);
     const role = await getUserRole();
     setUserRole(role);
 
     setData([]);
-    let result;
+    let result: { success: boolean; data?: any[]; totalCount?: number; totalPages?: number; error?: string } | undefined;
     if (tab === 'customers') result = await getCustomers(search, fltrs, page);
     else if (tab === 'vendors') result = await getVendors(search, fltrs, page);
     else if (tab === 'items') result = await getItems(search, fltrs, page);

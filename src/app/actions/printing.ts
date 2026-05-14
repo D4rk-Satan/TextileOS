@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { Batch } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { withCache, invalidateCache } from '@/lib/redis';
 
 async function getOrgId() {
   const cookieStore = await cookies();
@@ -13,73 +14,103 @@ async function getOrgId() {
   return orgId;
 }
 
-export async function getPrinters() {
+export async function getPrinters(page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    const vendors = await prisma.vendor.findMany({
-      where: { 
-        organizationId: orgId,
-        status: 'Active'
-      },
-      orderBy: { vendorName: 'asc' },
+    const cacheKey = `printing:printers:${orgId}:p${page}`;
+    const where = { 
+      organizationId: orgId,
+      status: 'Active' as const
+    };
+
+    const data = await withCache(cacheKey, async () => {
+      return await prisma.vendor.findMany({
+        where,
+        orderBy: { vendorName: 'asc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
     });
-    return { success: true, data: vendors };
+
+    const totalCount = await prisma.vendor.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-export async function getReadyForPrintingLots() {
+export async function getReadyForPrintingLots(page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    // A lot is ready for printing if it has batches with status 'Ready for Printing'
-    const inwards = await prisma.greyInward.findMany({
-      where: {
-        organizationId: orgId,
-        batches: {
-          some: { status: 'Ready for Printing' }
-        }
-      },
-      include: {
-        customer: true,
-        batches: {
-          where: { status: 'Ready for Printing' },
-          include: {
-            rfdInward: true
-          }
-        }
-      },
-      orderBy: { updatedAt: 'desc' }
-    });
+    const cacheKey = `printing:ready-lots:${orgId}:p${page}`;
+    const where = {
+      organizationId: orgId,
+      batches: {
+        some: { status: 'Ready for Printing' }
+      }
+    };
 
-    const serializedData = inwards.map(inward => {
-      const groupedBatches: any[] = [];
-      inward.batches.forEach((batch: any) => {
-        const baseBatchNo = batch.batchNo.split(' (P')[0];
-        const existing = groupedBatches.find(b => b.batchNo === baseBatchNo);
-        if (existing) {
-          existing.ids.push(batch.id);
-          existing.mtrs += Number(batch.mtrs);
-          existing.rfdMtrs += Number(batch.rfdMtrs);
-        } else {
-          groupedBatches.push({
-            ...batch,
-            ids: [batch.id],
-            mtrs: Number(batch.mtrs),
-            rfdMtrs: Number(batch.rfdMtrs),
-            batchNo: baseBatchNo
-          });
-        }
+    const serializedData = await withCache(cacheKey, async () => {
+      const inwards = await prisma.greyInward.findMany({
+        where,
+        include: {
+          customer: true,
+          batches: {
+            where: { status: 'Ready for Printing' },
+            include: {
+              rfdInward: true
+            }
+          }
+        },
+        orderBy: { updatedAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       });
 
-      return {
-        ...inward,
-        totalMtr: Number(inward.totalMtr),
-        batches: groupedBatches
-      };
+      return inwards.map(inward => {
+        const groupedBatches: any[] = [];
+        inward.batches.forEach((batch: any) => {
+          const baseBatchNo = batch.batchNo.split(' (P')[0];
+          const existing = groupedBatches.find(b => b.batchNo === baseBatchNo);
+          if (existing) {
+            existing.ids.push(batch.id);
+            existing.mtrs += Number(batch.mtrs);
+            existing.rfdMtrs += Number(batch.rfdMtrs);
+          } else {
+            groupedBatches.push({
+              ...batch,
+              ids: [batch.id],
+              mtrs: Number(batch.mtrs),
+              rfdMtrs: Number(batch.rfdMtrs),
+              batchNo: baseBatchNo
+            });
+          }
+        });
+
+        return {
+          ...inward,
+          totalMtr: Number(inward.totalMtr),
+          batches: groupedBatches
+        };
+      });
     });
 
-    return { success: true, data: serializedData };
+    const totalCount = await prisma.greyInward.count({ where });
+
+    return { 
+      success: true, 
+      data: serializedData,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -161,28 +192,30 @@ export async function updatePrintingReceive(id: string, data: any) {
   }
 }
 
-export async function getOutForPrintingLots(search?: string, filters: any = {}) {
+export async function getOutForPrintingLots(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
+    const where = { 
+      organizationId: orgId,
+      ...(search ? {
+        OR: [
+          { jobCardNumber: { contains: search, mode: 'insensitive' as const } },
+          { lotNo: { contains: search, mode: 'insensitive' as const } },
+          { printer: { vendorName: { contains: search, mode: 'insensitive' as const } } },
+          { batches: { some: { greyInward: { customer: { customerName: { contains: search, mode: 'insensitive' as const } } } } } }
+        ]
+      } : {}),
+      ...(filters.entityId ? { printerId: filters.entityId } : {}),
+      ...(filters.startDate && filters.endDate ? {
+        date: {
+          gte: new Date(filters.startDate),
+          lte: new Date(filters.endDate),
+        }
+      } : {}),
+    };
+
     const issues = await prisma.printingIssue.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? {
-          OR: [
-            { jobCardNumber: { contains: search, mode: 'insensitive' } },
-            { lotNo: { contains: search, mode: 'insensitive' } },
-            { printer: { vendorName: { contains: search, mode: 'insensitive' } } },
-            { batches: { some: { greyInward: { customer: { customerName: { contains: search, mode: 'insensitive' } } } } } }
-          ]
-        } : {}),
-        ...(filters.entityId ? { printerId: filters.entityId } : {}),
-        ...(filters.startDate && filters.endDate ? {
-          date: {
-            gte: new Date(filters.startDate),
-            lte: new Date(filters.endDate),
-          }
-        } : {}),
-      },
+      where,
       include: {
         printer: true,
         batches: {
@@ -195,7 +228,9 @@ export async function getOutForPrintingLots(search?: string, filters: any = {}) 
           }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     });
 
     const serializedData = issues.filter(i => i.batches.length > 0).map(issue => {
@@ -220,62 +255,86 @@ export async function getOutForPrintingLots(search?: string, filters: any = {}) 
 
       return {
         ...issue,
-        customer: issue.batches[0]?.greyInward?.customer,
-        processType: issue.batches[0]?.greyInward?.processType,
-        billNo: issue.batches[0]?.rfdInward?.billNo,
+        totalMtr: groupedBatches.reduce((sum, b) => sum + b.mtrs, 0),
         batches: groupedBatches
       };
     });
 
-    return { success: true, data: serializedData };
+    const totalCount = await prisma.printingIssue.count({ where });
+
+    return { 
+      success: true, 
+      data: serializedData,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-export async function getPrintingReceives(search?: string, filters: any = {}) {
+export async function getPrintingReceives(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
+    const where = { 
+      organizationId: orgId,
+      ...(search ? {
+        OR: [
+          { productionNumber: { contains: search, mode: 'insensitive' as const } },
+          { lotNo: { contains: search, mode: 'insensitive' as const } },
+          { billNo: { contains: search, mode: 'insensitive' as const } },
+          { challanNo: { contains: search, mode: 'insensitive' as const } },
+          { printer: { vendorName: { contains: search, mode: 'insensitive' as const } } },
+          { customer: { customerName: { contains: search, mode: 'insensitive' as const } } }
+        ]
+      } : {}),
+      ...(filters.entityId ? { printerId: filters.entityId } : {}),
+      ...(filters.customerId ? { customerId: filters.customerId } : {}),
+      ...(filters.startDate && filters.endDate ? {
+        date: {
+          gte: new Date(filters.startDate),
+          lte: new Date(filters.endDate),
+        }
+      } : {}),
+    };
+
     const receives = await prisma.printingReceive.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? {
-          OR: [
-            { productionNumber: { contains: search, mode: 'insensitive' } },
-            { lotNo: { contains: search, mode: 'insensitive' } },
-            { printer: { vendorName: { contains: search, mode: 'insensitive' } } },
-            { customer: { customerName: { contains: search, mode: 'insensitive' } } }
-          ]
-        } : {}),
-        ...(filters.entityId ? { printerId: filters.entityId } : {}),
-        ...(filters.customerId ? { customerId: filters.customerId } : {}),
-        ...(filters.startDate && filters.endDate ? {
-          date: {
-            gte: new Date(filters.startDate),
-            lte: new Date(filters.endDate),
-          }
-        } : {}),
-      },
+      where,
       include: {
         printer: true,
         customer: true,
-        batches: true
+        batches: {
+          include: {
+            greyInward: true,
+            rfdInward: true
+          }
+        }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     });
 
     const serializedData = receives.map(receive => ({
       ...receive,
       batches: receive.batches.map(batch => ({
         ...batch,
-        mtrs: Number(batch.mtrs || 0),
-        rfdMtrs: Number(batch.rfdMtrs || 0),
-        printMtrs: Number(batch.printMtrs || 0),
-        printShortage: Number(batch.printShortage || 0)
+        mtrs: Number(batch.mtrs),
+        rfdMtrs: Number(batch.rfdMtrs),
+        printMtrs: Number(batch.printMtrs)
       }))
     }));
 
-    return { success: true, data: serializedData };
+    const totalCount = await prisma.printingReceive.count({ where });
+
+    return { 
+      success: true, 
+      data: serializedData,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

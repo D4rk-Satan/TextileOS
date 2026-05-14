@@ -32,6 +32,7 @@ import {
 } from '@/app/actions/dispatch';
 import { getCustomers } from '@/app/actions/master';
 import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
+import { Pagination } from '@/components/shared/Pagination';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
 
@@ -46,6 +47,8 @@ function DeliveryChallanPageContent() {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [editData, setEditData] = useState<any>(null);
   const [showImport, setShowImport] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ totalCount: 0, totalPages: 1 });
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -72,9 +75,13 @@ function DeliveryChallanPageContent() {
 
   const fetchChallans = async () => {
     setLoading(true);
-    const result = await getDeliveryChallans(debouncedSearch, filters);
+    const result = await getDeliveryChallans(debouncedSearch, filters, currentPage);
     if (result.success) {
       setData(result.data || []);
+      setPagination({
+        totalCount: result.totalCount || 0,
+        totalPages: result.totalPages || 1
+      });
     }
     setLoading(false);
   };
@@ -103,7 +110,12 @@ function DeliveryChallanPageContent() {
       setShowForm(false);
     }
     fetchChallans();
-  }, [searchParams, debouncedSearch, filters]);
+  }, [searchParams, debouncedSearch, filters, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, filters]);
 
   const handleSuccess = () => {
     setShowForm(false);
@@ -295,6 +307,14 @@ function DeliveryChallanPageContent() {
                 </tbody>
               </table>
             </div>
+            {data.length > 0 && (
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                totalCount={pagination.totalCount}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>

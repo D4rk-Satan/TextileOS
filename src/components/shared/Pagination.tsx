@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React from 'react';
@@ -40,24 +41,37 @@ export function Pagination({
         </button>
         
         <div className="flex items-center gap-1.5">
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const pageNum = i + 1;
-            return (
-              <button
-                key={pageNum}
-                onClick={() => onPageChange(pageNum)}
-                className={cn(
-                  "w-10 h-10 rounded-xl text-xs font-black transition-all hover:scale-105 active:scale-95 shadow-sm",
-                  currentPage === pageNum 
-                    ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)]" 
-                    : "hover:bg-muted text-muted-foreground border border-border/30"
-                )}
-              >
-                {pageNum}
-              </button>
-            );
-          })}
-          {totalPages > 5 && <span className="text-muted-foreground px-2 font-black">...</span>}
+          {(() => {
+            const pages = [];
+            const maxVisible = 5;
+            let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            const end = Math.min(totalPages, start + maxVisible - 1);
+            
+            if (end - start + 1 < maxVisible) {
+              start = Math.max(1, end - maxVisible + 1);
+            }
+
+            for (let i = start; i <= end; i++) {
+              pages.push(
+                <button
+                  key={i}
+                  onClick={() => onPageChange(i)}
+                  className={cn(
+                    "w-10 h-10 rounded-xl text-xs font-black transition-all hover:scale-105 active:scale-95 shadow-sm",
+                    currentPage === i 
+                      ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)]" 
+                      : "hover:bg-muted text-muted-foreground border border-border/30"
+                  )}
+                >
+                  {i}
+                </button>
+              );
+            }
+            return pages;
+          })()}
+          {totalPages > 5 && currentPage + 2 < totalPages && (
+            <span className="text-muted-foreground px-2 font-black">...</span>
+          )}
         </div>
 
         <button

@@ -17,10 +17,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme | null;
     if (savedTheme) {
-      setTheme(savedTheme);
+      setTimeout(() => setTheme(savedTheme), 0);
       document.documentElement.classList.toggle('dark', savedTheme === 'charcoal');
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('charcoal');
+      setTimeout(() => setTheme('charcoal'), 0);
       document.documentElement.classList.add('dark');
     }
   }, []);

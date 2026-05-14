@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -33,7 +34,7 @@ function WarehousePageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('inwards');
   const [showForm, setShowForm] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
@@ -45,8 +46,11 @@ function WarehousePageContent() {
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<any>({});
-  const [filterOptions, setFilterOptions] = useState<any>({});
+  const [filters, setFilters] = useState<{ status?: string; entityId?: string; quality?: string; startDate?: string; endDate?: string }>({});
+  const [filterOptions, setFilterOptions] = useState<{ customers: { label: string; value: string }[]; qualities: { label: string; value: string }[] }>({
+    customers: [],
+    qualities: []
+  });
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -73,7 +77,7 @@ function WarehousePageContent() {
       setLoading(true);
       setData([]); 
       
-      let result: any;
+      let result: { success: boolean; data?: any[]; totalCount?: number; totalPages?: number; error?: string } | undefined;
       if (activeTab === 'inwards') {
         result = await getGreyInwards(debouncedSearch, filters, currentPage);
       } else if (activeTab === 'batches') {
