@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getOutForPrintingLots, getPrintingReceives, deletePrintingIssue, deletePrintingReceive, getPrinters } from '@/app/actions/printing';
 import { getCustomers } from '@/app/actions/master';
 import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
+import { Pagination } from '@/components/shared/Pagination';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
 
@@ -42,6 +43,8 @@ function PrintingProcessPageContent() {
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ totalCount: 0, totalPages: 1 });
 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -83,13 +86,17 @@ function PrintingProcessPageContent() {
       
       let result: any;
       if (activeTab === 'issue') {
-        result = await getOutForPrintingLots(debouncedSearch, filters);
+        result = await getOutForPrintingLots(debouncedSearch, filters, currentPage);
       } else if (activeTab === 'receive') {
-        result = await getPrintingReceives(debouncedSearch, filters);
+        result = await getPrintingReceives(debouncedSearch, filters, currentPage);
       }
 
       if (isCurrent && result?.success) {
         setData(result.data || []);
+        setPagination({
+          totalCount: result.totalCount || 0,
+          totalPages: result.totalPages || 1
+        });
         setFetchedTab(activeTab);
         setLoading(false);
       }
@@ -100,7 +107,12 @@ function PrintingProcessPageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab, debouncedSearch, filters]);
+  }, [searchParams, activeTab, debouncedSearch, filters, currentPage]);
+
+  // Reset page when tab or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, debouncedSearch, filters]);
 
   const handleRecordAddedOrUpdated = () => {
     setShowForm(false);
@@ -316,6 +328,14 @@ function PrintingProcessPageContent() {
                 </tbody>
               </table>
             </div>
+            {data.length > 0 && (
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                totalCount={pagination.totalCount}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>

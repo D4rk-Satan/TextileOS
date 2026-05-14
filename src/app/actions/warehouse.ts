@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import prisma from '@/lib/prisma';
@@ -10,6 +11,28 @@ async function getOrgId() {
   const orgId = cookieStore.get('org_id')?.value;
   if (!orgId) throw new Error('Unauthorized: No organization ID found');
   return orgId;
+}
+
+interface BatchData {
+  batchNo: string;
+  pcs: number;
+  mtrs: number;
+  weight: number;
+}
+
+interface GreyInwardData {
+  lotNo: string;
+  date: string | Date;
+  challanNo: string;
+  quality: string;
+  processType: string;
+  batchDetail?: string;
+  status: string;
+  image?: string;
+  totalBatch: string | number;
+  totalMtr: string | number;
+  customer: string;
+  batches: BatchData[];
 }
 
 export async function getNextLotNumber() {
@@ -31,7 +54,7 @@ export async function getNextLotNumber() {
   }
 }
 
-export async function createGreyInward(data: any) {
+export async function createGreyInward(data: GreyInwardData) {
   try {
     const orgId = await getOrgId();
     const greyInward = await prisma.greyInward.create({
@@ -44,16 +67,16 @@ export async function createGreyInward(data: any) {
         batchDetail: data.batchDetail,
         status: data.status,
         image: data.image,
-        totalBatch: parseInt(data.totalBatch) || 0,
-        totalMtr: parseFloat(data.totalMtr) || 0,
+        totalBatch: typeof data.totalBatch === 'string' ? parseInt(data.totalBatch) : data.totalBatch,
+        totalMtr: typeof data.totalMtr === 'string' ? parseFloat(data.totalMtr) : data.totalMtr,
         customerId: data.customer, // Expecting ID from dropdown
         organizationId: orgId,
         batches: {
-          create: data.batches.map((batch: any) => ({
+          create: data.batches.map((batch: BatchData) => ({
             batchNo: batch.batchNo,
-            pcs: parseInt(batch.pcs) || 0,
-            mtrs: parseFloat(batch.mtrs) || 0,
-            weight: parseFloat(batch.weight) || 0,
+            pcs: batch.pcs,
+            mtrs: batch.mtrs,
+            weight: batch.weight,
           })),
         },
       },
@@ -81,7 +104,7 @@ export async function createGreyInward(data: any) {
   }
 }
 
-export async function updateGreyInward(id: string, data: any) {
+export async function updateGreyInward(id: string, data: GreyInwardData) {
   try {
     const orgId = await getOrgId();
     const greyInward = await prisma.greyInward.update({
@@ -95,52 +118,64 @@ export async function updateGreyInward(id: string, data: any) {
         batchDetail: data.batchDetail,
         status: data.status,
         image: data.image,
-        totalBatch: parseInt(data.totalBatch) || 0,
-        totalMtr: parseFloat(data.totalMtr) || 0,
+        totalBatch: typeof data.totalBatch === 'string' ? parseInt(data.totalBatch) : data.totalBatch,
+        totalMtr: typeof data.totalMtr === 'string' ? parseFloat(data.totalMtr) : data.totalMtr,
         customerId: data.customer,
       },
     });
     revalidatePath('/dashboard/warehouse');
     await invalidateCache([`inwards:${orgId}`, `batches:${orgId}`]);
-    return { success: true, data: greyInward };
+    
+    // Serialization Fix: Convert Decimal to Number
+    return { 
+      success: true, 
+      data: {
+        ...greyInward,
+        totalMtr: Number(greyInward.totalMtr)
+      } 
+    };
   } catch (error: any) {
     console.error('Error updating grey inward:', error);
     return { success: false, error: error.message };
   }
 }
 
-export async function getGreyInwards(search?: string, filters: any = {}) {
+export async function getGreyInwards(search?: string, filters: { status?: string; entityId?: string; quality?: string; startDate?: string; endDate?: string } = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    const cacheKey = `inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}`;
+    const where = { 
+      organizationId: orgId,
+      ...(search ? {
+        OR: [
+          { lotNo: { contains: search, mode: 'insensitive' as const } },
+          { challanNo: { contains: search, mode: 'insensitive' as const } },
+          { customer: { customerName: { contains: search, mode: 'insensitive' as const } } },
+          { quality: { contains: search, mode: 'insensitive' as const } }
+        ]
+      } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.entityId ? { customerId: filters.entityId } : {}),
+      ...(filters.quality ? { quality: filters.quality } : {}),
+      ...(filters.startDate && filters.endDate ? {
+        date: {
+          gte: new Date(filters.startDate),
+          lte: new Date(filters.endDate),
+        }
+      } : {}),
+    };
+
+    const cacheKey = `inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
 
     const data = await withCache(cacheKey, async () => {
       const greyInwards = await prisma.greyInward.findMany({
-        where: { 
-          organizationId: orgId,
-          ...(search ? {
-            OR: [
-              { lotNo: { contains: search, mode: 'insensitive' } },
-              { challanNo: { contains: search, mode: 'insensitive' } },
-              { customer: { customerName: { contains: search, mode: 'insensitive' } } },
-              { quality: { contains: search, mode: 'insensitive' } }
-            ]
-          } : {}),
-          ...(filters.status ? { status: filters.status } : {}),
-          ...(filters.entityId ? { customerId: filters.entityId } : {}),
-          ...(filters.quality ? { quality: filters.quality } : {}),
-          ...(filters.startDate && filters.endDate ? {
-            date: {
-              gte: new Date(filters.startDate),
-              lte: new Date(filters.endDate),
-            }
-          } : {}),
-        },
+        where,
         include: {
           customer: true,
           batches: true,
         },
         orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       });
       return greyInwards.map(inward => ({
         ...inward,
@@ -152,46 +187,57 @@ export async function getGreyInwards(search?: string, filters: any = {}) {
         }))
       }));
     });
-    return { success: true, data };
+
+    const totalCount = await prisma.greyInward.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
 /** Fetches batches filtered by status and search */
-export async function getBatches(status?: string, search?: string, filters: any = {}) {
+export async function getBatches(status?: string, search?: string, filters: { entityId?: string; quality?: string; startDate?: string; endDate?: string; status?: string } = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    const cacheKey = `batches:${orgId}:${status || ''}:${search || ''}:${JSON.stringify(filters)}`;
+    const where = { 
+      greyInward: {
+        organizationId: orgId,
+        ...(search ? {
+          OR: [
+            { lotNo: { contains: search, mode: 'insensitive' as const } },
+            { customer: { customerName: { contains: search, mode: 'insensitive' as const } } },
+            { quality: { contains: search, mode: 'insensitive' as const } }
+          ]
+        } : {}),
+        ...(filters.entityId ? { customerId: filters.entityId } : {}),
+        ...(filters.quality ? { quality: filters.quality } : {}),
+        ...(filters.startDate && filters.endDate ? {
+          date: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          }
+        } : {}),
+      },
+      ...(status ? { status } : (filters.status ? { status: filters.status } : {})),
+      ...(search ? {
+        OR: [
+          { batchNo: { contains: search, mode: 'insensitive' as const } }
+        ]
+      } : {})
+    };
+
+    const cacheKey = `batches:${orgId}:${status || ''}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
 
     const data = await withCache(cacheKey, async () => {
       const batches = await prisma.batch.findMany({
-        where: { 
-          greyInward: {
-            organizationId: orgId,
-            ...(search ? {
-              OR: [
-                { lotNo: { contains: search, mode: 'insensitive' } },
-                { customer: { customerName: { contains: search, mode: 'insensitive' } } },
-                { quality: { contains: search, mode: 'insensitive' } }
-              ]
-            } : {}),
-            ...(filters.entityId ? { customerId: filters.entityId } : {}),
-            ...(filters.quality ? { quality: filters.quality } : {}),
-            ...(filters.startDate && filters.endDate ? {
-              date: {
-                gte: new Date(filters.startDate),
-                lte: new Date(filters.endDate),
-              }
-            } : {}),
-          },
-          ...(status ? { status } : (filters.status ? { status: filters.status } : {})),
-          ...(search ? {
-            OR: [
-              { batchNo: { contains: search, mode: 'insensitive' } }
-            ]
-          } : {})
-        },
+        where,
         include: {
           greyInward: {
             include: {
@@ -205,6 +251,8 @@ export async function getBatches(status?: string, search?: string, filters: any 
           }
         },
         orderBy: { id: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       });
 
       return batches.map(batch => ({
@@ -221,7 +269,16 @@ export async function getBatches(status?: string, search?: string, filters: any 
         }
       }));
     });
-    return { success: true, data };
+
+    const totalCount = await prisma.batch.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

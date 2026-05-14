@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { checkPermission } from '@/lib/dal';
+import { withCache, invalidateCache } from '@/lib/redis';
 
 async function getSessionContext() {
   const cookieStore = await cookies();
@@ -13,9 +15,41 @@ async function getSessionContext() {
   return { orgId };
 }
 
+interface CustomerData {
+  customerName: string;
+  status: string;
+  address?: string;
+  addressLine1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  phone?: string;
+  gstin?: string;
+}
+
+interface VendorData {
+  vendorName: string;
+  masterName?: string;
+  vendorNumber?: string;
+  booksId?: string;
+  gstin?: string;
+  status: string;
+  addressLine1?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+}
+
+interface ItemData {
+  itemName: string;
+  sku: string;
+}
+
 // --- Customer Actions ---
 
-export async function createCustomer(data: any) {
+export async function createCustomer(data: CustomerData) {
   try {
     const { orgId } = await getSessionContext();
 
@@ -27,18 +61,19 @@ export async function createCustomer(data: any) {
       data: {
         customerName: data.customerName,
         status: data.status,
-        address: data.address,
-        addressLine1: data.addressLine1,
-        city: data.city,
-        state: data.state,
-        postalCode: data.postalCode,
-        country: data.country,
-        phone: data.phone,
-        gstin: data.gstin,
+        address: data.address || '',
+        addressLine1: data.addressLine1 || '',
+        city: data.city || '',
+        state: data.state || '',
+        postalCode: data.postalCode || '',
+        country: data.country || '',
+        phone: data.phone || '',
+        gstin: data.gstin || '',
         organizationId: orgId,
       },
     });
     revalidatePath('/dashboard/master');
+    await invalidateCache(`customers:${orgId}`);
     return { success: true, data: customer };
   } catch (error: any) {
     console.error('Error creating customer:', error);
@@ -46,24 +81,43 @@ export async function createCustomer(data: any) {
   }
 }
 
-export async function getCustomers(search?: string, filters: any = {}) {
+export async function getCustomers(search?: string, filters: { status?: string } = {}, page: number = 1, pageSize: number = 20) {
   try {
     const { orgId } = await getSessionContext();
-    const customers = await prisma.customer.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? { customerName: { contains: search, mode: 'insensitive' } } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
-      },
-      orderBy: { customerName: 'asc' },
+    const where = { 
+      organizationId: orgId,
+      ...(search ? { customerName: { contains: search, mode: 'insensitive' as const } } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+    };
+
+    const cacheKey = `customers:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
+
+    const cached = await withCache(cacheKey, async () => {
+      const [customers, totalCount] = await Promise.all([
+        prisma.customer.findMany({
+          where,
+          orderBy: { customerName: 'asc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        prisma.customer.count({ where })
+      ]);
+      return { customers, totalCount };
     });
-    return { success: true, data: customers };
+
+    return { 
+      success: true, 
+      data: cached.customers,
+      totalCount: cached.totalCount,
+      totalPages: Math.ceil(cached.totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-export async function updateCustomer(id: string, data: any) {
+export async function updateCustomer(id: string, data: CustomerData) {
   try {
     const { orgId } = await getSessionContext();
     if (!await checkPermission('module:master')) {
@@ -75,17 +129,18 @@ export async function updateCustomer(id: string, data: any) {
       data: {
         customerName: data.customerName,
         status: data.status,
-        address: data.address,
-        addressLine1: data.addressLine1,
-        city: data.city,
-        state: data.state,
-        postalCode: data.postalCode,
-        country: data.country,
-        phone: data.phone,
-        gstin: data.gstin,
+        address: data.address || '',
+        addressLine1: data.addressLine1 || '',
+        city: data.city || '',
+        state: data.state || '',
+        postalCode: data.postalCode || '',
+        country: data.country || '',
+        phone: data.phone || '',
+        gstin: data.gstin || '',
       },
     });
     revalidatePath('/dashboard/master');
+    await invalidateCache(`customers:${orgId}`);
     return { success: true, data: customer };
   } catch (error: any) {
     console.error('Error updating customer:', error);
@@ -95,7 +150,7 @@ export async function updateCustomer(id: string, data: any) {
 
 // --- Vendor Actions ---
 
-export async function createVendor(data: any) {
+export async function createVendor(data: VendorData) {
   try {
     const { orgId } = await getSessionContext();
 
@@ -106,20 +161,21 @@ export async function createVendor(data: any) {
     const vendor = await prisma.vendor.create({
       data: {
         vendorName: data.vendorName,
-        masterName: data.masterName,
-        vendorNumber: data.vendorNumber,
-        booksId: data.booksId,
-        gstin: data.gstin,
+        masterName: data.masterName || '',
+        vendorNumber: data.vendorNumber || '',
+        booksId: data.booksId || '',
+        gstin: data.gstin || '',
         status: data.status,
-        addressLine1: data.addressLine1,
-        city: data.city,
-        state: data.state,
-        postalCode: data.postalCode,
-        country: data.country,
+        addressLine1: data.addressLine1 || '',
+        city: data.city || '',
+        state: data.state || '',
+        postalCode: data.postalCode || '',
+        country: data.country || '',
         organizationId: orgId,
       },
     });
     revalidatePath('/dashboard/master');
+    await invalidateCache(`vendors:${orgId}`);
     return { success: true, data: vendor };
   } catch (error: any) {
     console.error('Error creating vendor:', error);
@@ -127,24 +183,43 @@ export async function createVendor(data: any) {
   }
 }
 
-export async function getVendors(search?: string, filters: any = {}) {
+export async function getVendors(search?: string, filters: { status?: string } = {}, page: number = 1, pageSize: number = 20) {
   try {
     const { orgId } = await getSessionContext();
-    const vendors = await prisma.vendor.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? { vendorName: { contains: search, mode: 'insensitive' } } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
-      },
-      orderBy: { vendorName: 'asc' },
+    const where = { 
+      organizationId: orgId,
+      ...(search ? { vendorName: { contains: search, mode: 'insensitive' as const } } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+    };
+
+    const cacheKey = `vendors:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
+
+    const cached = await withCache(cacheKey, async () => {
+      const [vendors, totalCount] = await Promise.all([
+        prisma.vendor.findMany({
+          where,
+          orderBy: { vendorName: 'asc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        prisma.vendor.count({ where })
+      ]);
+      return { vendors, totalCount };
     });
-    return { success: true, data: vendors };
+
+    return { 
+      success: true, 
+      data: cached.vendors,
+      totalCount: cached.totalCount,
+      totalPages: Math.ceil(cached.totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-export async function updateVendor(id: string, data: any) {
+export async function updateVendor(id: string, data: VendorData) {
   try {
     const { orgId } = await getSessionContext();
     if (!await checkPermission('module:master')) {
@@ -155,19 +230,20 @@ export async function updateVendor(id: string, data: any) {
       where: { id, organizationId: orgId },
       data: {
         vendorName: data.vendorName,
-        masterName: data.masterName,
-        vendorNumber: data.vendorNumber,
-        booksId: data.booksId,
-        gstin: data.gstin,
+        masterName: data.masterName || '',
+        vendorNumber: data.vendorNumber || '',
+        booksId: data.booksId || '',
+        gstin: data.gstin || '',
         status: data.status,
-        addressLine1: data.addressLine1,
-        city: data.city,
-        state: data.state,
-        postalCode: data.postalCode,
-        country: data.country,
+        addressLine1: data.addressLine1 || '',
+        city: data.city || '',
+        state: data.state || '',
+        postalCode: data.postalCode || '',
+        country: data.country || '',
       },
     });
     revalidatePath('/dashboard/master');
+    await invalidateCache(`vendors:${orgId}`);
     return { success: true, data: vendor };
   } catch (error: any) {
     console.error('Error updating vendor:', error);
@@ -198,7 +274,7 @@ export async function getDashboardStats() {
 
 // --- Item Actions ---
 
-export async function createItem(data: any) {
+export async function createItem(data: ItemData) {
   try {
     const { orgId } = await getSessionContext();
     if (!await checkPermission('module:master')) {
@@ -213,6 +289,7 @@ export async function createItem(data: any) {
       },
     });
     revalidatePath('/dashboard/master');
+    await invalidateCache(`items:${orgId}`);
     return { success: true, data: item };
   } catch (error: any) {
     console.error('Error creating item:', error);
@@ -220,24 +297,43 @@ export async function createItem(data: any) {
   }
 }
 
-export async function getItems(search?: string, filters: any = {}) {
+export async function getItems(search?: string, filters: { status?: string } = {}, page: number = 1, pageSize: number = 20) {
   try {
     const { orgId } = await getSessionContext();
-    const items = await prisma.item.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? { itemName: { contains: search, mode: 'insensitive' } } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
-      },
-      orderBy: { itemName: 'asc' },
+    const where = { 
+      organizationId: orgId,
+      ...(search ? { itemName: { contains: search, mode: 'insensitive' as const } } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+    };
+
+    const cacheKey = `items:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
+
+    const cached = await withCache(cacheKey, async () => {
+      const [items, totalCount] = await Promise.all([
+        prisma.item.findMany({
+          where,
+          orderBy: { itemName: 'asc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        prisma.item.count({ where })
+      ]);
+      return { items, totalCount };
     });
-    return { success: true, data: items };
+
+    return { 
+      success: true, 
+      data: cached.items,
+      totalCount: cached.totalCount,
+      totalPages: Math.ceil(cached.totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-export async function updateItem(id: string, data: any) {
+export async function updateItem(id: string, data: ItemData) {
   try {
     const { orgId } = await getSessionContext();
     if (!await checkPermission('module:master')) {
@@ -252,6 +348,7 @@ export async function updateItem(id: string, data: any) {
       },
     });
     revalidatePath('/dashboard/master');
+    await invalidateCache(`items:${orgId}`);
     return { success: true, data: item };
   } catch (error: any) {
     console.error('Error updating item:', error);
@@ -277,6 +374,7 @@ export async function deleteCustomer(id: string) {
     });
 
     revalidatePath('/dashboard/master');
+    await invalidateCache(`customers:${orgId}`);
     return { success: true };
   } catch (error) {
     return { success: false, error: 'Failed to delete customer' };
@@ -303,6 +401,7 @@ export async function deleteVendor(id: string) {
     });
 
     revalidatePath('/dashboard/master');
+    await invalidateCache(`vendors:${orgId}`);
     return { success: true };
   } catch (error) {
     return { success: false, error: 'Failed to delete vendor' };
@@ -329,6 +428,7 @@ export async function deleteItem(id: string) {
     });
 
     revalidatePath('/dashboard/master');
+    await invalidateCache(`items:${orgId}`);
     return { success: true };
   } catch (error) {
     return { success: false, error: 'Failed to delete item' };
@@ -360,6 +460,7 @@ export async function bulkCreateCustomers(data: any[]) {
     });
 
     revalidatePath('/dashboard/master');
+    await invalidateCache(`customers:${orgId}`);
     return { success: true, count: customers.count };
   } catch (error: any) {
     console.error('Bulk Customer Error:', error);
@@ -388,6 +489,7 @@ export async function bulkCreateVendors(data: any[]) {
     });
 
     revalidatePath('/dashboard/master');
+    await invalidateCache(`vendors:${orgId}`);
     return { success: true, count: vendors.count };
   } catch (error: any) {
     console.error('Bulk Vendor Error:', error);
@@ -412,6 +514,7 @@ export async function bulkCreateItems(data: any[]) {
     });
 
     revalidatePath('/dashboard/master');
+    await invalidateCache(`items:${orgId}`);
     return { success: true, count: items.count };
   } catch (error: any) {
     console.error('Bulk Item Error:', error);

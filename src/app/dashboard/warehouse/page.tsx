@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -16,6 +17,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { ImportModal } from '@/components/shared/ImportModal';
 import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
+import { Pagination } from '@/components/shared/Pagination';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getGreyInwards, getBatches, updateGreyInward, deleteGreyInward,
@@ -32,18 +34,23 @@ function WarehousePageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('inwards');
   const [showForm, setShowForm] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ totalCount: 0, totalPages: 1 });
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
 
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<any>({});
-  const [filterOptions, setFilterOptions] = useState<any>({});
+  const [filters, setFilters] = useState<{ status?: string; entityId?: string; quality?: string; startDate?: string; endDate?: string }>({});
+  const [filterOptions, setFilterOptions] = useState<{ customers: { label: string; value: string }[]; qualities: { label: string; value: string }[] }>({
+    customers: [],
+    qualities: []
+  });
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -70,26 +77,30 @@ function WarehousePageContent() {
       setLoading(true);
       setData([]); 
       
-      let result: any;
+      let result: { success: boolean; data?: any[]; totalCount?: number; totalPages?: number; error?: string } | undefined;
       if (activeTab === 'inwards') {
-        result = await getGreyInwards(debouncedSearch, filters);
+        result = await getGreyInwards(debouncedSearch, filters, currentPage);
       } else if (activeTab === 'batches') {
-        result = await getBatches('In-Warehouse', debouncedSearch, filters);
+        result = await getBatches('In-Warehouse', debouncedSearch, filters, currentPage);
       } else if (activeTab === 'out-for-rfd') {
-        result = await getBatches('Out For RFD', debouncedSearch, filters);
+        result = await getBatches('Out For RFD', debouncedSearch, filters, currentPage);
       } else if (activeTab === 'ready-for-printing') {
-        result = await getBatches('Ready for Printing', debouncedSearch, filters);
+        result = await getBatches('Ready for Printing', debouncedSearch, filters, currentPage);
       } else if (activeTab === 'under-printing') {
-        result = await getBatches('Under Printing', debouncedSearch, filters);
+        result = await getBatches('Under Printing', debouncedSearch, filters, currentPage);
       } else if (activeTab === 'ready-for-dispatch') {
-        result = await getBatches('Ready For Dispatch', debouncedSearch, filters);
+        result = await getBatches('Ready For Dispatch', debouncedSearch, filters, currentPage);
       } else if (activeTab === 'dispatched') {
-        result = await getBatches('Dispatched', debouncedSearch, filters);
+        result = await getBatches('Dispatched', debouncedSearch, filters, currentPage);
       }
 
       if (isCurrent) {
         if (result?.success) {
           setData(result.data || []);
+          setPagination({
+            totalCount: result.totalCount || 0,
+            totalPages: result.totalPages || 1
+          });
         } else {
           setData([]);
         }
@@ -103,7 +114,12 @@ function WarehousePageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab, debouncedSearch, filters]);
+  }, [searchParams, activeTab, debouncedSearch, filters, currentPage]);
+
+  // Reset page when tab or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, debouncedSearch, filters]);
 
   const titles: Record<TabType, string> = {
     'inwards': 'Grey Inwards',
@@ -374,7 +390,15 @@ function WarehousePageContent() {
                </div>
             </motion.div>
           ) : (
-            <InwardsList inwards={data} />
+            <>
+              <InwardsList inwards={data} />
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                totalCount={pagination.totalCount}
+                onPageChange={setCurrentPage}
+              />
+            </>
           )
         ) : (activeTab === 'batches' || activeTab === 'out-for-rfd' || activeTab === 'ready-for-printing' || activeTab === 'under-printing' || activeTab === 'ready-for-dispatch' || activeTab === 'dispatched') ? (
           data.length === 0 ? (
@@ -398,6 +422,12 @@ function WarehousePageContent() {
           ) : (
             <div key={`${activeTab}-batchlist`}>
               <BatchList batches={data} />
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                totalCount={pagination.totalCount}
+                onPageChange={setCurrentPage}
+              />
             </div>
           )
         ) : (

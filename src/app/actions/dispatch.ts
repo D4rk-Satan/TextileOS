@@ -4,6 +4,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { withCache, invalidateCache } from '@/lib/redis';
 
 async function getOrgId() {
   const cookieStore = await cookies();
@@ -24,48 +25,64 @@ export async function getNextDeliveryChallanNumber() {
   }
 }
 
-export async function getReadyForDispatchLots(customerId: string) {
+export async function getReadyForDispatchLots(customerId: string, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    if (!customerId) return { success: true, data: [] };
+    if (!customerId) return { success: true, data: [], totalCount: 0, totalPages: 1, currentPage: page };
 
-    const batches = await prisma.batch.findMany({
-      where: {
-        status: 'Ready For Dispatch',
-        greyInward: {
-          organizationId: orgId,
-          customerId: customerId
-        }
-      },
-      include: {
-        greyInward: true,
-        printingReceive: true
-      },
-      orderBy: { updatedAt: 'desc' }
-    });
-
-    // Group batches by Lot No
-    const groupedLots: Record<string, any> = {};
-    batches.forEach(batch => {
-      const lotNo = batch.greyInward.lotNo;
-      if (!groupedLots[lotNo]) {
-        groupedLots[lotNo] = {
-          lotNo: lotNo,
-          quality: batch.greyInward.quality,
-          processType: batch.greyInward.processType,
-          batches: []
-        };
+    const cacheKey = `dispatch:ready-lots:${orgId}:${customerId}:p${page}`;
+    const where = {
+      status: 'Ready For Dispatch' as const,
+      greyInward: {
+        organizationId: orgId,
+        customerId: customerId
       }
-      groupedLots[lotNo].batches.push({
-        id: batch.id,
-        batchNo: batch.batchNo,
-        mtrs: Number(batch.mtrs || 0),
-        rfdMtrs: Number(batch.rfdMtrs || 0),
-        printMtrs: Number(batch.printMtrs || 0)
+    };
+
+    const data = await withCache(cacheKey, async () => {
+      const batches = await prisma.batch.findMany({
+        where,
+        include: {
+          greyInward: true,
+          printingReceive: true
+        },
+        orderBy: { updatedAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       });
+
+      // Group batches by Lot No
+      const groupedLots: Record<string, any> = {};
+      batches.forEach(batch => {
+        const lotNo = batch.greyInward.lotNo;
+        if (!groupedLots[lotNo]) {
+          groupedLots[lotNo] = {
+            lotNo: lotNo,
+            quality: batch.greyInward.quality,
+            processType: batch.greyInward.processType,
+            batches: []
+          };
+        }
+        groupedLots[lotNo].batches.push({
+          id: batch.id,
+          batchNo: batch.batchNo,
+          mtrs: Number(batch.mtrs || 0),
+          rfdMtrs: Number(batch.rfdMtrs || 0),
+          printMtrs: Number(batch.printMtrs || 0)
+        });
+      });
+      return Object.values(groupedLots);
     });
 
-    return { success: true, data: Object.values(groupedLots) };
+    const totalCount = await prisma.batch.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -95,6 +112,7 @@ export async function createDeliveryChallan(data: any) {
 
     revalidatePath('/dashboard/delivery-challan');
     revalidatePath('/dashboard/warehouse');
+    await invalidateCache([`dispatch:ready-lots:${orgId}`, `dispatch:challans:${orgId}`, `batches:${orgId}`]);
     return { success: true, data: challan };
   } catch (error: any) {
     console.error('Error creating delivery challan:', error);
@@ -154,47 +172,65 @@ export async function deleteDeliveryChallan(id: string) {
   }
 }
 
-export async function getDeliveryChallans(search?: string, filters: any = {}) {
+export async function getDeliveryChallans(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    const challans = await prisma.deliveryChallan.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? {
-          OR: [
-            { challanNo: { contains: search, mode: 'insensitive' } },
-            { customer: { customerName: { contains: search, mode: 'insensitive' } } }
-          ]
-        } : {}),
-        ...(filters.entityId ? { customerId: filters.entityId } : {}),
-        ...(filters.startDate && filters.endDate ? {
-          date: {
-            gte: new Date(filters.startDate),
-            lte: new Date(filters.endDate),
-          }
-        } : {}),
-      },
-      include: {
-        customer: true,
-        batches: {
-          include: {
-            greyInward: true
-          }
+    const cacheKey = `dispatch:challans:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
+    const where = {
+      organizationId: orgId,
+      ...(search ? {
+        OR: [
+          { challanNo: { contains: search, mode: 'insensitive' as const } },
+          { customer: { customerName: { contains: search, mode: 'insensitive' as const } } }
+        ]
+      } : {}),
+      ...(filters.entityId ? { customerId: filters.entityId } : {}),
+      ...(filters.startDate && filters.endDate ? {
+        date: {
+          gte: new Date(filters.startDate),
+          lte: new Date(filters.endDate),
         }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+      } : {}),
+    };
 
-    const serializedData = challans.map((challan: any) => {
-      const lotNumbers = Array.from(new Set(challan.batches.map((b: any) => b.greyInward.lotNo)));
-      return {
+    const data = await withCache(cacheKey, async () => {
+      const challans = await prisma.deliveryChallan.findMany({
+        where,
+        include: {
+          customer: true,
+          batches: {
+            include: {
+              greyInward: true
+            }
+          }
+        },
+        orderBy: { date: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+
+      return challans.map(challan => ({
         ...challan,
-        lotNumbers,
-        totalMtrs: challan.batches.reduce((sum: number, b: any) => sum + Number(b.printMtrs || 0), 0)
-      };
+        lotNumbers: Array.from(new Set(challan.batches.map((b: any) => b.greyInward.lotNo))),
+        totalMtrs: challan.batches.reduce((sum: number, b: any) => sum + Number(b.printMtrs || 0), 0),
+        batches: challan.batches.map(batch => ({
+          ...batch,
+          mtrs: Number(batch.mtrs || 0),
+          rfdMtrs: Number(batch.rfdMtrs || 0),
+          printMtrs: Number(batch.printMtrs || 0)
+        }))
+      }));
     });
 
-    return { success: true, data: serializedData };
+    const totalCount = await prisma.deliveryChallan.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

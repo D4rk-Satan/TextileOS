@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -26,6 +27,7 @@ import {
   bulkCreateGreyOutwards, getDyeingHouses
 } from '@/app/actions/dyeing';
 import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
+import { Pagination } from '@/components/shared/Pagination';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
@@ -42,6 +44,8 @@ function DyeingHousePageContent() {
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [showImport, setShowImport] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ totalCount: 0, totalPages: 1 });
   
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -82,13 +86,17 @@ function DyeingHousePageContent() {
       
       let result: any;
       if (activeTab === 'grey-outward') {
-        result = await getGreyOutwards(debouncedSearch, filters);
+        result = await getGreyOutwards(debouncedSearch, filters, currentPage);
       } else if (activeTab === 'rfd-inward') {
-        result = await getRFDInwards(debouncedSearch, filters);
+        result = await getRFDInwards(debouncedSearch, filters, currentPage);
       }
 
       if (isCurrent && result?.success) {
         setData(result.data || []);
+        setPagination({
+          totalCount: result.totalCount || 0,
+          totalPages: result.totalPages || 1
+        });
         setFetchedTab(activeTab);
         setLoading(false);
       }
@@ -99,7 +107,12 @@ function DyeingHousePageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab, debouncedSearch, filters]);
+  }, [searchParams, activeTab, debouncedSearch, filters, currentPage]);
+
+  // Reset page when tab or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, debouncedSearch, filters]);
 
   const handleRecordAddedOrUpdated = () => {
     setShowForm(false);
@@ -396,6 +409,14 @@ function DyeingHousePageContent() {
                 </tbody>
               </table>
             </div>
+            {data.length > 0 && (
+              <Pagination 
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                totalCount={pagination.totalCount}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>

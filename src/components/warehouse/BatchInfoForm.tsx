@@ -3,14 +3,13 @@
 import React from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { FormInput } from '@/components/shared/FormInput';
-import { FormButton } from '@/components/shared/FormButton';
-import { Plus, Trash2, Hash, Ruler, Weight, Package } from 'lucide-react';
+import { Ruler, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function BatchInfoForm() {
   const methods = useFormContext();
   const { control } = methods;
-  const { fields, append, remove } = useFieldArray({
+  const { fields } = useFieldArray({
     control,
     name: 'batches',
   });
