@@ -114,7 +114,7 @@ export async function getGreyInwards(search?: string, filters: any = {}) {
     const orgId = await getOrgId();
     const cacheKey = `inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}`;
 
-    return await withCache(cacheKey, async () => {
+    const data = await withCache(cacheKey, async () => {
       const greyInwards = await prisma.greyInward.findMany({
         where: { 
           organizationId: orgId,
@@ -152,6 +152,7 @@ export async function getGreyInwards(search?: string, filters: any = {}) {
         }))
       }));
     });
+    return { success: true, data };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -163,7 +164,7 @@ export async function getBatches(status?: string, search?: string, filters: any 
     const orgId = await getOrgId();
     const cacheKey = `batches:${orgId}:${status || ''}:${search || ''}:${JSON.stringify(filters)}`;
 
-    return await withCache(cacheKey, async () => {
+    const data = await withCache(cacheKey, async () => {
       const batches = await prisma.batch.findMany({
         where: { 
           greyInward: {
@@ -220,6 +221,7 @@ export async function getBatches(status?: string, search?: string, filters: any 
         }
       }));
     });
+    return { success: true, data };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
