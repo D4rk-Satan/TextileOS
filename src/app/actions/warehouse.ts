@@ -109,38 +109,42 @@ export async function updateGreyInward(id: string, data: any) {
   }
 }
 
-export async function getGreyInwards(search?: string, filters: any = {}) {
+export async function getGreyInwards(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    const cacheKey = `inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}`;
+    const where = { 
+      organizationId: orgId,
+      ...(search ? {
+        OR: [
+          { lotNo: { contains: search, mode: 'insensitive' } },
+          { challanNo: { contains: search, mode: 'insensitive' } },
+          { customer: { customerName: { contains: search, mode: 'insensitive' } } },
+          { quality: { contains: search, mode: 'insensitive' } }
+        ]
+      } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.entityId ? { customerId: filters.entityId } : {}),
+      ...(filters.quality ? { quality: filters.quality } : {}),
+      ...(filters.startDate && filters.endDate ? {
+        date: {
+          gte: new Date(filters.startDate),
+          lte: new Date(filters.endDate),
+        }
+      } : {}),
+    };
+
+    const cacheKey = `inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
 
     const data = await withCache(cacheKey, async () => {
       const greyInwards = await prisma.greyInward.findMany({
-        where: { 
-          organizationId: orgId,
-          ...(search ? {
-            OR: [
-              { lotNo: { contains: search, mode: 'insensitive' } },
-              { challanNo: { contains: search, mode: 'insensitive' } },
-              { customer: { customerName: { contains: search, mode: 'insensitive' } } },
-              { quality: { contains: search, mode: 'insensitive' } }
-            ]
-          } : {}),
-          ...(filters.status ? { status: filters.status } : {}),
-          ...(filters.entityId ? { customerId: filters.entityId } : {}),
-          ...(filters.quality ? { quality: filters.quality } : {}),
-          ...(filters.startDate && filters.endDate ? {
-            date: {
-              gte: new Date(filters.startDate),
-              lte: new Date(filters.endDate),
-            }
-          } : {}),
-        },
+        where,
         include: {
           customer: true,
           batches: true,
         },
         orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       });
       return greyInwards.map(inward => ({
         ...inward,
@@ -152,46 +156,57 @@ export async function getGreyInwards(search?: string, filters: any = {}) {
         }))
       }));
     });
-    return { success: true, data };
+
+    const totalCount = await prisma.greyInward.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
 /** Fetches batches filtered by status and search */
-export async function getBatches(status?: string, search?: string, filters: any = {}) {
+export async function getBatches(status?: string, search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
-    const cacheKey = `batches:${orgId}:${status || ''}:${search || ''}:${JSON.stringify(filters)}`;
+    const where = { 
+      greyInward: {
+        organizationId: orgId,
+        ...(search ? {
+          OR: [
+            { lotNo: { contains: search, mode: 'insensitive' } },
+            { customer: { customerName: { contains: search, mode: 'insensitive' } } },
+            { quality: { contains: search, mode: 'insensitive' } }
+          ]
+        } : {}),
+        ...(filters.entityId ? { customerId: filters.entityId } : {}),
+        ...(filters.quality ? { quality: filters.quality } : {}),
+        ...(filters.startDate && filters.endDate ? {
+          date: {
+            gte: new Date(filters.startDate),
+            lte: new Date(filters.endDate),
+          }
+        } : {}),
+      },
+      ...(status ? { status } : (filters.status ? { status: filters.status } : {})),
+      ...(search ? {
+        OR: [
+          { batchNo: { contains: search, mode: 'insensitive' } }
+        ]
+      } : {})
+    };
+
+    const cacheKey = `batches:${orgId}:${status || ''}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
 
     const data = await withCache(cacheKey, async () => {
       const batches = await prisma.batch.findMany({
-        where: { 
-          greyInward: {
-            organizationId: orgId,
-            ...(search ? {
-              OR: [
-                { lotNo: { contains: search, mode: 'insensitive' } },
-                { customer: { customerName: { contains: search, mode: 'insensitive' } } },
-                { quality: { contains: search, mode: 'insensitive' } }
-              ]
-            } : {}),
-            ...(filters.entityId ? { customerId: filters.entityId } : {}),
-            ...(filters.quality ? { quality: filters.quality } : {}),
-            ...(filters.startDate && filters.endDate ? {
-              date: {
-                gte: new Date(filters.startDate),
-                lte: new Date(filters.endDate),
-              }
-            } : {}),
-          },
-          ...(status ? { status } : (filters.status ? { status: filters.status } : {})),
-          ...(search ? {
-            OR: [
-              { batchNo: { contains: search, mode: 'insensitive' } }
-            ]
-          } : {})
-        },
+        where,
         include: {
           greyInward: {
             include: {
@@ -205,6 +220,8 @@ export async function getBatches(status?: string, search?: string, filters: any 
           }
         },
         orderBy: { id: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       });
 
       return batches.map(batch => ({
@@ -221,7 +238,16 @@ export async function getBatches(status?: string, search?: string, filters: any 
         }
       }));
     });
-    return { success: true, data };
+
+    const totalCount = await prisma.batch.count({ where });
+
+    return { 
+      success: true, 
+      data,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

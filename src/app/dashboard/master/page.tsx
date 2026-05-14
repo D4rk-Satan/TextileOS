@@ -40,25 +40,31 @@ function MasterPageContent() {
   const [fetchedTab, setFetchedTab] = useState<TabType | null>(null);
   const [userRole, setUserRole] = useState<string>('User');
   const [showImport, setShowImport] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ totalCount: 0, totalPages: 1 });
 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<any>({});
 
-  const fetchData = async (tab: TabType, search?: string, fltrs?: any) => {
+  const fetchData = async (tab: TabType, search?: string, fltrs?: any, page: number = 1) => {
     setLoading(true);
     const role = await getUserRole();
     setUserRole(role);
 
     setData([]);
     let result;
-    if (tab === 'customers') result = await getCustomers(search, fltrs);
-    else if (tab === 'vendors') result = await getVendors(search, fltrs);
-    else if (tab === 'items') result = await getItems(search, fltrs);
+    if (tab === 'customers') result = await getCustomers(search, fltrs, page);
+    else if (tab === 'vendors') result = await getVendors(search, fltrs, page);
+    else if (tab === 'items') result = await getItems(search, fltrs, page);
 
     if (result?.success) {
       setData(result.data || []);
+      setPagination({
+        totalCount: result.totalCount || 0,
+        totalPages: result.totalPages || 1
+      });
     }
     setFetchedTab(tab);
     setLoading(false);
@@ -70,11 +76,17 @@ function MasterPageContent() {
       setActiveTab(tab);
       setShowForm(false);
       setEditingRecord(null);
-      fetchData(tab, debouncedSearch, filters);
+      setCurrentPage(1);
+      fetchData(tab, debouncedSearch, filters, 1);
     } else {
-      fetchData(activeTab, debouncedSearch, filters);
+      fetchData(activeTab, debouncedSearch, filters, currentPage);
     }
-  }, [searchParams, activeTab, debouncedSearch, filters]);
+  }, [searchParams, activeTab, debouncedSearch, filters, currentPage]);
+
+  // Reset page when tab or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, debouncedSearch, filters]);
 
   const handleRecordAddedOrUpdated = () => {
     setShowForm(false);
@@ -237,6 +249,10 @@ function MasterPageContent() {
                     type={activeTab === 'customers' ? 'customers' : activeTab === 'vendors' ? 'vendors' : 'items'} 
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    currentPage={currentPage}
+                    totalPages={pagination.totalPages}
+                    totalCount={pagination.totalCount}
+                    onPageChange={setCurrentPage}
                   />
                </div>
             )}

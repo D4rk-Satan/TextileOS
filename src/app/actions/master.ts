@@ -46,18 +46,32 @@ export async function createCustomer(data: any) {
   }
 }
 
-export async function getCustomers(search?: string, filters: any = {}) {
+export async function getCustomers(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const { orgId } = await getSessionContext();
-    const customers = await prisma.customer.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? { customerName: { contains: search, mode: 'insensitive' } } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
-      },
-      orderBy: { customerName: 'asc' },
-    });
-    return { success: true, data: customers };
+    const where = { 
+      organizationId: orgId,
+      ...(search ? { customerName: { contains: search, mode: 'insensitive' } } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+    };
+
+    const [customers, totalCount] = await Promise.all([
+      prisma.customer.findMany({
+        where,
+        orderBy: { customerName: 'asc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.customer.count({ where })
+    ]);
+
+    return { 
+      success: true, 
+      data: customers,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -127,18 +141,32 @@ export async function createVendor(data: any) {
   }
 }
 
-export async function getVendors(search?: string, filters: any = {}) {
+export async function getVendors(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const { orgId } = await getSessionContext();
-    const vendors = await prisma.vendor.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? { vendorName: { contains: search, mode: 'insensitive' } } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
-      },
-      orderBy: { vendorName: 'asc' },
-    });
-    return { success: true, data: vendors };
+    const where = { 
+      organizationId: orgId,
+      ...(search ? { vendorName: { contains: search, mode: 'insensitive' } } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+    };
+
+    const [vendors, totalCount] = await Promise.all([
+      prisma.vendor.findMany({
+        where,
+        orderBy: { vendorName: 'asc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.vendor.count({ where })
+    ]);
+
+    return { 
+      success: true, 
+      data: vendors,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -220,18 +248,32 @@ export async function createItem(data: any) {
   }
 }
 
-export async function getItems(search?: string, filters: any = {}) {
+export async function getItems(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const { orgId } = await getSessionContext();
-    const items = await prisma.item.findMany({
-      where: { 
-        organizationId: orgId,
-        ...(search ? { itemName: { contains: search, mode: 'insensitive' } } : {}),
-        ...(filters.status ? { status: filters.status } : {}),
-      },
-      orderBy: { itemName: 'asc' },
-    });
-    return { success: true, data: items };
+    const where = { 
+      organizationId: orgId,
+      ...(search ? { itemName: { contains: search, mode: 'insensitive' } } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+    };
+
+    const [items, totalCount] = await Promise.all([
+      prisma.item.findMany({
+        where,
+        orderBy: { itemName: 'asc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.item.count({ where })
+    ]);
+
+    return { 
+      success: true, 
+      data: items,
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
