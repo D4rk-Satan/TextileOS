@@ -33,7 +33,7 @@ export function ImportModal({ isOpen, onClose, onImport, title, templateColumns 
       Papa.parse(selectedFile, {
         header: true,
         complete: (results) => {
-          setPreview(results.data.slice(0, 5)); // Show first 5 rows
+          setPreview(results.data.slice(0, 5) as Record<string, string>[]); // Show first 5 rows
         }
       });
     }

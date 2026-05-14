@@ -107,13 +107,13 @@ export async function createDeliveryChallan(data: DispatchChallanData) {
         remark: data.remark,
         organizationId: orgId,
         batches: {
-          connect: data.batchIds.map((id: string) => ({ id }))
+          connect: data.batches.map((b: { id: string }) => ({ id: b.id }))
         }
       }
     });
 
     await prisma.batch.updateMany({
-      where: { id: { in: data.batchIds } },
+      where: { id: { in: data.batches.map((b: { id: string }) => b.id) } },
       data: { status: 'Dispatched' }
     });
 

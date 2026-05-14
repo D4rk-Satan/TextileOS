@@ -205,22 +205,28 @@ export function IssueForPrintingForm({ onSuccess, initialData }: IssueForPrintin
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
-                {fields.map((field, index) => (
-                  <tr key={field.id} className="hover:bg-card/50 transition-colors group">
-                    <td className="px-8 py-5 text-xs font-black text-muted-foreground/50">
-                      {String(index + 1).padStart(2, '0')}
-                    </td>
-                    <td className="px-8 py-5 text-sm font-bold text-foreground">
-                      {watch(`batches.${index}.batchNo`)}
-                    </td>
-                    <td className="px-8 py-5 text-right text-sm font-bold text-muted-foreground">
-                      {(watch(`batches.${index}.mtrs`) || 0).toFixed(2)}
-                    </td>
-                    <td className="px-8 py-5 text-right text-sm font-black text-blue-600">
-                      {(watch(`batches.${index}.rfdMtrs`) || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  const batchesData = watch('batches');
+                  return fields.map((field, index) => {
+                    const batch = batchesData[index];
+                    return (
+                      <tr key={field.id} className="hover:bg-card/50 transition-colors group">
+                        <td className="px-8 py-5 text-xs font-black text-muted-foreground/50">
+                          {String(index + 1).padStart(2, '0')}
+                        </td>
+                        <td className="px-8 py-5 text-sm font-bold text-foreground">
+                          {batch?.batchNo}
+                        </td>
+                        <td className="px-8 py-5 text-right text-sm font-bold text-muted-foreground">
+                          {(batch?.mtrs || 0).toFixed(2)}
+                        </td>
+                        <td className="px-8 py-5 text-right text-sm font-black text-blue-600">
+                          {(batch?.rfdMtrs || 0).toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
                 {fields.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-8 py-16 text-center text-sm text-muted-foreground italic bg-background/30">

@@ -49,7 +49,7 @@ export default function TeamPage() {
     setIsLoading(true);
     const result = await getOrganizationUsers();
     if (result.success) {
-      setUsers(result.users);
+      setUsers(result.users as User[]);
     }
     setIsLoading(false);
   };

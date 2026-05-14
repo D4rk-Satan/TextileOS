@@ -292,75 +292,81 @@ export function ReceiveFromPrintingForm({ onSuccess, initialData }: ReceiveFromP
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
-                {fields.map((field, index) => (
-                  <tr key={field.id} className="hover:bg-card/50 transition-colors">
-                    <td className="px-4 py-3 text-center text-xs font-black text-muted-foreground">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-bold text-foreground">
-                      {watch(`batches.${index}.batchNo`)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm font-bold text-muted-foreground/60">
-                      {watch(`batches.${index}.mtrs`)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm font-bold text-muted-foreground">
-                      {watch(`batches.${index}.rfdMtrs`)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-center">
-                        <input
-                          {...methods.register(`batches.${index}.printMtrs`, { required: true, valueAsNumber: true })}
-                          type="number"
-                          step="0.01"
-                          readOnly={watch(`batches.${index}.isTP`)}
-                          className={`w-24 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-center outline-none transition-all ${
-                            watch(`batches.${index}.isTP`) 
-                              ? "bg-muted/50 cursor-default" 
-                              : "bg-card focus:border-indigo-500"
-                          }`}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-center">
-                        <input
-                          {...methods.register(`batches.${index}.isTP`)}
-                          type="checkbox"
-                          className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
-                        />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <input
-                        {...methods.register(`batches.${index}.tpDetail`)}
-                        readOnly={!watch(`batches.${index}.isTP`)}
-                        className={`w-full border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold outline-none transition-all ${
-                          !watch(`batches.${index}.isTP`) 
-                            ? "bg-muted/50 cursor-default" 
-                            : "bg-card focus:border-indigo-500"
-                        }`}
-                        placeholder="Detail"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {(watch(`batches.${index}.printShortage`) || 0) < 0 ? <TrendingUp size={12} className="text-green-500" /> : <TrendingDown size={12} className="text-red-500" />}
-                        <span className={`text-sm font-black ${(watch(`batches.${index}.printShortage`) || 0) < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {(watch(`batches.${index}.printShortage`) || 0)}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button 
-                        type="button" 
-                        onClick={() => remove(index)}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  const batchesData = watch('batches');
+                  return fields.map((field, index) => {
+                    const batch = batchesData[index];
+                    return (
+                      <tr key={field.id} className="hover:bg-card/50 transition-colors">
+                        <td className="px-4 py-3 text-center text-xs font-black text-muted-foreground">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-bold text-foreground">
+                          {batch?.batchNo}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-bold text-muted-foreground/60">
+                          {batch?.mtrs}
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-bold text-muted-foreground">
+                          {batch?.rfdMtrs}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center">
+                            <input
+                              {...methods.register(`batches.${index}.printMtrs`, { required: true, valueAsNumber: true })}
+                              type="number"
+                              step="0.01"
+                              readOnly={batch?.isTP}
+                              className={`w-24 border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold text-center outline-none transition-all ${
+                                batch?.isTP 
+                                  ? "bg-muted/50 cursor-default" 
+                                  : "bg-card focus:border-indigo-500"
+                              }`}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center">
+                            <input
+                              {...methods.register(`batches.${index}.isTP`)}
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            {...methods.register(`batches.${index}.tpDetail`)}
+                            readOnly={!batch?.isTP}
+                            className={`w-full border border-border/50 rounded-lg px-3 py-1.5 text-sm font-bold outline-none transition-all ${
+                              !batch?.isTP 
+                                ? "bg-muted/50 cursor-default" 
+                                : "bg-card focus:border-indigo-500"
+                            }`}
+                            placeholder="Detail"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {(batch?.printShortage || 0) < 0 ? <TrendingUp size={12} className="text-green-500" /> : <TrendingDown size={12} className="text-red-500" />}
+                            <span className={`text-sm font-black ${(batch?.printShortage || 0) < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {(batch?.printShortage || 0)}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button 
+                            type="button" 
+                            onClick={() => remove(index)}
+                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </div>
