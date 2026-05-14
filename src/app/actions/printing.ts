@@ -14,8 +14,11 @@ export interface PrinterVendor {
 export interface PrintingBatchInput {
   id: string;
   ids?: string[]; // For grouped batches
+  batchNo?: string;
   mtrs: number;
+  rfdMtrs?: number;
   printMtrs?: number;
+  printShortage?: number;
   isTP?: boolean;
   tpDetail?: string;
   millShortage?: number;
