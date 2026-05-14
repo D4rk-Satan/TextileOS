@@ -27,7 +27,7 @@ export default function SignupPage() {
       phone: '',
       password: '',
     },
-    mode: 'onTouched',
+    mode: 'onBlur',
   });
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);

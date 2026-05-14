@@ -43,7 +43,7 @@ export function GreyInwardForm({ onSuccess, initialData }: { onSuccess?: () => v
       totalMtr: initialData?.totalMtr?.toString() || '0.00',
       batches: initialData?.batches || [],
     },
-    mode: 'onTouched',
+    mode: 'onBlur',
   });
 
   const [batches, batchDetail, lotNo] = useWatch({
