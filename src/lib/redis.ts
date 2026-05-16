@@ -39,20 +39,27 @@ export async function withCache<T>(
 }
 
 /**
- * Helper to invalidate cache keys
+ * Helper to invalidate cache keys by exact key or prefix
  */
-export async function invalidateCache(key: string | string[]) {
-  if (!process.env.UPSTASH_REDIS_REST_URL) return;
+export async function invalidateCache(patterns: string | string[]) {
+  if (!pattern() || !process.env.UPSTASH_REDIS_REST_URL) return;
+  
+  const patternList = Array.isArray(patterns) ? patterns : [patterns];
   
   try {
-    if (Array.isArray(key)) {
-      await Promise.all(key.map(k => redis.del(k)));
-      console.log(`[Redis] Invalidated keys: ${key.join(', ')}`);
-    } else {
-      await redis.del(key);
-      console.log(`[Redis] Invalidated key: ${key}`);
+    for (const pattern of patternList) {
+      // Find all keys matching the prefix
+      const keys = await redis.keys(`${pattern}*`);
+      if (keys.length > 0) {
+        await redis.del(...keys);
+        console.log(`[Redis] Invalidated ${keys.length} keys for pattern: ${pattern}*`);
+      }
     }
   } catch (error) {
     console.error('[Redis] Invalidation Error:', error);
   }
+}
+
+function pattern() {
+  return true;
 }

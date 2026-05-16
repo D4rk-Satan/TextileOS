@@ -280,7 +280,8 @@ export async function getBatches(status?: string, search?: string, filters: { en
           include: {
             greyInward: {
               include: {
-                customer: true
+                customer: true,
+                batches: true
               }
             },
             printingIssue: {
