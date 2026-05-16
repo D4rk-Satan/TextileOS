@@ -18,6 +18,7 @@ interface BatchData {
   pcs: number;
   mtrs: number;
   weight: number;
+  status?: string;
 }
 
 interface GreyInwardData {
