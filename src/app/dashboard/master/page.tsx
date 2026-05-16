@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { MasterTable } from '@/components/shared/MasterTable';
 import { ImportModal } from '@/components/shared/ImportModal';
+import { TableSkeleton } from '@/components/shared/Skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getCustomers, getVendors, getItems, deleteCustomer, deleteVendor, deleteItem,
@@ -180,9 +181,9 @@ function MasterPageContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="h-96 flex items-center justify-center"
+            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
           >
-            <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+            <TableSkeleton />
           </motion.div>
         ) : showForm ? (
           <motion.div 
