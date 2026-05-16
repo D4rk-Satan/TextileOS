@@ -226,6 +226,8 @@ export async function updatePrintingReceive(id: string, data: PrintingReceiveDat
 export async function getOutForPrintingLots(search?: string, filters: any = {}, page: number = 1, pageSize: number = 20) {
   try {
     const orgId = await getOrgId();
+    const cacheKey = `printing:out-for-printing:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
+
     const where = { 
       organizationId: orgId,
       ...(search ? {
@@ -245,53 +247,57 @@ export async function getOutForPrintingLots(search?: string, filters: any = {}, 
       } : {}),
     };
 
-    const issues = await prisma.printingIssue.findMany({
-      where,
-      include: {
-        printer: true,
-        batches: {
-          where: { status: 'Under Printing' },
-          include: {
-            greyInward: {
-              include: { customer: true }
-            },
-            rfdInward: true
+    const { data: serializedData, totalCount } = await withCache(cacheKey, async () => {
+      const issues = await prisma.printingIssue.findMany({
+        where,
+        include: {
+          printer: true,
+          batches: {
+            where: { status: 'Under Printing' },
+            include: {
+              greyInward: {
+                include: { customer: true }
+              },
+              rfdInward: true
+            }
           }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    });
-
-    const serializedData = issues.filter(i => i.batches.length > 0).map(issue => {
-      const groupedBatches: any[] = [];
-      issue.batches.forEach((batch: any) => {
-        const baseBatchNo = batch.batchNo.split(' (P')[0];
-        const existing = groupedBatches.find(b => b.batchNo === baseBatchNo);
-        if (existing) {
-          existing.ids.push(batch.id);
-          existing.mtrs += Number(batch.mtrs);
-          existing.rfdMtrs += Number(batch.rfdMtrs);
-        } else {
-          groupedBatches.push({
-            ...batch,
-            ids: [batch.id],
-            mtrs: Number(batch.mtrs),
-            rfdMtrs: Number(batch.rfdMtrs),
-            batchNo: baseBatchNo
-          });
-        }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       });
 
-      return {
-        ...issue,
-        totalMtr: groupedBatches.reduce((sum, b) => sum + b.mtrs, 0),
-        batches: groupedBatches
-      };
-    });
+      const count = await prisma.printingIssue.count({ where });
 
-    const totalCount = await prisma.printingIssue.count({ where });
+      const mappedData = issues.filter(i => i.batches.length > 0).map(issue => {
+        const groupedBatches: any[] = [];
+        issue.batches.forEach((batch: any) => {
+          const baseBatchNo = batch.batchNo.split(' (P')[0];
+          const existing = groupedBatches.find(b => b.batchNo === baseBatchNo);
+          if (existing) {
+            existing.ids.push(batch.id);
+            existing.mtrs += Number(batch.mtrs);
+            existing.rfdMtrs += Number(batch.rfdMtrs);
+          } else {
+            groupedBatches.push({
+              ...batch,
+              ids: [batch.id],
+              mtrs: Number(batch.mtrs),
+              rfdMtrs: Number(batch.rfdMtrs),
+              batchNo: baseBatchNo
+            });
+          }
+        });
+
+        return {
+          ...issue,
+          totalMtr: groupedBatches.reduce((sum, b) => sum + b.mtrs, 0),
+          batches: groupedBatches
+        };
+      });
+
+      return { data: mappedData, totalCount: count };
+    });
 
     return { 
       success: true, 
@@ -330,34 +336,40 @@ export async function getPrintingReceives(search?: string, filters: any = {}, pa
       } : {}),
     };
 
-    const receives = await prisma.printingReceive.findMany({
-      where,
-      include: {
-        printer: true,
-        customer: true,
-        batches: {
-          include: {
-            greyInward: true,
-            rfdInward: true
+    const cacheKey = `printing:receives:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
+
+    const { data: serializedData, totalCount } = await withCache(cacheKey, async () => {
+      const receives = await prisma.printingReceive.findMany({
+        where,
+        include: {
+          printer: true,
+          customer: true,
+          batches: {
+            include: {
+              greyInward: true,
+              rfdInward: true
+            }
           }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+
+      const count = await prisma.printingReceive.count({ where });
+
+      const mappedData = receives.map(receive => ({
+        ...receive,
+        batches: receive.batches.map(batch => ({
+          ...batch,
+          mtrs: Number(batch.mtrs),
+          rfdMtrs: Number(batch.rfdMtrs),
+          printMtrs: Number(batch.printMtrs)
+        }))
+      }));
+
+      return { data: mappedData, totalCount: count };
     });
-
-    const serializedData = receives.map(receive => ({
-      ...receive,
-      batches: receive.batches.map(batch => ({
-        ...batch,
-        mtrs: Number(batch.mtrs),
-        rfdMtrs: Number(batch.rfdMtrs),
-        printMtrs: Number(batch.printMtrs)
-      }))
-    }));
-
-    const totalCount = await prisma.printingReceive.count({ where });
 
     return { 
       success: true, 
