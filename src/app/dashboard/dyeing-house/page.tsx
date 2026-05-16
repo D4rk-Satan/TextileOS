@@ -28,6 +28,7 @@ import {
 } from '@/app/actions/dyeing';
 import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
 import { Pagination } from '@/components/shared/Pagination';
+import { TableSkeleton } from '@/components/shared/Skeleton';
 import { ModuleHeader } from '@/components/layout/ModuleHeader';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
@@ -116,7 +117,7 @@ function DyeingHousePageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab, debouncedSearch, filters, currentPage]);
+  }, [searchParams, activeTab, debouncedSearch, filters, currentPage, fetchedTab]);
 
   // Reset page when tab or filters change
   useEffect(() => {
@@ -208,9 +209,9 @@ function DyeingHousePageContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="h-96 flex items-center justify-center"
+            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
           >
-            <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+            <TableSkeleton />
           </motion.div>
         ) : showForm ? (
           <div key="form" className="max-w-7xl mx-auto">

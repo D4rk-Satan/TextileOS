@@ -32,6 +32,7 @@ import {
 import { getCustomers } from '@/app/actions/master';
 import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
 import { Pagination } from '@/components/shared/Pagination';
+import { TableSkeleton } from '@/components/shared/Skeleton';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
 
@@ -184,9 +185,9 @@ function DeliveryChallanPageContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="h-96 flex items-center justify-center"
+            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
           >
-            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <TableSkeleton />
           </motion.div>
         ) : showForm ? (
           <div key="form" className="max-w-7xl mx-auto">

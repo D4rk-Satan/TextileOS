@@ -19,6 +19,7 @@ import { GlassCard } from '@/components/shared/GlassCard';
 import { ImportModal } from '@/components/shared/ImportModal';
 import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
 import { Pagination } from '@/components/shared/Pagination';
+import { TableSkeleton, CardSkeleton } from '@/components/shared/Skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getGreyInwards, getBatches, updateGreyInward, deleteGreyInward,
@@ -115,7 +116,7 @@ function WarehousePageContent() {
     return () => {
       isCurrent = false;
     };
-  }, [searchParams, activeTab, debouncedSearch, filters, currentPage]);
+  }, [searchParams, activeTab, debouncedSearch, filters, currentPage, fetchedTab]);
 
   // Reset page when tab or search changes
   useEffect(() => {
@@ -347,9 +348,9 @@ function WarehousePageContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="h-96 flex items-center justify-center"
+            className="bg-card rounded-[2.5rem] border border-border shadow-xl overflow-hidden"
           >
-            <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+            <TableSkeleton />
           </motion.div>
         ) : showForm ? (
           <motion.div 
