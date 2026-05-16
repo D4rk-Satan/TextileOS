@@ -20,6 +20,7 @@ import { createStaffUser, getOrganizationUsers, getUserRole } from '@/app/action
 import { getRoles } from '@/app/actions/roles';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { TableSkeleton } from '@/components/shared/Skeleton';
 
 interface User {
   id: string;
@@ -179,8 +180,8 @@ export default function TeamPage() {
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground animate-pulse font-medium">
-                    Loading team members...
+                  <td colSpan={4} className="p-0">
+                    <TableSkeleton />
                   </td>
                 </tr>
               ) : users.length === 0 ? (

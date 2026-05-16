@@ -21,6 +21,7 @@ import { getRoles, createRole, updateRole, deleteRole } from '@/app/actions/role
 import { ALL_PERMISSIONS, PERMISSION_LABELS } from '@/lib/permissions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { CardSkeleton } from '@/components/shared/Skeleton';
 
 interface Role {
   id: string;
@@ -108,8 +109,10 @@ export default function RolesPage() {
 
   if (isLoading && roles.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] text-muted-foreground font-bold animate-pulse">
-        LOADING ROLES SYSTEM...
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <GlassCard><CardSkeleton /></GlassCard>
+        <GlassCard><CardSkeleton /></GlassCard>
+        <GlassCard><CardSkeleton /></GlassCard>
       </div>
     );
   }
