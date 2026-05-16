@@ -107,6 +107,18 @@ export async function createGreyInward(data: GreyInwardData) {
 export async function updateGreyInward(id: string, data: GreyInwardData) {
   try {
     const orgId = await getOrgId();
+    // Lock Check: Verify if any batch is already processed downstream
+    const existingInward = await prisma.greyInward.findUnique({
+      where: { id, organizationId: orgId },
+      include: { batches: true }
+    });
+
+    if (!existingInward) return { success: false, error: 'Record not found' };
+
+    const isLocked = existingInward.batches.some(b => 
+      b.greyOutwardId || b.rfdInwardId || b.printingIssueId || b.printingReceiveId || b.deliveryChallanId
+    );
+
     const greyInward = await prisma.greyInward.update({
       where: { id, organizationId: orgId },
       data: {
@@ -121,7 +133,23 @@ export async function updateGreyInward(id: string, data: GreyInwardData) {
         totalBatch: typeof data.totalBatch === 'string' ? parseInt(data.totalBatch) : data.totalBatch,
         totalMtr: typeof data.totalMtr === 'string' ? parseFloat(data.totalMtr) : data.totalMtr,
         customerId: data.customer,
+        // Sync Batches: Only if not locked
+        ...(isLocked ? {} : {
+          batches: {
+            deleteMany: {},
+            create: data.batches.map(batch => ({
+              batchNo: batch.batchNo,
+              pcs: batch.pcs,
+              mtrs: batch.mtrs,
+              weight: batch.weight,
+              status: batch.status || 'In-Warehouse'
+            }))
+          }
+        })
       },
+      include: {
+        batches: true
+      }
     });
     revalidatePath('/dashboard/warehouse');
     await invalidateCache([`inwards:${orgId}`, `batches:${orgId}`]);
@@ -131,7 +159,12 @@ export async function updateGreyInward(id: string, data: GreyInwardData) {
       success: true, 
       data: {
         ...greyInward,
-        totalMtr: Number(greyInward.totalMtr)
+        totalMtr: Number(greyInward.totalMtr),
+        batches: greyInward.batches.map(batch => ({
+          ...batch,
+          mtrs: batch.mtrs ? Number(batch.mtrs) : 0,
+          weight: batch.weight ? Number(batch.weight) : 0,
+        }))
       } 
     };
   } catch (error: any) {
