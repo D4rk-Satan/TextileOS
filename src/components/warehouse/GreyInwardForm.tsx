@@ -39,6 +39,7 @@ interface FormBatch {
   pcs: string | number;
   mtrs: string | number;
   weight: string | number;
+  status?: string;
 }
 
 interface FormValues {
@@ -97,9 +98,8 @@ export function GreyInwardForm({ onSuccess, initialData }: GreyInwardFormProps) 
     methods.setValue('totalMtr', totals.totalMtr.toFixed(2));
   }, [totals, methods]);
 
-  // Auto-populate batches from batchDetail - ONLY IF NOT EDITING
+  // Auto-populate or sync batches from batchDetail
   useEffect(() => {
-    if (initialData) return; // Skip auto-generation when editing existing record
     if (!batchDetail || typeof batchDetail !== 'string') return;
     
     const values = batchDetail.split(/[,\n\s]+/)
@@ -107,22 +107,25 @@ export function GreyInwardForm({ onSuccess, initialData }: GreyInwardFormProps) 
       .filter(v => v !== '' && !isNaN(parseFloat(v)));
 
     if (values.length > 0) {
-      const currentBatches = methods.getValues('batches');
-      
-      const currentMtrs = currentBatches?.map((b: FormBatch) => b.mtrs).join(',');
+      const currentBatches = methods.getValues('batches') || [];
+      const currentMtrs = currentBatches.map((b: FormBatch) => b.mtrs?.toString()).join(',');
       const newMtrs = values.join(',');
 
       if (currentMtrs !== newMtrs) {
-        const newBatches = values.map((val, index) => ({
-          batchNo: `${lotNo || 'B'}-${index + 1}`,
-          pcs: '1',
-          mtrs: val,
-          weight: '0'
-        }));
+        const newBatches = values.map((val, index) => {
+          const existing = currentBatches[index];
+          return {
+            batchNo: existing?.batchNo || `${lotNo || 'B'}-${index + 1}`,
+            pcs: existing?.pcs || '1',
+            mtrs: val,
+            weight: existing?.weight || '0',
+            status: existing?.status || 'In-Warehouse'
+          };
+        });
         methods.setValue('batches', newBatches);
       }
     }
-  }, [batchDetail, lotNo, methods, initialData]);
+  }, [batchDetail, lotNo, methods]);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [customers, setCustomers] = React.useState<{ label: string; value: string }[]>([]);
