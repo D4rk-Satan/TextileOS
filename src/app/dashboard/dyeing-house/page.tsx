@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Hash,
   Trash2,
-  Upload
+  Upload,
+  Edit
 } from 'lucide-react';
 import { GreyOutwardForm } from '@/components/dyeing/GreyOutwardForm';
 import { RFDInwardForm } from '@/components/dyeing/RFDInwardForm';
@@ -334,7 +335,7 @@ function DyeingHousePageContent() {
                                onClick={(e) => handleEdit(item, e)}
                                className="p-2 hover:bg-primary/10 rounded-xl text-primary/60 hover:text-primary transition-all duration-300"
                              >
-                               <Search size={18} />
+                               <Edit size={18} />
                              </button>
                              <button 
                                onClick={(e) => handleDelete(item.id, e)}

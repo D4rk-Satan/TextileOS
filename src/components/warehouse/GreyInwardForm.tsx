@@ -26,6 +26,9 @@ import { motion } from 'framer-motion';
 import { createGreyInward, updateGreyInward, getNextLotNumber } from '@/app/actions/warehouse';
 import { getCustomers, getItems } from '@/app/actions/master';
 
+import { FormHeader } from '@/components/shared/FormHeader';
+import { toast } from 'sonner';
+
 interface GreyInwardFormProps {
   onSuccess?: () => void;
   initialData?: any; // Maps to complex Prisma object
@@ -158,6 +161,7 @@ export function GreyInwardForm({ onSuccess, initialData }: GreyInwardFormProps) 
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
+    const toastId = toast.loading(`${initialData ? 'Updating' : 'Saving'} record...`);
     try {
       // Transform data to match GreyInwardData interface
       const submissionData = {
@@ -175,17 +179,17 @@ export function GreyInwardForm({ onSuccess, initialData }: GreyInwardFormProps) 
         : await createGreyInward(submissionData);
         
       if (result.success) {
-        alert(`Grey Inward entry ${initialData ? 'updated' : 'saved'} successfully!`);
+        toast.success(`Grey Inward entry ${initialData ? 'updated' : 'saved'} successfully!`, { id: toastId });
         if (!initialData) {
           methods.reset();
           await refreshLotNumber();
         }
         onSuccess?.();
       } else {
-        alert('Error: ' + result.error);
+        toast.error('Error: ' + result.error, { id: toastId });
       }
     } catch (error) {
-      alert('An unexpected error occurred.');
+      toast.error('An unexpected error occurred.', { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -198,128 +202,131 @@ export function GreyInwardForm({ onSuccess, initialData }: GreyInwardFormProps) 
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Challan Info Wrapper */}
-        <div className="bg-muted/30 rounded-2xl p-4 border border-border/50">
-          <div className="flex items-center gap-3 mb-4 border-b border-border/50 pb-2">
-            <div className="p-1.5 bg-blue-600/10 rounded-lg text-blue-600">
-              <ClipboardList size={18} />
-            </div>
-            <h3 className="text-md font-black text-foreground tracking-tight uppercase">Challan Info</h3>
-          </div>
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-12">
+        {/* Core Details */}
+        <div className="space-y-6">
+          <FormHeader title="Challan Details" icon={ClipboardList} color="blue" className="mb-6" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormInput
+              name="lotNo"
+              label="Lot Number"
+              icon={Box}
+              readOnly
+              variant="dark"
+              className="bg-muted/20 font-black text-blue-600 border-blue-500/10"
+            />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-            <div className="space-y-4">
-              <FormInput
-                name="lotNo"
-                label="Lot No"
-                placeholder="Auto-assigned"
-                icon={Box}
-                readOnly
-                variant="dark"
-              />
+            <FormInput
+              name="date"
+              label="Inward Date"
+              type="date"
+              required
+              icon={Calendar}
+            />
 
-              <FormInput
-                name="date"
-                label="Date"
-                type="date"
-                required
-                icon={Calendar}
-              />
+            <FormSelect
+              name="customer"
+              label="Customer"
+              required
+              placeholder="Select customer..."
+              icon={Search}
+              options={customers}
+            />
 
-              <FormSelect
-                name="customer"
-                label="Customers"
-                required
-                placeholder="Select Customer"
-                icon={Search}
-                options={customers}
-              />
+            <FormInput
+              name="challanNo"
+              label="Challan Number"
+              required
+              placeholder="e.g. DC-1024"
+              icon={Hash}
+            />
 
-              <FormInput
-                name="challanNo"
-                label="Challan No"
-                required
-                placeholder="Enter Challan Number"
-                icon={Hash}
-              />
-            </div>
+            <FormSelect
+              name="quality"
+              label="Item Quality"
+              required
+              placeholder="Select quality..."
+              icon={Layers}
+              options={qualities}
+            />
 
-            <div className="space-y-6">
-              <FormSelect
-                name="quality"
-                label="Quality"
-                required
-                placeholder="Select Quality"
-                icon={Layers}
-                options={qualities}
-              />
-
-              <FormSelect
-                name="processType"
-                label="Process Type"
-                required
-                placeholder="Select Process"
-                icon={Settings}
-                options={[
-                  { label: 'RFD & Print', value: 'rfd_print' },
-                  { label: 'Direct Print', value: 'direct_print' },
-                ]}
-              />
-
-              <FormInput
-                name="image"
-                label="Image"
-                placeholder="Image filename / upload"
-                icon={ImageIcon}
-              />
-            </div>
-
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <FormInput
-                  name="totalBatch"
-                  label="Total Grey Batch"
-                  icon={Hash}
-                  variant="dark"
-                  readOnly
-                />
-
-                <FormInput
-                  name="totalMtr"
-                  label="Total Grey Mtr"
-                  icon={Hash}
-                  variant="dark"
-                  readOnly
-                />
-              </div>
-
-              <FormTextArea
-                name="batchDetail"
-                label="Batch Detail"
-                required
-                placeholder="Enter comma separated values (e.g. 98.25, 109.25, 82)"
-                icon={FileText}
-                className="min-h-[120px]"
-              />
-            </div>
+            <FormSelect
+              name="processType"
+              label="Process Type"
+              required
+              placeholder="Select process..."
+              icon={Settings}
+              options={[
+                { label: 'RFD & Print', value: 'rfd_print' },
+                { label: 'Direct Print', value: 'direct_print' },
+              ]}
+            />
           </div>
         </div>
 
-        {/* Batch Info Section */}
-        <div className="bg-muted/30 rounded-2xl p-4 border border-border/50">
+        {/* Generation & Stats */}
+        <div className="pt-10 border-t border-border/50">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-600/10 rounded-xl text-blue-600">
+                <FileText size={20} />
+              </div>
+              <h3 className="text-lg font-black text-foreground tracking-tight uppercase">Batch Generation</h3>
+            </div>
+
+            <div className="flex items-center gap-4 bg-muted/30 border border-border/50 px-5 py-3 rounded-2xl">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Batches</span>
+                <span className="text-sm font-black text-foreground leading-none">{totals.totalBatch}</span>
+              </div>
+              <div className="w-px h-6 bg-border/50 mx-1" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Total Meters</span>
+                <span className="text-sm font-black text-blue-600 leading-none">{totals.totalMtr.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          <FormTextArea
+            name="batchDetail"
+            label="Input meters separated by commas"
+            required
+            placeholder="e.g. 98.25, 102.50, 88.00..."
+            icon={FileText}
+            className="min-h-[120px] bg-muted/5 border-dashed"
+          />
+        </div>
+
+        {/* Preview Section */}
+        <div className="pt-10 border-t border-border/50">
           <BatchInfoForm />
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3 pt-4">
-          <FormButton type="submit" variant="primary" className="h-11 px-8 rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-blue-500/10 flex gap-2">
-            <Save size={18} />
-            Save Grey Inward
+        <div className="flex items-center gap-4 pt-10 border-t border-border/50">
+          <FormButton 
+            type="submit" 
+            variant="primary" 
+            disabled={isSubmitting}
+            className="h-14 px-12 rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl shadow-blue-500/20 flex gap-3 transition-all hover:scale-[1.02]"
+          >
+            {isSubmitting ? (
+              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Save size={20} />
+            )}
+            {initialData ? 'Update Record' : 'Save Inward'}
           </FormButton>
-          <FormButton type="button" onClick={onReset} variant="secondary" className="h-11 px-8 rounded-xl text-sm font-black uppercase tracking-wider flex gap-2">
-            <RotateCcw size={18} />
-            Reset Form
+          
+          <FormButton 
+            type="button" 
+            onClick={onReset} 
+            variant="secondary" 
+            className="h-14 px-12 rounded-2xl text-xs font-black uppercase tracking-widest flex gap-3 transition-all hover:bg-muted"
+          >
+            <RotateCcw size={20} />
+            Reset
           </FormButton>
         </div>
       </form>

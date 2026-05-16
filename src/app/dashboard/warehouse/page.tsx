@@ -10,7 +10,8 @@ import {
   Search,
   Trash2,
   Upload,
-  Filter
+  Filter,
+  Edit
 } from 'lucide-react';
 import { GreyInwardForm } from '@/components/warehouse/GreyInwardForm';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -206,7 +207,7 @@ function WarehousePageContent() {
                        onClick={() => handleEdit(inward)}
                        className="p-2 hover:bg-primary/10 rounded-xl text-primary/60 hover:text-primary transition-all duration-300"
                      >
-                       <Search size={18} />
+                       <Edit size={18} />
                      </button>
                      <button 
                        onClick={() => handleDelete(inward.id)}
@@ -266,8 +267,23 @@ function WarehousePageContent() {
                     {batch.status}
                   </span>
                 </td>
-                <td className="px-8 py-5 text-right text-muted-foreground/30 italic text-[10px]">
-                  Batch Mode
+                <td className="px-8 py-5 text-right">
+                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                     <button 
+                       onClick={() => handleEdit(batch.greyInward)}
+                       className="p-2 hover:bg-primary/10 rounded-xl text-primary/60 hover:text-primary transition-all duration-300"
+                       title="Edit Parent Inward"
+                     >
+                       <Edit size={18} />
+                     </button>
+                     <button 
+                       onClick={() => handleDelete(batch.greyInwardId)}
+                       className="p-2 hover:bg-red-500/10 rounded-xl text-red-500/40 hover:text-red-500 transition-all duration-300"
+                       title="Delete Parent Inward"
+                     >
+                       <Trash2 size={16} />
+                     </button>
+                   </div>
                 </td>
               </tr>
             ))}

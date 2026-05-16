@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { CommandPalette } from '@/components/shared/CommandPalette';
+import { Toaster } from 'sonner';
 
 const jakarta = Plus_Jakarta_Sans({ 
   subsets: ['latin'],
@@ -11,7 +12,7 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: 'TextileOS',
-  description: 'Role-based registration for Admin, Customer, and Vendor',
+  description: 'Next-gen Textile Management System',
 };
 
 export default function RootLayout({
@@ -24,9 +25,11 @@ export default function RootLayout({
       <body className={jakarta.className}>
         <ThemeProvider>
           <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+            <CommandPalette />
             <main>
               {children}
             </main>
+            <Toaster position="top-right" richColors closeButton />
           </div>
         </ThemeProvider>
       </body>

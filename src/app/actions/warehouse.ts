@@ -166,18 +166,22 @@ export async function getGreyInwards(search?: string, filters: { status?: string
 
     const cacheKey = `inwards:${orgId}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
 
-    const data = await withCache(cacheKey, async () => {
-      const greyInwards = await prisma.greyInward.findMany({
-        where,
-        include: {
-          customer: true,
-          batches: true,
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      });
-      return greyInwards.map(inward => ({
+    const { data, totalCount } = await withCache(cacheKey, async () => {
+      const [greyInwards, count] = await Promise.all([
+        prisma.greyInward.findMany({
+          where,
+          include: {
+            customer: true,
+            batches: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        prisma.greyInward.count({ where })
+      ]);
+
+      const formattedData = greyInwards.map(inward => ({
         ...inward,
         totalMtr: Number(inward.totalMtr),
         batches: inward.batches.map(batch => ({
@@ -186,9 +190,9 @@ export async function getGreyInwards(search?: string, filters: { status?: string
           weight: batch.weight ? Number(batch.weight) : 0,
         }))
       }));
-    });
 
-    const totalCount = await prisma.greyInward.count({ where });
+      return { data: formattedData, totalCount: count };
+    });
 
     return { 
       success: true, 
@@ -235,27 +239,30 @@ export async function getBatches(status?: string, search?: string, filters: { en
 
     const cacheKey = `batches:${orgId}:${status || ''}:${search || ''}:${JSON.stringify(filters)}:p${page}`;
 
-    const data = await withCache(cacheKey, async () => {
-      const batches = await prisma.batch.findMany({
-        where,
-        include: {
-          greyInward: {
-            include: {
-              customer: true
+    const { data, totalCount } = await withCache(cacheKey, async () => {
+      const [batches, count] = await Promise.all([
+        prisma.batch.findMany({
+          where,
+          include: {
+            greyInward: {
+              include: {
+                customer: true
+              }
+            },
+            printingIssue: {
+              include: {
+                printer: true
+              }
             }
           },
-          printingIssue: {
-            include: {
-              printer: true
-            }
-          }
-        },
-        orderBy: { id: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      });
+          orderBy: { id: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        prisma.batch.count({ where })
+      ]);
 
-      return batches.map(batch => ({
+      const formattedData = batches.map(batch => ({
         ...batch,
         mtrs: batch.mtrs ? Number(batch.mtrs) : 0,
         weight: batch.weight ? Number(batch.weight) : 0,
@@ -268,9 +275,9 @@ export async function getBatches(status?: string, search?: string, filters: { en
           totalMtr: Number(batch.greyInward.totalMtr)
         }
       }));
-    });
 
-    const totalCount = await prisma.batch.count({ where });
+      return { data: formattedData, totalCount: count };
+    });
 
     return { 
       success: true, 
